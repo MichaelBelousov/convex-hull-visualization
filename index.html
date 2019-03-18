@@ -1,5 +1,4 @@
-<!-- -->
-<!DOCTYPE HTML5>
+<!DOCTYPE HTML>
 <html lang="en">
   <head>
     <script type="text/javascript" 
@@ -16,7 +15,12 @@
     <meta name="image" content="favicon.ico">
   </head>
   <body>
-    <div id="content"></div>
+    <main></main>
+    <script>
+      var app = Elm.Main.init({
+        node: document.querySelector('main')
+      });
+    </script>
   </body>
 </html>
 
