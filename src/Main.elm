@@ -4,7 +4,8 @@ module Main exposing (main)
 -- Imports
 
 import Browser
-import Html exposing (Html, button, div, p, text)
+import Html exposing (Html, div, button, text, a,
+                      table, tr, td)
 import Html.Events exposing (onClick)
 import Html.Attributes exposing (..)
 import List
@@ -28,15 +29,32 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ text "This will be the rendered model"
-        , drawConvexHullAlgorithmsState model
+        [ div [] [ table [ style  "width" "100%"
+                         , style "table-layout" "fixed"
+                         ]
+                        -- TODO<Mike>: move styling to CSS
+                         [ tr [] 
+                              [ td [ style "width" "50%" ]
+                                   [ drawConvexHullAlgorithmsState model ]
+                              , td [ style "width" "50%" ]
+                                   [ div [] [ model.step_desc ]
+                                   , div [] [ button [ onClick Step ] 
+                                                     [ text "next step" ]
+                                            ]
+                                   ]
+                              ]
+                         ]
+                 ]
+        , div [ style "text-align" "center" ] 
+              [ a [ href "/about.html" ] [ text "about" ]
+              ]
         ]
 
 type alias Model =
     { polygon : Polygon
     , convex_hull_state : Polyline
     , next_step : ModelMutator
-    , step_description : Html Msg
+    , step_desc : Html Msg
     }
 
 -- 
@@ -60,9 +78,10 @@ page_state =
     { polygon = [(2,2), (-2,2), (-2,-2), (2,-2)]
     , convex_hull_state = []
     , next_step = ModelMutator startAlgorithm
-    , step_description = text "hello"
+    , step_desc = text "hello"
     }
 
+-- TODO: change the type to not pass the whole mode, just the polygon and hull progress
 -- TODO<Xuefeng>: this is a stub, finish and optionally rename
 drawConvexHullAlgorithmsState : Model -> Html Msg
 drawConvexHullAlgorithmsState model =
