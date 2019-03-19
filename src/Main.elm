@@ -4,9 +4,9 @@ module Main exposing (main)
 -- Imports
 
 import Browser
-import Html exposing (Html, button, div, p, onInput)
+import Html exposing (Html, button, div, p, text)
 import Html.Events exposing (onClick)
-import Html.Attributesx exposing (..)
+import Html.Attributes exposing (..)
 import List
 import Tuple
 
@@ -16,7 +16,6 @@ import Tuple
 type Msg
     = Start
     | Step
-    | End
 
 update : Msg -> Model -> Model
 update msg model =
@@ -36,9 +35,12 @@ view model =
 type alias Model =
     { polygon : Polygon
     , convex_hull_state : Polyline
-    , next_step : Model -> Model
-    , step_description : Html
+    , next_step : ModelMutator
+    , step_description : Html Msg
     }
+
+-- 
+type ModelMutator = ModelMutator (Model -> Model)
 
 -- Domain Types
 
@@ -51,29 +53,34 @@ type alias Polyline = List Point
 
 -- App Implementation
 
-page_state : Model
 
 -- initial page state
+page_state : Model
 page_state =
     { polygon = [(2,2), (-2,2), (-2,-2), (2,-2)]
-    , convex_Hull_state = []
-    , next_step = algorithm.start
-    , step_description = div [] []
+    , convex_hull_state = []
+    , next_step = ModelMutator startAlgorithm
+    , step_description = text "hello"
     }
 
 -- TODO<Xuefeng>: this is a stub, finish and optionally rename
-drawConvexHullAlgorithmsState : Model -> Html
-drawConvexHullAlgorithmsState pagestate =
+drawConvexHullAlgorithmsState : Model -> Html Msg
+drawConvexHullAlgorithmsState model =
     div [] []
     -- returns an empty div for now
 
+-- TODO<Tyler>: this is a stub, finish and optionally rename
+startAlgorithm : Model -> Model
+startAlgorithm model =
+    model
+    -- returns an unchanged model for now
 
 -- Browser Init
 
 main : Program () Model Msg
 main =
     Browser.sandbox
-        { init = pageState
+        { init = page_state
         , view = view
         , update = update
         }
