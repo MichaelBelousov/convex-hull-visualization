@@ -73,8 +73,8 @@ type alias Polyline = List Point
 
 
 -- initial page state
-page_state : Model
-page_state =
+initial_state : Model
+initial_state =
     { polygon = [(2,2), (-2,2), (-2,-2), (2,-2)]
     , convex_hull_state = []
     , next_step = ModelMutator startAlgorithm
@@ -99,7 +99,7 @@ startAlgorithm model =
 main : Program () Model Msg
 main =
     Browser.sandbox
-        { init = page_state
+        { init = initial_state
         , view = view
         , update = update
         }
