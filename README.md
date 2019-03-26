@@ -1,6 +1,7 @@
 # Convex Hull Visualization
 
-HTML5 Visualization of the algorithm for finding the convex hull of a polygon
+HTML5 Visualization of the linear time complexity algorithm for
+finding the convex hull of a simple polygon.
 
 # [See it!](https://computational-geometry-visualizations.github.io/convex-hull-visualization/)
 
