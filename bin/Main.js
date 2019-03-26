@@ -4957,7 +4957,7 @@ var author$project$Main$view = function (model) {
 						elm$html$Html$a,
 						_List_fromArray(
 							[
-								elm$html$Html$Attributes$href('/about.html')
+								elm$html$Html$Attributes$href('about.html')
 							]),
 						_List_fromArray(
 							[
