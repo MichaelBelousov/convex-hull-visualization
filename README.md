@@ -2,12 +2,14 @@
 
 HTML5 Visualization of the algorithm for finding the convex hull of a polygon
 
+# [See it!](https://computational-geometry-visualizations.github.io/convex-hull-visualization/)
+
 # Authors
 
-Michael Belousov
-Xuefeng Chen
-Tyler Cromwell
-Jackie Videira
+- Michael Belousov
+- Xuefeng Chen
+- Tyler Cromwell
+- Jackie Videira
 
 # Backing Academic Paper
 
