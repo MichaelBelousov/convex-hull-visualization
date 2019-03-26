@@ -46,7 +46,7 @@ view model =
                          ]
                  ]
         , div [ style "text-align" "center" ] 
-              [ a [ href "/about.html" ] [ text "about" ]
+              [ a [ href "about.html" ] [ text "about" ]
               ]
         ]
 
