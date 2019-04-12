@@ -50,15 +50,14 @@ view model =
               ]
         ]
 
+type alias Stack = List
+
 type alias Model =
     { polygon : Polygon
-    , convex_hull_state : Polyline
-    , next_step : ModelMutator
+    , algorithm_state : { stack : Stack number }
     , step_desc : Html Msg
     }
 
--- 
-type ModelMutator = ModelMutator (Model -> Model)
 
 -- Domain Types
 
@@ -76,16 +75,39 @@ type alias Polyline = List Point
 initial_state : Model
 initial_state =
     { polygon = [(2,2), (-2,2), (-2,-2), (2,-2)]
-    , convex_hull_state = []
-    , next_step = ModelMutator startAlgorithm
+    , algorithm_state = { stack = [0,1] }
     , step_desc = text "hello"
     }
+
+nth : Int -> List a -> a
+nth n list =
+    case list of
+        head::rest -> 
+            if n==0 then head
+                    else nth (n-1) rest
+        [] -> 
+            Nothing
+
+ccw a b c =
+
+
+progressConvexHull model =
+    let
+        top = nth 1 (List.reverse model.algorithm_state.stack)
+        scd = nth 2 (List.reverse model.algorithm_state.stack)
+    in
+        if ccw()
+        { model | algorithm_state.stack =
+                    model.algorithm_state.stack }
+            
 
 -- TODO: change the type to not pass the whole mode, just the polygon and hull progress
 -- TODO<Xuefeng>: this is a stub, finish and optionally rename
 drawConvexHullAlgorithmsState : Model -> Html Msg
 drawConvexHullAlgorithmsState model =
-    div [] []
+    div []
+        [ svg []
+        ]
     -- returns an empty div for now
 
 -- TODO<Tyler>: this is a stub, finish and optionally rename
