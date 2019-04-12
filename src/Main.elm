@@ -131,11 +131,13 @@ drawConvexHullAlgorithmsState model =
 progressConvexHull : Model -> Model
 progressConvexHull model =
     let
-        top = Debug.log "top: " (Maybe.withDefault (0,0) (nth (Maybe.withDefault 0 (nth 1 (List.reverse model.stack))) model.polygon))
-        scd = Debug.log "scd: " (Maybe.withDefault (0,0) (nth (Maybe.withDefault 0 (nth 2 (List.reverse model.stack))) model.polygon))
+        top = Debug.log "top: " (Maybe.withDefault (0,0) (nth (Maybe.withDefault 0 (nth 0 (List.reverse model.stack))) model.polygon))
+        scd = Debug.log "scd: " (Maybe.withDefault (0,0) (nth (Maybe.withDefault 0 (nth 1 (List.reverse model.stack))) model.polygon))
         next = Debug.log "next: " (Maybe.withDefault (0,0) (nth model.next_point model.polygon))
     in
-        if Debug.log "ccw scd top next: " (ccw scd top next) < 1 then
+        if model.next_point >= List.length model.polygon then
+            model
+        else if Debug.log "ccw scd top next: " (ccw scd top next) < 1 then
             { model | stack = Debug.log "pop: " (case removeLast model.stack of
                               Nothing -> []
                               Just stack -> stack)
