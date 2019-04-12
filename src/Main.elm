@@ -10,6 +10,7 @@ import Html.Events exposing (onClick)
 import Html.Attributes exposing (..)
 import List
 import Tuple
+import Debug
 
 
 -- Browser Model
@@ -60,6 +61,7 @@ type alias Model =
     , stack : Stack Int
     , next_point : Int
     , step_desc : Html Msg
+    , step_log : List String
     }
 
 
@@ -78,8 +80,9 @@ initial_state : Model
 initial_state =
     { polygon = [(2,2), (-2,2), (-2,-2), (2,-2)]
     , stack = [0,1]
-    , next_point = 0
+    , next_point = 2
     , step_desc = text "hello"
+    , step_log = []
     }
 
 
@@ -128,24 +131,30 @@ drawConvexHullAlgorithmsState model =
 progressConvexHull : Model -> Model
 progressConvexHull model =
     let
-        top = Maybe.withDefault (0,0) (nth (Maybe.withDefault 0 (nth 1 (List.reverse model.stack))) model.polygon)
-        scd = Maybe.withDefault (0,0) (nth (Maybe.withDefault 0 (nth 2 (List.reverse model.stack))) model.polygon)
-        next = Maybe.withDefault (0,0) (nth model.next_point model.polygon)
+        top = Debug.log "top: " (Maybe.withDefault (0,0) (nth (Maybe.withDefault 0 (nth 1 (List.reverse model.stack))) model.polygon))
+        scd = Debug.log "scd: " (Maybe.withDefault (0,0) (nth (Maybe.withDefault 0 (nth 2 (List.reverse model.stack))) model.polygon))
+        next = Debug.log "next: " (Maybe.withDefault (0,0) (nth model.next_point model.polygon))
     in
-        if ccw scd top next < 1 then
-            { model | stack = case removeLast model.stack of
-                      Nothing -> []
-                      Just stack -> stack
-                    , next_point = model.next_point + 1
+        if Debug.log "ccw scd top next: " (ccw scd top next) < 1 then
+            { model | stack = Debug.log "pop: " (case removeLast model.stack of
+                              Nothing -> []
+                              Just stack -> stack)
+                    , step_log = ("Popped point: (" ++ (String.fromFloat (Tuple.first top)) ++ ", " ++ (String.fromFloat (Tuple.second top)) ++ ")") :: model.step_log
             }
         else
-            model
+            { model | stack = Debug.log "push: " (model.stack ++ [model.next_point])
+                    , next_point = model.next_point + 1
+                    , step_log = ("Pushed point: (" ++ (String.fromFloat (Tuple.first next)) ++ ", " ++ (String.fromFloat (Tuple.second next)) ++ ")") :: model.step_log
+            }
 
 
--- 
+-- For displaying debug output
 debugAlgorithmState : Model -> Html Msg
 debugAlgorithmState model = 
-    div [] (List.map (\s -> text (String.fromInt s)) model.stack)
+    div [] [
+        div [] (List.map (\s -> text (String.fromInt s)) model.stack)
+        , div [](List.map (\s -> text s) model.step_log)
+    ]
 
 
 -- Browser Init
