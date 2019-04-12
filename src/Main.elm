@@ -24,7 +24,7 @@ update msg model =
         Start ->
             model
         Step ->
-            model
+            progressConvexHull model
 
 view : Model -> Html Msg
 view model =
@@ -35,7 +35,10 @@ view model =
                         -- TODO<Mike>: move styling to CSS
                          [ tr [] 
                               [ td [ style "width" "50%" ]
-                                   [ drawConvexHullAlgorithmsState model ]
+                                   [ div [] [ drawConvexHullAlgorithmsState model 
+                                            , debugAlgorithmState model
+                                            ]
+                                   ]
                               , td [ style "width" "50%" ]
                                    [ div [] [ model.step_desc ]
                                    , div [] [ button [ onClick Step ] 
@@ -116,9 +119,7 @@ ccw (ax,ay) (bx,by) (cx,cy) =
 -- TODO<Xuefeng>: this is a stub, finish and optionally rename
 drawConvexHullAlgorithmsState : Model -> Html Msg
 drawConvexHullAlgorithmsState model =
-    div []
-        [
-        ]
+    div [] []
     -- returns an empty div for now
 
 
@@ -139,6 +140,12 @@ progressConvexHull model =
             }
         else
             model
+
+
+-- 
+debugAlgorithmState : Model -> Html Msg
+debugAlgorithmState model = 
+    div [] (List.map (\s -> text (String.fromInt s)) model.stack)
 
 
 -- Browser Init
