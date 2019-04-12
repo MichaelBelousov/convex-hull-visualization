@@ -50,11 +50,12 @@ view model =
               ]
         ]
 
-type alias Stack = List
+type alias Stack a = List a
 
 type alias Model =
     { polygon : Polygon
-    , algorithm_state : { stack : Stack number }
+    , stack : Stack Int
+    , next_point : Int
     , step_desc : Html Msg
     }
 
@@ -62,9 +63,7 @@ type alias Model =
 -- Domain Types
 
 type alias Point = (Float, Float)
-
 type alias Polygon = List Point
-
 type alias Polyline = List Point
 
 
@@ -75,30 +74,42 @@ type alias Polyline = List Point
 initial_state : Model
 initial_state =
     { polygon = [(2,2), (-2,2), (-2,-2), (2,-2)]
-    , algorithm_state = { stack = [0,1] }
+    , stack = [0,1]
+    , next_point = 0
     , step_desc = text "hello"
     }
 
-nth : Int -> List a -> a
+
+-- Returns the nth element or Nothing (if not exists)
+nth : Int -> List a -> Maybe a
 nth n list =
     case list of
         head::rest -> 
-            if n==0 then head
+            if n==0 then Just head
                     else nth (n-1) rest
         [] -> 
             Nothing
 
-ccw a b c =
+
+-- Removes the last element from a List/Stack
+removeLast : List a -> Maybe (List a)
+removeLast list = 
+    case list of
+        [] ->
+            Nothing
+        other ->
+            Just (List.reverse (Maybe.withDefault [] (List.tail (List.reverse list))))
 
 
-progressConvexHull model =
+--
+ccw : Point -> Point -> Point -> Int
+ccw (ax,ay) (bx,by) (cx,cy) =
     let
-        top = nth 1 (List.reverse model.algorithm_state.stack)
-        scd = nth 2 (List.reverse model.algorithm_state.stack)
+        value = (ax * (by - cy)) - (bx * (ay - cy)) + (cx * (ay - by))
     in
-        if ccw()
-        { model | algorithm_state.stack =
-                    model.algorithm_state.stack }
+        if value > 0 then 1
+        else if value < 0 then -1
+        else 0
             
 
 -- TODO: change the type to not pass the whole mode, just the polygon and hull progress
@@ -106,15 +117,29 @@ progressConvexHull model =
 drawConvexHullAlgorithmsState : Model -> Html Msg
 drawConvexHullAlgorithmsState model =
     div []
-        [ svg []
+        [
         ]
     -- returns an empty div for now
 
+
 -- TODO<Tyler>: this is a stub, finish and optionally rename
-startAlgorithm : Model -> Model
-startAlgorithm model =
-    model
-    -- returns an unchanged model for now
+-- 
+progressConvexHull : Model -> Model
+progressConvexHull model =
+    let
+        top = Maybe.withDefault (0,0) (nth (Maybe.withDefault 0 (nth 1 (List.reverse model.stack))) model.polygon)
+        scd = Maybe.withDefault (0,0) (nth (Maybe.withDefault 0 (nth 2 (List.reverse model.stack))) model.polygon)
+        next = Maybe.withDefault (0,0) (nth model.next_point model.polygon)
+    in
+        if ccw scd top next < 1 then
+            { model | stack = case removeLast model.stack of
+                      Nothing -> []
+                      Just stack -> stack
+                    , next_point = model.next_point + 1
+            }
+        else
+            model
+
 
 -- Browser Init
 
