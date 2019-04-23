@@ -1,0 +1,23 @@
+body {
+    font-family: "Open Sans";
+}
+
+button {
+    color: #fff;
+    box-shadow: 2px;
+    border-radius: 5px;
+    background-color: #aac;
+    border: none;
+    padding: 5px 15px 5px 15px;
+    font-style: italic;
+}
+
+/*
+button::after {
+    content: " >";
+}
+*/
+
+.about-footer {
+    position: static;
+}
