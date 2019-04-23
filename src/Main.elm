@@ -10,6 +10,9 @@ import Html.Attributes exposing (..)
 import List
 import Tuple
 import Debug
+import String exposing (..)
+import Svg exposing (..)
+import Svg.Attributes exposing (..)
 
 
 -- Browser Model
@@ -120,8 +123,63 @@ ccw (ax,ay) (bx,by) (cx,cy) =
 -- TODO<Xuefeng>: this is a stub, finish and optionally rename
 drawConvexHullAlgorithmsState : Model -> Html Msg
 drawConvexHullAlgorithmsState model =
-    div [] []
-    -- returns an empty div for now
+    div [] [svg
+               [width "800", height "600", viewBox "0 0 800 600"]
+               [drawPolygon model, drawPolyline model, drawNextPoints model.next_point ]
+           ]
+    
+    
+-- Draw the polygon, return svg message    
+drawPolygon : Model -> Svg msg
+drawPolygon model = 
+    polygon [ fill "yellow", stroke "green", strokeWidth "2", points (mapToSvg model.polygon) ][]
+
+
+-- Draw every polyline, return svg message
+drawPolyline : Model -> Svg msg
+drawPolyline model =
+    polyline [ fill "none", stroke "black", strokeWidth "2", points (mapToSvg (getCurrentPolylineState model.convex_hull_state model.polygon)) ][]
+
+
+-- Draw next points in each step, return svg message
+drawNextPoints : Point -> Svg msg
+drawNextPoints point =
+    circle [fill "blue",cx (fromFloat (first point) ) , cy (fromFloat (second point)), r "4" ][]
+
+
+-- Mapping the list of points into svg attributes value
+mapToSvg : List Point-> String
+mapToSvg listPoint =
+    listPoint
+        |> List.map pointToString
+        |> join " " 
+
+
+-- Mapping point tuple into string
+pointToString : Point -> String
+pointToString point =
+   fromFloat (first point) ++ "," ++ fromFloat (second point)
+
+
+-- Get the list of polyline from current state
+getCurrentPolylineState : List Int -> List Point -> List Point
+getCurrentPolylineState list_int list_point =
+    List.map (getCurrentStatePoint list_point) list_int
+
+
+-- Get one point of the polyline from current state
+getCurrentStatePoint : List Point-> Int -> Point
+getCurrentStatePoint list_point n =
+        fromJust(nth n list_point)
+    
+
+-- Return a of "Maybe a"
+fromJust : Maybe a -> a
+fromJust x = 
+    case x of
+        Just y -> y
+        Nothing -> Debug.todo "Empty Input"
+
 
 
 -- TODO<Tyler>: this is a stub, finish and optionally rename
