@@ -48,9 +48,8 @@ view model =
                               ]
                          ]
                  ]
-        , div [ style "text-align" "center" ] 
-              [ a [ href "about.html" ] [ text "about" ]
-              ]
+        , div [ class "footer" ] 
+              [ a [ href "about.html" ] [ text "about" ] ]
         ]
 
 type alias Stack a = List a
