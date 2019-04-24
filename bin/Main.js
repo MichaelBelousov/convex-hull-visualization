@@ -4310,17 +4310,11 @@ function _Browser_load(url)
 		}
 	}));
 }
-var author$project$Main$ModelMutator = function (a) {
-	return {$: 'ModelMutator', a: a};
-};
-var author$project$Main$startAlgorithm = function (model) {
-	return model;
+var elm$core$Basics$negate = function (n) {
+	return -n;
 };
 var elm$core$Basics$identity = function (x) {
 	return x;
-};
-var elm$core$Basics$negate = function (n) {
-	return -n;
 };
 var elm$core$Basics$False = {$: 'False'};
 var elm$core$Basics$True = {$: 'True'};
@@ -4814,9 +4808,8 @@ var elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
 };
 var elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var elm$html$Html$text = elm$virtual_dom$VirtualDom$text;
-var author$project$Main$page_state = {
-	convex_hull_state: _List_Nil,
-	next_step: author$project$Main$ModelMutator(author$project$Main$startAlgorithm),
+var author$project$Main$initial_state = {
+	next_point: 2,
 	polygon: _List_fromArray(
 		[
 			_Utils_Tuple2(2, 2),
@@ -4824,175 +4817,172 @@ var author$project$Main$page_state = {
 			_Utils_Tuple2(-2, -2),
 			_Utils_Tuple2(2, -2)
 		]),
-	step_desc: elm$html$Html$text('hello')
+	stack: _List_fromArray(
+		[0, 1]),
+	step_desc: elm$html$Html$text('hello'),
+	step_log: _List_Nil
+};
+var author$project$Main$ccw = F3(
+	function (_n0, _n1, _n2) {
+		var ax = _n0.a;
+		var ay = _n0.b;
+		var bx = _n1.a;
+		var by = _n1.b;
+		var cx = _n2.a;
+		var cy = _n2.b;
+		var value = ((ax * (by - cy)) - (bx * (ay - cy))) + (cx * (ay - by));
+		return (value > 0) ? 1 : ((value < 0) ? (-1) : 0);
+	});
+var author$project$Main$nth = F2(
+	function (n, list) {
+		nth:
+		while (true) {
+			if (list.b) {
+				var head = list.a;
+				var rest = list.b;
+				if (!n) {
+					return elm$core$Maybe$Just(head);
+				} else {
+					var $temp$n = n - 1,
+						$temp$list = rest;
+					n = $temp$n;
+					list = $temp$list;
+					continue nth;
+				}
+			} else {
+				return elm$core$Maybe$Nothing;
+			}
+		}
+	});
+var elm$core$List$tail = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return elm$core$Maybe$Just(xs);
+	} else {
+		return elm$core$Maybe$Nothing;
+	}
+};
+var elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
+var author$project$Main$removeLast = function (list) {
+	if (!list.b) {
+		return elm$core$Maybe$Nothing;
+	} else {
+		var other = list;
+		return elm$core$Maybe$Just(
+			elm$core$List$reverse(
+				A2(
+					elm$core$Maybe$withDefault,
+					_List_Nil,
+					elm$core$List$tail(
+						elm$core$List$reverse(list)))));
+	}
+};
+var elm$core$Basics$ge = _Utils_ge;
+var elm$core$Debug$log = _Debug_log;
+var elm$core$String$fromFloat = _String_fromNumber;
+var elm$core$Tuple$second = function (_n0) {
+	var y = _n0.b;
+	return y;
+};
+var author$project$Main$progressConvexHull = function (model) {
+	var top = A2(
+		elm$core$Debug$log,
+		'top: ',
+		A2(
+			elm$core$Maybe$withDefault,
+			_Utils_Tuple2(0, 0),
+			A2(
+				author$project$Main$nth,
+				A2(
+					elm$core$Maybe$withDefault,
+					0,
+					A2(
+						author$project$Main$nth,
+						0,
+						elm$core$List$reverse(model.stack))),
+				model.polygon)));
+	var scd = A2(
+		elm$core$Debug$log,
+		'scd: ',
+		A2(
+			elm$core$Maybe$withDefault,
+			_Utils_Tuple2(0, 0),
+			A2(
+				author$project$Main$nth,
+				A2(
+					elm$core$Maybe$withDefault,
+					0,
+					A2(
+						author$project$Main$nth,
+						1,
+						elm$core$List$reverse(model.stack))),
+				model.polygon)));
+	var next = A2(
+		elm$core$Debug$log,
+		'next: ',
+		A2(
+			elm$core$Maybe$withDefault,
+			_Utils_Tuple2(0, 0),
+			A2(author$project$Main$nth, model.next_point, model.polygon)));
+	return (_Utils_cmp(
+		model.next_point,
+		elm$core$List$length(model.polygon)) > -1) ? model : ((A2(
+		elm$core$Debug$log,
+		'ccw scd top next: ',
+		A3(author$project$Main$ccw, scd, top, next)) < 1) ? _Utils_update(
+		model,
+		{
+			stack: A2(
+				elm$core$Debug$log,
+				'pop: ',
+				function () {
+					var _n0 = author$project$Main$removeLast(model.stack);
+					if (_n0.$ === 'Nothing') {
+						return _List_Nil;
+					} else {
+						var stack = _n0.a;
+						return stack;
+					}
+				}()),
+			step_log: A2(
+				elm$core$List$cons,
+				'Popped point: (' + (elm$core$String$fromFloat(top.a) + (', ' + (elm$core$String$fromFloat(top.b) + ')'))),
+				model.step_log)
+		}) : _Utils_update(
+		model,
+		{
+			next_point: model.next_point + 1,
+			stack: A2(
+				elm$core$Debug$log,
+				'push: ',
+				_Utils_ap(
+					model.stack,
+					_List_fromArray(
+						[model.next_point]))),
+			step_log: A2(
+				elm$core$List$cons,
+				'Pushed point: (' + (elm$core$String$fromFloat(next.a) + (', ' + (elm$core$String$fromFloat(next.b) + ')'))),
+				model.step_log)
+		}));
 };
 var author$project$Main$update = F2(
 	function (msg, model) {
 		if (msg.$ === 'Start') {
 			return model;
 		} else {
-			return model;
+			return author$project$Main$progressConvexHull(model);
 		}
 	});
 var author$project$Main$Step = {$: 'Step'};
-var elm$html$Html$div = _VirtualDom_node('div');
-var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
-	return A2(elm$html$Html$div, _List_Nil, _List_Nil);
-};
-var elm$html$Html$a = _VirtualDom_node('a');
-var elm$html$Html$button = _VirtualDom_node('button');
-var elm$html$Html$table = _VirtualDom_node('table');
-var elm$html$Html$td = _VirtualDom_node('td');
-var elm$html$Html$tr = _VirtualDom_node('tr');
-var elm$json$Json$Encode$string = _Json_wrap;
-var elm$html$Html$Attributes$stringProperty = F2(
-	function (key, string) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			elm$json$Json$Encode$string(string));
-	});
-var elm$html$Html$Attributes$href = function (url) {
-	return A2(
-		elm$html$Html$Attributes$stringProperty,
-		'href',
-		_VirtualDom_noJavaScriptUri(url));
-};
-var elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
-var elm$html$Html$Attributes$style = elm$virtual_dom$VirtualDom$style;
-var elm$virtual_dom$VirtualDom$Normal = function (a) {
-	return {$: 'Normal', a: a};
-};
-var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
-var elm$html$Html$Events$on = F2(
-	function (event, decoder) {
-		return A2(
-			elm$virtual_dom$VirtualDom$on,
-			event,
-			elm$virtual_dom$VirtualDom$Normal(decoder));
-	});
-var elm$html$Html$Events$onClick = function (msg) {
-	return A2(
-		elm$html$Html$Events$on,
-		'click',
-		elm$json$Json$Decode$succeed(msg));
-};
-var author$project$Main$view = function (model) {
-	return A2(
-		elm$html$Html$div,
-		_List_Nil,
-		_List_fromArray(
-			[
-				A2(
-				elm$html$Html$div,
-				_List_Nil,
-				_List_fromArray(
-					[
-						A2(
-						elm$html$Html$table,
-						_List_fromArray(
-							[
-								A2(elm$html$Html$Attributes$style, 'width', '100%'),
-								A2(elm$html$Html$Attributes$style, 'table-layout', 'fixed')
-							]),
-						_List_fromArray(
-							[
-								A2(
-								elm$html$Html$tr,
-								_List_Nil,
-								_List_fromArray(
-									[
-										A2(
-										elm$html$Html$td,
-										_List_fromArray(
-											[
-												A2(elm$html$Html$Attributes$style, 'width', '50%')
-											]),
-										_List_fromArray(
-											[
-												author$project$Main$drawConvexHullAlgorithmsState(model)
-											])),
-										A2(
-										elm$html$Html$td,
-										_List_fromArray(
-											[
-												A2(elm$html$Html$Attributes$style, 'width', '50%')
-											]),
-										_List_fromArray(
-											[
-												A2(
-												elm$html$Html$div,
-												_List_Nil,
-												_List_fromArray(
-													[model.step_desc])),
-												A2(
-												elm$html$Html$div,
-												_List_Nil,
-												_List_fromArray(
-													[
-														A2(
-														elm$html$Html$button,
-														_List_fromArray(
-															[
-																elm$html$Html$Events$onClick(author$project$Main$Step)
-															]),
-														_List_fromArray(
-															[
-																elm$html$Html$text('next step')
-															]))
-													]))
-											]))
-									]))
-							]))
-					])),
-				A2(
-				elm$html$Html$div,
-				_List_fromArray(
-					[
-						A2(elm$html$Html$Attributes$style, 'text-align', 'center')
-					]),
-				_List_fromArray(
-					[
-						A2(
-						elm$html$Html$a,
-						_List_fromArray(
-							[
-								elm$html$Html$Attributes$href('about.html')
-							]),
-						_List_fromArray(
-							[
-								elm$html$Html$text('about')
-							]))
-					]))
-			]));
-};
-var elm$core$Platform$Cmd$batch = _Platform_batch;
-var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
-var elm$core$Platform$Sub$batch = _Platform_batch;
-var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
-var elm$browser$Browser$External = function (a) {
-	return {$: 'External', a: a};
-};
-var elm$browser$Browser$Internal = function (a) {
-	return {$: 'Internal', a: a};
-};
-var elm$browser$Browser$Dom$NotFound = function (a) {
-	return {$: 'NotFound', a: a};
-};
-var elm$core$Basics$never = function (_n0) {
-	never:
-	while (true) {
-		var nvr = _n0.a;
-		var $temp$_n0 = nvr;
-		_n0 = $temp$_n0;
-		continue never;
-	}
-};
-var elm$core$Task$Perform = function (a) {
-	return {$: 'Perform', a: a};
-};
-var elm$core$Task$succeed = _Scheduler_succeed;
-var elm$core$Task$init = elm$core$Task$succeed(_Utils_Tuple0);
 var elm$core$List$foldrHelper = F4(
 	function (fn, acc, ctr, ls) {
 		if (!ls.b) {
@@ -5062,6 +5052,320 @@ var elm$core$List$map = F2(
 			_List_Nil,
 			xs);
 	});
+var elm$html$Html$div = _VirtualDom_node('div');
+var author$project$Main$debugAlgorithmState = function (model) {
+	return A2(
+		elm$html$Html$div,
+		_List_Nil,
+		_List_fromArray(
+			[
+				A2(
+				elm$html$Html$div,
+				_List_Nil,
+				A2(
+					elm$core$List$map,
+					function (s) {
+						return elm$html$Html$text(
+							elm$core$String$fromInt(s));
+					},
+					model.stack)),
+				A2(
+				elm$html$Html$div,
+				_List_Nil,
+				A2(
+					elm$core$List$map,
+					function (s) {
+						return elm$html$Html$text(s);
+					},
+					model.step_log))
+			]));
+};
+var author$project$Main$point_color = 'blue';
+var author$project$Main$point_radius = '1';
+var elm$svg$Svg$trustedNode = _VirtualDom_nodeNS('http://www.w3.org/2000/svg');
+var elm$svg$Svg$circle = elm$svg$Svg$trustedNode('circle');
+var elm$svg$Svg$Attributes$cx = _VirtualDom_attribute('cx');
+var elm$svg$Svg$Attributes$cy = _VirtualDom_attribute('cy');
+var elm$svg$Svg$Attributes$fill = _VirtualDom_attribute('fill');
+var elm$svg$Svg$Attributes$r = _VirtualDom_attribute('r');
+var author$project$Main$drawNextPoints = function (_n0) {
+	var x = _n0.a;
+	var y = _n0.b;
+	return A2(
+		elm$svg$Svg$circle,
+		_List_fromArray(
+			[
+				elm$svg$Svg$Attributes$fill(author$project$Main$point_color),
+				elm$svg$Svg$Attributes$cx(
+				elm$core$String$fromFloat(x)),
+				elm$svg$Svg$Attributes$cy(
+				elm$core$String$fromFloat(y)),
+				elm$svg$Svg$Attributes$r(author$project$Main$point_radius)
+			]),
+		_List_Nil);
+};
+var author$project$Main$pointToString = function (_n0) {
+	var x = _n0.a;
+	var y = _n0.b;
+	return elm$core$String$fromFloat(x) + (',' + elm$core$String$fromFloat(y));
+};
+var author$project$Main$mapToSvg = function (listPoint) {
+	return A2(
+		elm$core$String$join,
+		' ',
+		A2(elm$core$List$map, author$project$Main$pointToString, listPoint));
+};
+var author$project$Main$polygon_fill = 'none';
+var author$project$Main$polygon_stroke = 'green';
+var author$project$Main$polygon_stroke_width = '2';
+var elm$svg$Svg$polygon = elm$svg$Svg$trustedNode('polygon');
+var elm$svg$Svg$Attributes$points = _VirtualDom_attribute('points');
+var elm$svg$Svg$Attributes$stroke = _VirtualDom_attribute('stroke');
+var elm$svg$Svg$Attributes$strokeWidth = _VirtualDom_attribute('stroke-width');
+var author$project$Main$drawPolygon = function (model) {
+	return A2(
+		elm$svg$Svg$polygon,
+		_List_fromArray(
+			[
+				elm$svg$Svg$Attributes$fill(author$project$Main$polygon_fill),
+				elm$svg$Svg$Attributes$stroke(author$project$Main$polygon_stroke),
+				elm$svg$Svg$Attributes$strokeWidth(author$project$Main$polygon_stroke_width),
+				elm$svg$Svg$Attributes$points(
+				author$project$Main$mapToSvg(model.polygon))
+			]),
+		_List_Nil);
+};
+var elm$core$Debug$todo = _Debug_todo;
+var author$project$Main$trust = function (x) {
+	if (x.$ === 'Just') {
+		var y = x.a;
+		return y;
+	} else {
+		return _Debug_todo(
+			'Main',
+			{
+				start: {line: 128, column: 20},
+				end: {line: 128, column: 30}
+			})('Empty Input');
+	}
+};
+var author$project$Main$calcHullProgressPolyline = function (model) {
+	return A2(
+		elm$core$List$map,
+		function (n) {
+			return author$project$Main$trust(
+				A2(author$project$Main$nth, n, model.polygon));
+		},
+		model.stack);
+};
+var author$project$Main$polyline_fill = 'none';
+var author$project$Main$polyline_stroke = 'black';
+var author$project$Main$polyline_stroke_width = '2';
+var elm$svg$Svg$polyline = elm$svg$Svg$trustedNode('polyline');
+var author$project$Main$drawPolyline = function (model) {
+	return A2(
+		elm$svg$Svg$polyline,
+		_List_fromArray(
+			[
+				elm$svg$Svg$Attributes$fill(author$project$Main$polyline_fill),
+				elm$svg$Svg$Attributes$stroke(author$project$Main$polyline_stroke),
+				elm$svg$Svg$Attributes$strokeWidth(author$project$Main$polyline_stroke_width),
+				elm$svg$Svg$Attributes$points(
+				author$project$Main$mapToSvg(
+					author$project$Main$calcHullProgressPolyline(model)))
+			]),
+		_List_Nil);
+};
+var elm$svg$Svg$svg = elm$svg$Svg$trustedNode('svg');
+var elm$svg$Svg$Attributes$height = _VirtualDom_attribute('height');
+var elm$svg$Svg$Attributes$viewBox = _VirtualDom_attribute('viewBox');
+var elm$svg$Svg$Attributes$width = _VirtualDom_attribute('width');
+var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
+	return A2(
+		elm$html$Html$div,
+		_List_Nil,
+		_List_fromArray(
+			[
+				A2(
+				elm$svg$Svg$svg,
+				_List_fromArray(
+					[
+						elm$svg$Svg$Attributes$width('800'),
+						elm$svg$Svg$Attributes$height('600'),
+						elm$svg$Svg$Attributes$viewBox('-40 -30 80 60')
+					]),
+				_List_fromArray(
+					[
+						author$project$Main$drawPolygon(model),
+						author$project$Main$drawPolyline(model),
+						author$project$Main$drawNextPoints(
+						author$project$Main$trust(
+							A2(author$project$Main$nth, model.next_point, model.polygon)))
+					]))
+			]));
+};
+var elm$html$Html$a = _VirtualDom_node('a');
+var elm$html$Html$button = _VirtualDom_node('button');
+var elm$html$Html$table = _VirtualDom_node('table');
+var elm$html$Html$td = _VirtualDom_node('td');
+var elm$html$Html$tr = _VirtualDom_node('tr');
+var elm$json$Json$Encode$string = _Json_wrap;
+var elm$html$Html$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			elm$json$Json$Encode$string(string));
+	});
+var elm$html$Html$Attributes$class = elm$html$Html$Attributes$stringProperty('className');
+var elm$html$Html$Attributes$href = function (url) {
+	return A2(
+		elm$html$Html$Attributes$stringProperty,
+		'href',
+		_VirtualDom_noJavaScriptUri(url));
+};
+var elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
+var elm$html$Html$Attributes$style = elm$virtual_dom$VirtualDom$style;
+var elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
+};
+var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			elm$virtual_dom$VirtualDom$on,
+			event,
+			elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		elm$html$Html$Events$on,
+		'click',
+		elm$json$Json$Decode$succeed(msg));
+};
+var author$project$Main$view = function (model) {
+	return A2(
+		elm$html$Html$div,
+		_List_Nil,
+		_List_fromArray(
+			[
+				A2(
+				elm$html$Html$div,
+				_List_Nil,
+				_List_fromArray(
+					[
+						A2(
+						elm$html$Html$table,
+						_List_fromArray(
+							[
+								A2(elm$html$Html$Attributes$style, 'width', '100%'),
+								A2(elm$html$Html$Attributes$style, 'table-layout', 'fixed')
+							]),
+						_List_fromArray(
+							[
+								A2(
+								elm$html$Html$tr,
+								_List_Nil,
+								_List_fromArray(
+									[
+										A2(
+										elm$html$Html$td,
+										_List_fromArray(
+											[
+												A2(elm$html$Html$Attributes$style, 'width', '50%')
+											]),
+										_List_fromArray(
+											[
+												A2(
+												elm$html$Html$div,
+												_List_Nil,
+												_List_fromArray(
+													[
+														author$project$Main$drawConvexHullAlgorithmsState(model),
+														author$project$Main$debugAlgorithmState(model)
+													]))
+											])),
+										A2(
+										elm$html$Html$td,
+										_List_fromArray(
+											[
+												A2(elm$html$Html$Attributes$style, 'width', '50%')
+											]),
+										_List_fromArray(
+											[
+												A2(
+												elm$html$Html$div,
+												_List_Nil,
+												_List_fromArray(
+													[model.step_desc])),
+												A2(
+												elm$html$Html$div,
+												_List_Nil,
+												_List_fromArray(
+													[
+														A2(
+														elm$html$Html$button,
+														_List_fromArray(
+															[
+																elm$html$Html$Events$onClick(author$project$Main$Step)
+															]),
+														_List_fromArray(
+															[
+																elm$html$Html$text('next step')
+															]))
+													]))
+											]))
+									]))
+							]))
+					])),
+				A2(
+				elm$html$Html$div,
+				_List_fromArray(
+					[
+						elm$html$Html$Attributes$class('footer')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						elm$html$Html$a,
+						_List_fromArray(
+							[
+								elm$html$Html$Attributes$href('about.html')
+							]),
+						_List_fromArray(
+							[
+								elm$html$Html$text('about')
+							]))
+					]))
+			]));
+};
+var elm$core$Platform$Cmd$batch = _Platform_batch;
+var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
+var elm$core$Platform$Sub$batch = _Platform_batch;
+var elm$core$Platform$Sub$none = elm$core$Platform$Sub$batch(_List_Nil);
+var elm$browser$Browser$External = function (a) {
+	return {$: 'External', a: a};
+};
+var elm$browser$Browser$Internal = function (a) {
+	return {$: 'Internal', a: a};
+};
+var elm$browser$Browser$Dom$NotFound = function (a) {
+	return {$: 'NotFound', a: a};
+};
+var elm$core$Basics$never = function (_n0) {
+	never:
+	while (true) {
+		var nvr = _n0.a;
+		var $temp$_n0 = nvr;
+		_n0 = $temp$_n0;
+		continue never;
+	}
+};
+var elm$core$Task$Perform = function (a) {
+	return {$: 'Perform', a: a};
+};
+var elm$core$Task$succeed = _Scheduler_succeed;
+var elm$core$Task$init = elm$core$Task$succeed(_Utils_Tuple0);
 var elm$core$Task$andThen = _Scheduler_andThen;
 var elm$core$Task$map = F2(
 	function (func, taskA) {
@@ -5284,6 +5588,6 @@ var elm$browser$Browser$sandbox = function (impl) {
 		});
 };
 var author$project$Main$main = elm$browser$Browser$sandbox(
-	{init: author$project$Main$page_state, update: author$project$Main$update, view: author$project$Main$view});
+	{init: author$project$Main$initial_state, update: author$project$Main$update, view: author$project$Main$view});
 _Platform_export({'Main':{'init':author$project$Main$main(
 	elm$json$Json$Decode$succeed(_Utils_Tuple0))(0)}});}(this));

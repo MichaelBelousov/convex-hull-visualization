@@ -11,8 +11,10 @@ import List
 import Tuple
 import Debug
 import String exposing (..)
-import Svg exposing (..)
-import Svg.Attributes exposing (..)
+import Svg exposing (Svg, svg, circle, polyline, polygon)
+import Svg.Attributes exposing (height, width, viewBox,
+                                fill, stroke, strokeWidth,
+                                cx, cy, r, points)
 
 
 -- Browser Model
@@ -118,33 +120,73 @@ ccw (ax,ay) (bx,by) (cx,cy) =
         else if value < 0 then -1
         else 0
             
+-- trust that a Maybe is fulfilled
+trust : Maybe a -> a
+trust x = 
+    case x of
+        Just y -> y
+        Nothing -> Debug.todo "Empty Input"
 
 -- TODO: change the type to not pass the whole mode, just the polygon and hull progress
 -- TODO<Xuefeng>: this is a stub, finish and optionally rename
 drawConvexHullAlgorithmsState : Model -> Html Msg
 drawConvexHullAlgorithmsState model =
-    div [] [svg
-               [width "800", height "600", viewBox "0 0 800 600"]
-               [drawPolygon model, drawPolyline model, drawNextPoints model.next_point ]
+    div [] [svg [ width "800"
+                , height "600"
+                , viewBox "-40 -30 80 60"
+                ]
+                [ drawPolygon model
+                , drawPolyline model
+                , drawNextPoints (trust (nth model.next_point
+                                         model.polygon))
+                ]
            ]
-    
+
+point_color = "blue"
+point_radius = "1"
+polygon_fill = "none"
+polygon_stroke = "green"
+polygon_stroke_width = "2"  -- TODO: string.fromInt
+polyline_fill = "none"
+polyline_stroke = "black"
+polyline_stroke_width = "2"
     
 -- Draw the polygon, return svg message    
 drawPolygon : Model -> Svg msg
 drawPolygon model = 
-    polygon [ fill "yellow", stroke "green", strokeWidth "2", points (mapToSvg model.polygon) ][]
+    polygon [ fill polygon_fill
+            , stroke polygon_stroke
+            , strokeWidth polygon_stroke_width
+            , points (mapToSvg model.polygon)
+            ]
+            []
+ 
+calcHullProgressPolyline : Model -> Polyline
+calcHullProgressPolyline model =
+    model.stack
+    |> List.map (\n -> trust (nth n model.polygon))
 
 
 -- Draw every polyline, return svg message
 drawPolyline : Model -> Svg msg
 drawPolyline model =
-    polyline [ fill "none", stroke "black", strokeWidth "2", points (mapToSvg (getCurrentPolylineState model.convex_hull_state model.polygon)) ][]
+    polyline [ fill polyline_fill
+             , stroke polyline_stroke
+             , strokeWidth polyline_stroke_width
+             , points (mapToSvg (calcHullProgressPolyline model))
+             ]
+             []
 
 
 -- Draw next points in each step, return svg message
 drawNextPoints : Point -> Svg msg
-drawNextPoints point =
-    circle [fill "blue",cx (fromFloat (first point) ) , cy (fromFloat (second point)), r "4" ][]
+drawNextPoints (x,y) =
+    circle [ fill point_color
+           , cx (fromFloat x)
+           , cy (fromFloat y)
+           , r point_radius
+           ]
+           []
 
 
 -- Mapping the list of points into svg attributes value
@@ -157,33 +199,12 @@ mapToSvg listPoint =
 
 -- Mapping point tuple into string
 pointToString : Point -> String
-pointToString point =
-   fromFloat (first point) ++ "," ++ fromFloat (second point)
+pointToString (x, y) =
+   fromFloat x
+   ++ ","
+   ++ fromFloat y
 
 
--- Get the list of polyline from current state
-getCurrentPolylineState : List Int -> List Point -> List Point
-getCurrentPolylineState list_int list_point =
-    List.map (getCurrentStatePoint list_point) list_int
-
-
--- Get one point of the polyline from current state
-getCurrentStatePoint : List Point-> Int -> Point
-getCurrentStatePoint list_point n =
-        fromJust(nth n list_point)
-    
-
--- Return a of "Maybe a"
-fromJust : Maybe a -> a
-fromJust x = 
-    case x of
-        Just y -> y
-        Nothing -> Debug.todo "Empty Input"
-
-
-
--- TODO<Tyler>: this is a stub, finish and optionally rename
--- 
 progressConvexHull : Model -> Model
 progressConvexHull model =
     let
