@@ -20,16 +20,27 @@ import Svg.Attributes exposing (height, width, viewBox,
 -- Browser Model
 
 type Msg
-    = Start
-    | Step
+    = StepAlgorithm
+    | RightClickPoint point_idx
+    | LeftClickEdge edge_idx
+    | GrabPoint point_idx
+    | ReleasePoint point_idx
+
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
-        Start ->
-            model
-        Step ->
+        StepAlgorithm ->
             progressConvexHull model
+        RightClickPoint point_idx ->
+            deletePoint model point_idx
+        LeftClickEdge ->
+            insertPoint model edge_idx
+        GrabPoint ->
+            grabPoint point_idx
+        ReleasePoint ->
+            releasePoint point_idx
+
 
 view : Model -> Html Msg
 view model =
@@ -74,9 +85,15 @@ type alias Point = (Float, Float)
 type alias Polygon = List Point
 type alias Polyline = List Point
 
-
 -- App Implementation
 
+-- Interactions
+
+deletePoint : Model -> Point -> Model
+deletePoint model point =
+    if List.length model.polygon > 3
+    then { model | polygon = List.filter (\p -> p != point) model.polygon }
+    else model
 
 -- initial page state
 initial_state : Model
