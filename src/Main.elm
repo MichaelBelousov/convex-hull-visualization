@@ -12,11 +12,11 @@ import List.Extra exposing (getAt, last, elemIndex)
 import Tuple
 import Debug
 import String exposing (..)
-import Svg exposing (Svg, svg, circle, polyline, polygon, g)
+import Svg exposing (Svg, svg, circle, polyline, polygon, g, path)
 import Svg.Attributes exposing (height, width, viewBox,
                                 fill, stroke, strokeWidth,
                                 strokeLinecap,
-                                cx, cy, r, points)
+                                cx, cy, r, points, d)
 
 -- Browser Model
 
@@ -51,9 +51,7 @@ view model =
                          ]
                          [ tr [] 
                               [ td [ style "width" "50%" ]
-                                   [ div [] [ drawConvexHullAlgorithmsState model 
-                                            , debugAlgorithmState model
-                                            ]
+                                   [ div [] [ drawConvexHullAlgorithmsState model ]
                                    ]
                               , td [ style "width" "50%" ]
                                    [ div [] [ model.step_desc
@@ -92,7 +90,7 @@ type alias Polyline = List Point
 init_polygon = makeCube 20
 
     -- Style
-point_color = "green"
+point_color = "blue"
 point_radius = "1"
 next_point_color = "red"
 polygon_fill = "none"
@@ -103,13 +101,17 @@ polyline_fill = "none"
 polyline_stroke = "yellow"
 polyline_stroke_width = fromFloat 0.5
 polyline_stroke_cap = "round"
+ccw_triangle_fill = "none"
+ccw_triangle_stroke = "red"
+ccw_triangle_stroke_width = fromFloat 0.3
+ccw_wheel_radius = 5
 
 -- UI Strings
 
 intro : Html Msg
 intro = p
         []
-        [ text ("Welcome. Together, we're going to find the convex hull of this polygon "
+        [ text ("Welcome. Together, we're going to find the convex hull of this simple polygon "
              ++ "on the left. If you don't know what that is, Wikipedia and Google probably "
              ++ "still exist.")
         , ul []
@@ -118,6 +120,19 @@ intro = p
              , li [] [ text "Click and drag on edges to add points"]
              ]
         ]
+
+started_desc : Html Msg
+started_desc =
+    p
+    []
+    [ text "Since we're given a "
+    , i [] [ text "simple polygon" ]
+    , text (" our points are ordered by the edges they connect to. Since it is simple "
+         ++ "they don't overlap each other "
+         ++ "Our simple polygon is already sorted in counter-clockwise order "
+         ++ "(if it weren't we'd just reverse it), so we'll just find the "
+         ++ "bottom-leftmost point and shift the polygon list to start at that point")
+    ]
 
 -- Utilities
 
@@ -154,16 +169,6 @@ releasePoint model point_idx =
 
 -- initial page state
 
-    -- state when the algorithm starts
-start_state : Model
-start_state =
-    { polygon = init_polygon
-    , stack = [0,1]
-    , next_point = 2
-    , step_desc = text "WELCOME"
-    , step_log = []
-    }
-
     -- state when the app starts
 before_start_state : Model
 before_start_state =
@@ -184,8 +189,6 @@ nth n list =
         [] -> 
             Nothing
 
-
-
 -- CCW formula
 ccw : Point -> Point -> Point -> Int
 ccw (ax,ay) (bx,by) (cx,cy) =
@@ -202,6 +205,7 @@ trust x =
     case x of
         Just y -> y
         Nothing -> Debug.todo "trust got Nothing"
+
 
 renderStepLog : List String -> Html Msg
 renderStepLog msgs =
@@ -227,7 +231,9 @@ drawConvexHullAlgorithmsState model =
     in
         if model.next_point == -1 -- TODO: add a tag meaning this is before_start
         then svgBase []
-        else svgBase [ drawNextPoint <| trust <| nth model.next_point model.polygon ]
+        else svgBase [ drawNextPoint <| trust <| nth model.next_point model.polygon
+                     , drawCurrentCCW model
+                     ]
 
 -- Draw the polygon, return svg message
 drawPolygon : Model -> Svg Msg
@@ -238,7 +244,7 @@ drawPolygon model =
                  , stroke polygon_stroke
                  , strokeWidth polygon_stroke_width
                  , strokeLinecap polygon_stroke_cap
-                 , points (mapToSvg model.polygon)
+                 , points (svgPointsFromList model.polygon)
                  ]
                  []
       ]
@@ -266,7 +272,7 @@ drawPolyline model =
              , stroke polyline_stroke
              , strokeWidth polyline_stroke_width
              , strokeLinecap polyline_stroke_cap
-             , points (mapToSvg (calcHullProgressPolyline model))
+             , points (svgPointsFromList (calcHullProgressPolyline model))
              ]
              []
 
@@ -281,10 +287,54 @@ drawNextPoint (x,y) =
            ]
            []
 
+polygonMidPoint : Polygon -> Point
+polygonMidPoint polygon =
+    let
+        xsum = List.sum <| List.map Tuple.first polygon
+        ysum = List.sum <| List.map Tuple.second polygon
+        len = List.length polygon
+    in
+        ( xsum / Basics.toFloat len
+        , ysum / Basics.toFloat len)
+    
+
+drawCurrentCCW : Model -> Svg Msg
+drawCurrentCCW model =
+    let
+        top = trust <| last model.polygon
+        scd = trust <| nth (trust <| listPenultimate model.stack) model.polygon
+        next = trust <| nth model.next_point model.polygon
+    in
+    g []
+      [ polygon [ fill ccw_triangle_fill
+                , stroke ccw_triangle_stroke
+                , strokeWidth ccw_triangle_stroke_width
+                , strokeLinecap polygon_stroke_cap
+                , points <| svgPointsFromList model.polygon
+                ]
+                []
+      , path [ id "ccw_wheel"
+             , d <| buildCCWWheelPathD <| polygonMidPoint [scd, top, next]
+             , stroke "black"
+             , fill "none"
+             ]
+             []
+      ]
+
+buildCCWWheelPathD : Point -> String
+buildCCWWheelPathD (center_x, center_y) =
+    ( "M" ++ fromFloat center_x ++ " " ++ fromFloat center_y ++ "\n"
+    ++ "A"
+        ++ fromFloat (center_x-ccw_wheel_radius) ++ " "
+        ++ fromFloat (center_y) ++ " "
+        ++  " 270 " ++ " 1 " ++ " 1 "
+        ++ fromFloat (center_x) ++ " "
+        ++ fromFloat (center_y+ccw_wheel_radius)
+    )
 
 -- Mapping the list of points into svg attributes value
-mapToSvg : List Point-> String
-mapToSvg listPoint =
+svgPointsFromList : List Point-> String
+svgPointsFromList listPoint =
     listPoint
         |> List.map pointToString
         |> join " " 
@@ -317,10 +367,38 @@ stackPush : Stack a -> a -> Stack a
 stackPush stack item =
     stack ++ [item]
 
+getBottomLeftMostPoint : Polygon -> Point
+getBottomLeftMostPoint polygon =
+    trust <| List.minimum polygon
+
+    -- shift a polygon until it starts with its bottom-leftmost point
+restartAtBottomLeftMost : Polygon -> Polygon
+restartAtBottomLeftMost polygon =
+    let
+        min = getBottomLeftMostPoint polygon
+    in
+    case polygon of
+        [] ->
+            []
+        first::rest ->
+            if first == min
+            then polygon
+            else restartAtBottomLeftMost (rest ++ [first])
+
+
+startAlgorithmState : Model -> Model
+startAlgorithmState model =
+    { polygon = restartAtBottomLeftMost model.polygon
+    , stack = [0,1]
+    , next_point = 2
+    , step_desc = started_desc
+    , step_log = []
+    }
+
 progressConvexHull : Model -> Model
 progressConvexHull model =
     if model.next_point == -1 then
-        start_state -- TODO: add first popped points to start state log
+        startAlgorithmState model
     else
     let
         top = trust <| last model.polygon
@@ -348,15 +426,6 @@ progressConvexHull model =
                 , next_point = clamp 0 ((List.length model.polygon)-1) (model.next_point+1)
                 , step_log = (writePointAction "Pushed point" next) :: model.step_log
         }
-
-
--- For displaying debug output
-debugAlgorithmState : Model -> Html Msg
-debugAlgorithmState model = 
-    div [] [
-        div [] (List.map (\s -> text (String.fromInt s)) model.stack)
-        , div [](List.map (\s -> text s) model.step_log)
-    ]
 
 
 -- Browser Init
