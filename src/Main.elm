@@ -50,14 +50,16 @@ view model =
                          ]
                          [ tr [] 
                               [ td [ style "width" "50%" ]
-                                   [ div [] [ drawConvexHullAlgorithmsState <| flipCartesian model ]
+                                   [ div [ class "resizable-svg-container" ]
+                                         [ drawConvexHullAlgorithmsState <| flipCartesian model ]
                                    ]
                               , td [ style "width" "50%" ]
                                    [ div [] [ model.step_desc
                                             , renderStepLog model.step_log ]
-                                   , div [] [ button [ onClick StepAlgorithm ] 
-                                                     [ text "next step" ]
-                                            ]
+                                   , div [ style "text-align" "center" ]
+                                         [ button [ onClick StepAlgorithm ] 
+                                                  [ text "next step" ]
+                                         ]
                                    ]
                               ]
                          ]
@@ -90,7 +92,7 @@ init_polygon = makeCube 20
 
     -- Style
 point_color = "blue"
-point_radius = "1"
+point_radius = "2"
 next_point_color = "green"
 polygon_fill = "none"
 polygon_stroke = "blue"
@@ -103,7 +105,7 @@ polyline_stroke_cap = "round"
 ccw_triangle_fill = "none"
 ccw_triangle_stroke = "yellow"
 ccw_triangle_stroke_width = fromFloat 0.7
-ccw_triangle_stroke_dash = "20,10"
+ccw_triangle_stroke_dash = "3,2"
 ccw_wheel_radius = 5
 ccw_wheel_id = "ccw_wheel"
 
@@ -124,6 +126,7 @@ intro = p
              ]
         ]
 
+-- TODO: push these guys into some managed list of content that expands as the algorithm goes, with good scrolling
 started_desc : Html Msg
 started_desc =
     div
@@ -149,10 +152,10 @@ started_desc =
 
 makeCube : Float -> Polygon
 makeCube half_sz = 
-    [ (-half_sz,  half_sz)
-    , (half_sz, half_sz)
+    [ (-half_sz,  -half_sz)
     , (half_sz, -half_sz)
-    , (-half_sz, -half_sz) ]
+    , (half_sz, half_sz)
+    , (-half_sz, half_sz) ]
 
     -- flip the cartesian points in the model to SVG
 flipCartesian : Model -> Model
@@ -237,16 +240,17 @@ drawConvexHullAlgorithmsState model =
     let 
         _ = Debug.log "state" model
         svgBase extra =
-            div [] [ svg [ width "800"
-                         , height "600"
-                         , viewBox "-40 -30 80 60"
-                         ]
-                         (
-                         [ drawPolygon model
-                         , drawPolyline model
-                         ] ++ extra
-                         )
-                    ]
+            div [ class "resizable-svg" ]
+                [ svg [ width "800"
+                      , height "600"
+                      , viewBox "-40 -30 80 60"
+                      ]
+                      (
+                      [ drawPolygon model
+                      , drawPolyline model
+                      ] ++ extra
+                      )
+                 ]
     in
         if model.next_point == -1 -- TODO: add a tag meaning this is before_start
         then svgBase []
@@ -320,27 +324,29 @@ polygonMidPoint polygon =
 drawCurrentCCW : Model -> Svg Msg
 drawCurrentCCW model =
     let
-        top = trust <| last model.polygon
+        _ = Debug.log "ccw state" model
+        top = trust <| nth (trust <| last model.stack) model.polygon
         scd = trust <| nth (trust <| listPenultimate model.stack) model.polygon
         next = trust <| nth model.next_point model.polygon
-        (ccw_x, ccw_y) = polygonMidPoint model.polygon
+        ccw_triangle = [scd, top, next]
+        (ccw_x, ccw_y) = polygonMidPoint ccw_triangle
+        _ = Debug.log "ccw" (ccw_x, ccw_y, ccw_triangle)
     in
     g []
       [ polygon [ fill ccw_triangle_fill
                 , stroke ccw_triangle_stroke
                 , strokeWidth ccw_triangle_stroke_width
                 , strokeLinecap polygon_stroke_cap
-                , points <| svgPointsFromList [scd, top, next]
+                , strokeDasharray ccw_triangle_stroke_dash
+                , points <| svgPointsFromList ccw_triangle
                 ]
                 []
-      , image [ id ccw_wheel_id
-              , x <| fromFloat (ccw_x-ccw_wheel_radius)
+      , image [ x <| fromFloat (ccw_x-ccw_wheel_radius)
               , y <| fromFloat (ccw_y-ccw_wheel_radius)
               , width <| fromFloat (2 * ccw_wheel_radius)
               , height <| fromFloat (2 * ccw_wheel_radius)
               , xlinkHref "static/ccw_wheel.svg"
-              ]
-              []
+              ] []
       ]
 
 -- Mapping the list of points into svg attributes value
@@ -412,7 +418,7 @@ progressConvexHull model =
         startAlgorithmState model
     else
     let
-        top = trust <| last model.polygon
+        top = trust <| nth (trust <| last model.stack) model.polygon
         _ = Debug.log "top: " top
         scd = trust <| nth (trust <| listPenultimate model.stack) model.polygon
         _ = Debug.log "scd: " scd

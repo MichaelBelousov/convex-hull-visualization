@@ -4396,10 +4396,10 @@ var elm$core$Set$toList = function (_n0) {
 var author$project$Main$makeCube = function (half_sz) {
 	return _List_fromArray(
 		[
-			_Utils_Tuple2(-half_sz, half_sz),
-			_Utils_Tuple2(half_sz, half_sz),
+			_Utils_Tuple2(-half_sz, -half_sz),
 			_Utils_Tuple2(half_sz, -half_sz),
-			_Utils_Tuple2(-half_sz, -half_sz)
+			_Utils_Tuple2(half_sz, half_sz),
+			_Utils_Tuple2(-half_sz, half_sz)
 		]);
 };
 var author$project$Main$init_polygon = author$project$Main$makeCube(20);
@@ -4886,8 +4886,8 @@ var author$project$Main$trust = function (x) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 224, column: 20},
-				end: {line: 224, column: 30}
+				start: {line: 229, column: 20},
+				end: {line: 229, column: 30}
 			})('trust got Nothing');
 	}
 };
@@ -5149,7 +5149,11 @@ var author$project$Main$progressConvexHull = function (model) {
 		return author$project$Main$startAlgorithmState(model);
 	} else {
 		var top = author$project$Main$trust(
-			elm_community$list_extra$List$Extra$last(model.polygon));
+			A2(
+				author$project$Main$nth,
+				author$project$Main$trust(
+					elm_community$list_extra$List$Extra$last(model.stack)),
+				model.polygon));
 		var scd = author$project$Main$trust(
 			A2(
 				author$project$Main$nth,
@@ -5228,8 +5232,8 @@ var author$project$Main$update = F2(
 var author$project$Main$StepAlgorithm = {$: 'StepAlgorithm'};
 var author$project$Main$ccw_triangle_fill = 'none';
 var author$project$Main$ccw_triangle_stroke = 'yellow';
+var author$project$Main$ccw_triangle_stroke_dash = '3,2';
 var author$project$Main$ccw_triangle_stroke_width = elm$core$String$fromFloat(0.7);
-var author$project$Main$ccw_wheel_id = 'ccw_wheel';
 var author$project$Main$ccw_wheel_radius = 5;
 var elm$core$List$map = F2(
 	function (f, xs) {
@@ -5269,9 +5273,9 @@ var elm$svg$Svg$image = elm$svg$Svg$trustedNode('image');
 var elm$svg$Svg$polygon = elm$svg$Svg$trustedNode('polygon');
 var elm$svg$Svg$Attributes$fill = _VirtualDom_attribute('fill');
 var elm$svg$Svg$Attributes$height = _VirtualDom_attribute('height');
-var elm$svg$Svg$Attributes$id = _VirtualDom_attribute('id');
 var elm$svg$Svg$Attributes$points = _VirtualDom_attribute('points');
 var elm$svg$Svg$Attributes$stroke = _VirtualDom_attribute('stroke');
+var elm$svg$Svg$Attributes$strokeDasharray = _VirtualDom_attribute('stroke-dasharray');
 var elm$svg$Svg$Attributes$strokeLinecap = _VirtualDom_attribute('stroke-linecap');
 var elm$svg$Svg$Attributes$strokeWidth = _VirtualDom_attribute('stroke-width');
 var elm$svg$Svg$Attributes$width = _VirtualDom_attribute('width');
@@ -5286,7 +5290,11 @@ var elm$svg$Svg$Attributes$xlinkHref = function (value) {
 var elm$svg$Svg$Attributes$y = _VirtualDom_attribute('y');
 var author$project$Main$drawCurrentCCW = function (model) {
 	var top = author$project$Main$trust(
-		elm_community$list_extra$List$Extra$last(model.polygon));
+		A2(
+			author$project$Main$nth,
+			author$project$Main$trust(
+				elm_community$list_extra$List$Extra$last(model.stack)),
+			model.polygon));
 	var scd = author$project$Main$trust(
 		A2(
 			author$project$Main$nth,
@@ -5295,9 +5303,16 @@ var author$project$Main$drawCurrentCCW = function (model) {
 			model.polygon));
 	var next = author$project$Main$trust(
 		A2(author$project$Main$nth, model.next_point, model.polygon));
-	var _n0 = author$project$Main$polygonMidPoint(model.polygon);
+	var ccw_triangle = _List_fromArray(
+		[scd, top, next]);
+	var _n0 = author$project$Main$polygonMidPoint(ccw_triangle);
 	var ccw_x = _n0.a;
 	var ccw_y = _n0.b;
+	var _n1 = A2(elm$core$Debug$log, 'ccw state', model);
+	var _n2 = A2(
+		elm$core$Debug$log,
+		'ccw',
+		_Utils_Tuple3(ccw_x, ccw_y, ccw_triangle));
 	return A2(
 		elm$svg$Svg$g,
 		_List_Nil,
@@ -5311,15 +5326,15 @@ var author$project$Main$drawCurrentCCW = function (model) {
 						elm$svg$Svg$Attributes$stroke(author$project$Main$ccw_triangle_stroke),
 						elm$svg$Svg$Attributes$strokeWidth(author$project$Main$ccw_triangle_stroke_width),
 						elm$svg$Svg$Attributes$strokeLinecap(author$project$Main$polygon_stroke_cap),
+						elm$svg$Svg$Attributes$strokeDasharray(author$project$Main$ccw_triangle_stroke_dash),
 						elm$svg$Svg$Attributes$points(
-						author$project$Main$svgPointsFromList(model.polygon))
+						author$project$Main$svgPointsFromList(ccw_triangle))
 					]),
 				_List_Nil),
 				A2(
 				elm$svg$Svg$image,
 				_List_fromArray(
 					[
-						elm$svg$Svg$Attributes$id(author$project$Main$ccw_wheel_id),
 						elm$svg$Svg$Attributes$x(
 						elm$core$String$fromFloat(ccw_x - author$project$Main$ccw_wheel_radius)),
 						elm$svg$Svg$Attributes$y(
@@ -5334,7 +5349,7 @@ var author$project$Main$drawCurrentCCW = function (model) {
 			]));
 };
 var author$project$Main$next_point_color = 'green';
-var author$project$Main$point_radius = '1';
+var author$project$Main$point_radius = '2';
 var elm$svg$Svg$circle = elm$svg$Svg$trustedNode('circle');
 var elm$svg$Svg$Attributes$cx = _VirtualDom_attribute('cx');
 var elm$svg$Svg$Attributes$cy = _VirtualDom_attribute('cy');
@@ -5451,13 +5466,25 @@ var author$project$Main$drawPolyline = function (model) {
 			]),
 		_List_Nil);
 };
+var elm$json$Json$Encode$string = _Json_wrap;
+var elm$html$Html$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			elm$json$Json$Encode$string(string));
+	});
+var elm$html$Html$Attributes$class = elm$html$Html$Attributes$stringProperty('className');
 var elm$svg$Svg$svg = elm$svg$Svg$trustedNode('svg');
 var elm$svg$Svg$Attributes$viewBox = _VirtualDom_attribute('viewBox');
 var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
 	var svgBase = function (extra) {
 		return A2(
 			elm$html$Html$div,
-			_List_Nil,
+			_List_fromArray(
+				[
+					elm$html$Html$Attributes$class('resizable-svg')
+				]),
 			_List_fromArray(
 				[
 					A2(
@@ -5524,15 +5551,6 @@ var elm$html$Html$button = _VirtualDom_node('button');
 var elm$html$Html$table = _VirtualDom_node('table');
 var elm$html$Html$td = _VirtualDom_node('td');
 var elm$html$Html$tr = _VirtualDom_node('tr');
-var elm$json$Json$Encode$string = _Json_wrap;
-var elm$html$Html$Attributes$stringProperty = F2(
-	function (key, string) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			elm$json$Json$Encode$string(string));
-	});
-var elm$html$Html$Attributes$class = elm$html$Html$Attributes$stringProperty('className');
 var elm$html$Html$Attributes$href = function (url) {
 	return A2(
 		elm$html$Html$Attributes$stringProperty,
@@ -5582,7 +5600,10 @@ var author$project$Main$view = function (model) {
 											[
 												A2(
 												elm$html$Html$div,
-												_List_Nil,
+												_List_fromArray(
+													[
+														elm$html$Html$Attributes$class('resizable-svg-container')
+													]),
 												_List_fromArray(
 													[
 														author$project$Main$drawConvexHullAlgorithmsState(
@@ -5607,7 +5628,10 @@ var author$project$Main$view = function (model) {
 													])),
 												A2(
 												elm$html$Html$div,
-												_List_Nil,
+												_List_fromArray(
+													[
+														A2(elm$html$Html$Attributes$style, 'text-align', 'center')
+													]),
 												_List_fromArray(
 													[
 														A2(

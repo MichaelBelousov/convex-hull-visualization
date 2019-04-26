@@ -84,5 +84,13 @@
        inkscape:transform-center-x="-0.27684561"
        inkscape:transform-center-y="-0.64068262"
        transform="rotate(90,56.31562,252.33)" />
+    <animateTransform
+       attributeName="rotate"
+       type="rotate"
+       from="360 128 128"
+       to="0 128 128"
+       begin="0s"
+       dur="1s"
+       repeatCount="indefinite" />
   </g>
 </svg>
