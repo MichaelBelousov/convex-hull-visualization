@@ -4,7 +4,7 @@ module Main exposing (main)
 
 import Browser
 import Html exposing (Html, div, button, text, a,
-                      table, tr, td)
+                      table, tr, td, p, i, b, ul, li)
 import Html.Events exposing (onClick)
 import Html.Attributes exposing (..)
 import List
@@ -14,6 +14,7 @@ import String exposing (..)
 import Svg exposing (Svg, svg, circle, polyline, polygon)
 import Svg.Attributes exposing (height, width, viewBox,
                                 fill, stroke, strokeWidth,
+                                strokeLinecap,
                                 cx, cy, r, points)
 
 
@@ -21,10 +22,10 @@ import Svg.Attributes exposing (height, width, viewBox,
 
 type Msg
     = StepAlgorithm
-    | RightClickPoint point_idx
-    | LeftClickEdge edge_idx
-    | GrabPoint point_idx
-    | ReleasePoint point_idx
+    | RightClickPoint Int
+    | LeftClickEdge Int
+    | GrabPoint Int
+    | ReleasePoint Int
 
 
 update : Msg -> Model -> Model
@@ -34,12 +35,12 @@ update msg model =
             progressConvexHull model
         RightClickPoint point_idx ->
             deletePoint model point_idx
-        LeftClickEdge ->
+        LeftClickEdge edge_idx ->
             insertPoint model edge_idx
-        GrabPoint ->
-            grabPoint point_idx
-        ReleasePoint ->
-            releasePoint point_idx
+        GrabPoint point_idx ->
+            grabPoint model point_idx
+        ReleasePoint point_idx ->
+            releasePoint model point_idx
 
 
 view : Model -> Html Msg
@@ -57,7 +58,7 @@ view model =
                                    ]
                               , td [ style "width" "50%" ]
                                    [ div [] [ model.step_desc ]
-                                   , div [] [ button [ onClick Step ] 
+                                   , div [] [ button [ onClick StepAlgorithm ] 
                                                      [ text "next step" ]
                                             ]
                                    ]
@@ -68,7 +69,7 @@ view model =
               [ a [ href "about.html" ] [ text "about" ] ]
         ]
 
-type alias Stack a = List a
+type alias Stack z = List z
 
 type alias Model =
     { polygon : Polygon
@@ -85,26 +86,92 @@ type alias Point = (Float, Float)
 type alias Polygon = List Point
 type alias Polyline = List Point
 
--- App Implementation
+-- Constants
+
+    -- States
+init_polygon = makeCube 20
+
+    -- Style
+point_color = "blue"
+point_radius = "1"
+polygon_fill = "none"
+polygon_stroke = "green"
+polygon_stroke_width = fromFloat 1
+polygon_stroke_cap = "round"
+polyline_fill = "none"
+polyline_stroke = "black"
+polyline_stroke_width = fromFloat 0.5
+polyline_stroke_cap = "round"
+
+-- UI Strings
+
+intro : Html Msg
+intro = p
+        []
+        [ text ("Welcome. Together, we're going to find the convex hull of this polygon "
+             ++ "on the left. If you don't know what that is, Wikipedia and Google probably "
+             ++ "still exist.")
+        , ul []
+             [ li [] [ text "Click and drag on points to move them around"]
+             , li [] [ text "Right click on a point to delete it"]
+             , li [] [ text "Click and drag on edges to add points"]
+             ]
+        ]
+
+-- Utilities
+
+makeCube : Float -> Polygon
+makeCube half_sz = 
+    [ (half_sz, half_sz)
+    , (-half_sz, half_sz)
+    , (-half_sz, -half_sz)
+    , (half_sz, -half_sz) ]
 
 -- Interactions
 
-deletePoint : Model -> Point -> Model
-deletePoint model point =
-    if List.length model.polygon > 3
-    then { model | polygon = List.filter (\p -> p != point) model.polygon }
-    else model
+deletePoint : Model -> Int -> Model
+deletePoint model point_idx =
+    let
+        point = trust <| nth point_idx model.polygon
+    in
+        if List.length model.polygon > 3
+        then { model | polygon = List.filter (\p -> p /= point) model.polygon }
+        else model
+
+
+insertPoint : Model -> Int -> Model
+insertPoint model edge_idx =
+    model
+
+grabPoint : Model -> Int -> Model
+grabPoint model point_idx =
+    model
+
+releasePoint : Model -> Int -> Model
+releasePoint model point_idx =
+    model
 
 -- initial page state
-initial_state : Model
-initial_state =
-    { polygon = [(2,2), (-2,2), (-2,-2), (2,-2)]
+
+    -- state when the algorithm starts
+start_state : Model
+start_state =
+    { polygon = init_polygon
     , stack = [0,1]
     , next_point = 2
-    , step_desc = text "hello"
+    , step_desc = text "WELCOME"
     , step_log = []
     }
 
+    -- state when the app starts
+before_start_state : Model
+before_start_state =
+    { polygon = init_polygon
+    , stack = []
+    , next_point = -1
+    , step_desc = intro
+    , step_log = []
+    }
 
 -- Returns the nth element or Nothing (if not exists)
 nth : Int -> List a -> Maybe a
@@ -142,46 +209,55 @@ trust : Maybe a -> a
 trust x = 
     case x of
         Just y -> y
-        Nothing -> Debug.todo "Empty Input"
+        Nothing -> Debug.todo "trust got Nothing"
 
--- TODO: change the type to not pass the whole mode, just the polygon and hull progress
--- TODO<Xuefeng>: this is a stub, finish and optionally rename
 drawConvexHullAlgorithmsState : Model -> Html Msg
 drawConvexHullAlgorithmsState model =
-    div [] [svg [ width "800"
-                , height "600"
-                , viewBox "-40 -30 80 60"
-                ]
-                [ drawPolygon model
-                , drawPolyline model
-                , drawNextPoints (trust (nth model.next_point
-                                         model.polygon))
-                ]
-           ]
+    let 
+        svgBase extra =
+            div [] [ svg [ width "800"
+                         , height "600"
+                         , viewBox "-40 -30 80 60"
+                         ]
+                         (
+                         [ drawPolygon model
+                         , drawPolyline model
+                         ] ++ extra
+                         )
+                    ]
+    in
+        if model == before_start_state
+        then svgBase []
+        else svgBase [ drawNextPoint <| trust <| nth model.next_point model.polygon ]
 
-point_color = "blue"
-point_radius = "1"
-polygon_fill = "none"
-polygon_stroke = "green"
-polygon_stroke_width = "2"  -- TODO: string.fromInt
-polyline_fill = "none"
-polyline_stroke = "black"
-polyline_stroke_width = "2"
-    
 -- Draw the polygon, return svg message    
 drawPolygon : Model -> Svg msg
 drawPolygon model = 
-    polygon [ fill polygon_fill
-            , stroke polygon_stroke
-            , strokeWidth polygon_stroke_width
-            , points (mapToSvg model.polygon)
-            ]
-            []
+    svg []
+        (
+        [ polygon [ fill polygon_fill
+                  , stroke polygon_stroke
+                  , strokeWidth polygon_stroke_width
+                  , strokeLinecap polygon_stroke_cap
+                  , points (mapToSvg model.polygon)
+                  ]
+                  []
+        ]
+        ++ List.map
+                (\(x,y) -> 
+                circle [ fill point_color
+                       , cx <| fromFloat x
+                       , cy <| fromFloat y
+                       , r point_radius
+                       ] []
+                )
+                model.polygon
+        )
  
 calcHullProgressPolyline : Model -> Polyline
 calcHullProgressPolyline model =
     model.stack
-    |> List.map (\n -> trust (nth n model.polygon))
+    |> List.map (\n -> trust <| nth n model.polygon)
 
 
 -- Draw every polyline, return svg message
@@ -190,14 +266,15 @@ drawPolyline model =
     polyline [ fill polyline_fill
              , stroke polyline_stroke
              , strokeWidth polyline_stroke_width
+             , strokeLinecap polyline_stroke_cap
              , points (mapToSvg (calcHullProgressPolyline model))
              ]
              []
 
 
--- Draw next points in each step, return svg message
-drawNextPoints : Point -> Svg msg
-drawNextPoints (x,y) =
+-- Draw next point in each step, return svg message
+drawNextPoint : Point -> Svg msg
+drawNextPoint (x,y) =
     circle [ fill point_color
            , cx (fromFloat x)
            , cy (fromFloat y)
@@ -258,7 +335,7 @@ debugAlgorithmState model =
 main : Program () Model Msg
 main =
     Browser.sandbox
-        { init = initial_state
+        { init = before_start_state
         , view = view
         , update = update
         }
