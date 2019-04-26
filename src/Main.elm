@@ -5,10 +5,10 @@ module Main exposing (main)
 import Browser
 import Html exposing (Html, div, button, text, a,
                       table, tr, td, p, i, b, ul, ol, li)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, onDoubleClick)
 import Html.Attributes exposing (..)
 import List
-import List.Extra exposing (getAt, last)
+import List.Extra exposing (getAt, last, elemIndex)
 import Tuple
 import Debug
 import String exposing (..)
@@ -18,12 +18,11 @@ import Svg.Attributes exposing (height, width, viewBox,
                                 strokeLinecap,
                                 cx, cy, r, points)
 
-
 -- Browser Model
 
 type Msg
     = StepAlgorithm
-    | RightClickPoint Int
+    | DoubleClickPoint Int
     | LeftClickEdge Int
     | GrabPoint Int
     | ReleasePoint Int
@@ -34,7 +33,7 @@ update msg model =
     case msg of
         StepAlgorithm ->
             progressConvexHull model
-        RightClickPoint point_idx ->
+        DoubleClickPoint point_idx ->
             deletePoint model point_idx
         LeftClickEdge edge_idx ->
             insertPoint model edge_idx
@@ -114,7 +113,7 @@ intro = p
              ++ "still exist.")
         , ul []
              [ li [] [ text "Click and drag on points to move them around"]
-             , li [] [ text "Right click on a point to delete it"]
+             , li [] [ text "Double click on a point to delete it"]
              , li [] [ text "Click and drag on edges to add points"]
              ]
         ]
@@ -230,7 +229,7 @@ drawConvexHullAlgorithmsState model =
         else svgBase [ drawNextPoint <| trust <| nth model.next_point model.polygon ]
 
 -- Draw the polygon, return svg message
-drawPolygon : Model -> Svg msg
+drawPolygon : Model -> Svg Msg
 drawPolygon model = 
     g []
       (
@@ -242,13 +241,15 @@ drawPolygon model =
                  ]
                  []
       ]
-      ++ List.map (\(x,y) -> circle [ fill point_color
-                                    , cx <| fromFloat x
-                                    , cy <| fromFloat y
-                                    , r point_radius
-                                    ]
-                                    [] )
-                  model.polygon
+      ++ List.indexedMap
+            (\i (x,y) -> circle [ fill point_color
+                              , cx <| fromFloat x
+                              , cy <| fromFloat y
+                              , r point_radius
+                              , onDoubleClick (DoubleClickPoint i)
+                              ]
+                              [] )
+            model.polygon
       )
  
 calcHullProgressPolyline : Model -> Polyline
@@ -258,7 +259,7 @@ calcHullProgressPolyline model =
 
 
 -- Draw every polyline, return svg message
-drawPolyline : Model -> Svg msg
+drawPolyline : Model -> Svg Msg
 drawPolyline model =
     polyline [ fill polyline_fill
              , stroke polyline_stroke
@@ -270,7 +271,7 @@ drawPolyline model =
 
 
 -- Draw next point in each step, return svg message
-drawNextPoint : Point -> Svg msg
+drawNextPoint : Point -> Svg Msg
 drawNextPoint (x,y) =
     circle [ fill point_color
            , cx (fromFloat x)

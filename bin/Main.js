@@ -4844,7 +4844,7 @@ var author$project$Main$intro = A2(
 					_List_Nil,
 					_List_fromArray(
 						[
-							elm$html$Html$text('Right click on a point to delete it')
+							elm$html$Html$text('Double click on a point to delete it')
 						])),
 					A2(
 					elm$html$Html$li,
@@ -4886,8 +4886,8 @@ var author$project$Main$trust = function (x) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 204, column: 20},
-				end: {line: 204, column: 30}
+				start: {line: 203, column: 20},
+				end: {line: 203, column: 30}
 			})('trust got Nothing');
 	}
 };
@@ -5090,6 +5090,13 @@ var author$project$Main$progressConvexHull = function (model) {
 			elm$core$Debug$log,
 			'pop: ',
 			elm_community$list_extra$List$Extra$last(model.stack)) : elm$core$Maybe$Nothing;
+		var _n5 = (A3(author$project$Main$ccw, scd, top, next) >= 1) ? A2(
+			elm$core$Debug$log,
+			'push: ',
+			_Utils_ap(
+				model.stack,
+				_List_fromArray(
+					[model.next_point]))) : _List_Nil;
 		return (_Utils_cmp(
 			model.next_point,
 			elm$core$List$length(model.polygon)) > -1) ? model : ((A3(author$project$Main$ccw, scd, top, next) < 1) ? _Utils_update(
@@ -5108,13 +5115,10 @@ var author$project$Main$progressConvexHull = function (model) {
 					0,
 					elm$core$List$length(model.polygon) - 1,
 					model.next_point) + 1,
-				stack: A2(
-					elm$core$Debug$log,
-					'push: ',
-					_Utils_ap(
-						model.stack,
-						_List_fromArray(
-							[model.next_point]))),
+				stack: _Utils_ap(
+					model.stack,
+					_List_fromArray(
+						[model.next_point])),
 				step_log: A2(
 					elm$core$List$cons,
 					A2(author$project$Main$writePointAction, 'Pushed point', next),
@@ -5131,7 +5135,7 @@ var author$project$Main$update = F2(
 		switch (msg.$) {
 			case 'StepAlgorithm':
 				return author$project$Main$progressConvexHull(model);
-			case 'RightClickPoint':
+			case 'DoubleClickPoint':
 				var point_idx = msg.a;
 				return A2(author$project$Main$deletePoint, model, point_idx);
 			case 'LeftClickEdge':
@@ -5212,6 +5216,9 @@ var author$project$Main$drawNextPoint = function (_n0) {
 			]),
 		_List_Nil);
 };
+var author$project$Main$DoubleClickPoint = function (a) {
+	return {$: 'DoubleClickPoint', a: a};
+};
 var author$project$Main$mapToSvg = function (listPoint) {
 	return A2(
 		elm$core$String$join,
@@ -5222,6 +5229,23 @@ var author$project$Main$polygon_fill = 'none';
 var author$project$Main$polygon_stroke = 'blue';
 var author$project$Main$polygon_stroke_cap = 'round';
 var author$project$Main$polygon_stroke_width = elm$core$String$fromFloat(1);
+var elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
+};
+var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			elm$virtual_dom$VirtualDom$on,
+			event,
+			elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var elm$html$Html$Events$onDoubleClick = function (msg) {
+	return A2(
+		elm$html$Html$Events$on,
+		'dblclick',
+		elm$json$Json$Decode$succeed(msg));
+};
 var elm$svg$Svg$g = elm$svg$Svg$trustedNode('g');
 var elm$svg$Svg$polygon = elm$svg$Svg$trustedNode('polygon');
 var elm$svg$Svg$Attributes$points = _VirtualDom_attribute('points');
@@ -5249,23 +5273,26 @@ var author$project$Main$drawPolygon = function (model) {
 					_List_Nil)
 				]),
 			A2(
-				elm$core$List$map,
-				function (_n0) {
-					var x = _n0.a;
-					var y = _n0.b;
-					return A2(
-						elm$svg$Svg$circle,
-						_List_fromArray(
-							[
-								elm$svg$Svg$Attributes$fill(author$project$Main$point_color),
-								elm$svg$Svg$Attributes$cx(
-								elm$core$String$fromFloat(x)),
-								elm$svg$Svg$Attributes$cy(
-								elm$core$String$fromFloat(y)),
-								elm$svg$Svg$Attributes$r(author$project$Main$point_radius)
-							]),
-						_List_Nil);
-				},
+				elm$core$List$indexedMap,
+				F2(
+					function (i, _n0) {
+						var x = _n0.a;
+						var y = _n0.b;
+						return A2(
+							elm$svg$Svg$circle,
+							_List_fromArray(
+								[
+									elm$svg$Svg$Attributes$fill(author$project$Main$point_color),
+									elm$svg$Svg$Attributes$cx(
+									elm$core$String$fromFloat(x)),
+									elm$svg$Svg$Attributes$cy(
+									elm$core$String$fromFloat(y)),
+									elm$svg$Svg$Attributes$r(author$project$Main$point_radius),
+									elm$html$Html$Events$onDoubleClick(
+									author$project$Main$DoubleClickPoint(i))
+								]),
+							_List_Nil);
+					}),
 				model.polygon)));
 };
 var author$project$Main$calcHullProgressPolyline = function (model) {
@@ -5334,6 +5361,24 @@ var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
 					A2(author$project$Main$nth, model.next_point, model.polygon)))
 			]));
 };
+var elm$html$Html$ol = _VirtualDom_node('ol');
+var author$project$Main$renderStepLog = function (msgs) {
+	return A2(
+		elm$html$Html$ol,
+		_List_Nil,
+		A2(
+			elm$core$List$map,
+			function (msg) {
+				return A2(
+					elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							elm$html$Html$text(msg)
+						]));
+			},
+			msgs));
+};
 var elm$html$Html$a = _VirtualDom_node('a');
 var elm$html$Html$button = _VirtualDom_node('button');
 var elm$html$Html$table = _VirtualDom_node('table');
@@ -5356,17 +5401,6 @@ var elm$html$Html$Attributes$href = function (url) {
 };
 var elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var elm$html$Html$Attributes$style = elm$virtual_dom$VirtualDom$style;
-var elm$virtual_dom$VirtualDom$Normal = function (a) {
-	return {$: 'Normal', a: a};
-};
-var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
-var elm$html$Html$Events$on = F2(
-	function (event, decoder) {
-		return A2(
-			elm$virtual_dom$VirtualDom$on,
-			event,
-			elm$virtual_dom$VirtualDom$Normal(decoder));
-	});
 var elm$html$Html$Events$onClick = function (msg) {
 	return A2(
 		elm$html$Html$Events$on,
@@ -5427,7 +5461,10 @@ var author$project$Main$view = function (model) {
 												elm$html$Html$div,
 												_List_Nil,
 												_List_fromArray(
-													[model.step_desc])),
+													[
+														model.step_desc,
+														author$project$Main$renderStepLog(model.step_log)
+													])),
 												A2(
 												elm$html$Html$div,
 												_List_Nil,
