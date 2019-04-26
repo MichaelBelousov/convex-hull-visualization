@@ -8,10 +8,11 @@ import Html exposing (Html, div, button, text, a,
 import Html.Events exposing (onClick)
 import Html.Attributes exposing (..)
 import List
+import List.Extra exposing (getAt, last)
 import Tuple
 import Debug
 import String exposing (..)
-import Svg exposing (Svg, svg, circle, polyline, polygon)
+import Svg exposing (Svg, svg, circle, polyline, polygon, g)
 import Svg.Attributes exposing (height, width, viewBox,
                                 fill, stroke, strokeWidth,
                                 strokeLinecap,
@@ -92,14 +93,14 @@ type alias Polyline = List Point
 init_polygon = makeCube 20
 
     -- Style
-point_color = "blue"
+point_color = "green"
 point_radius = "1"
 polygon_fill = "none"
-polygon_stroke = "green"
+polygon_stroke = "blue"
 polygon_stroke_width = fromFloat 1
 polygon_stroke_cap = "round"
 polyline_fill = "none"
-polyline_stroke = "black"
+polyline_stroke = "yellow"
 polyline_stroke_width = fromFloat 0.5
 polyline_stroke_cap = "round"
 
@@ -184,17 +185,8 @@ nth n list =
             Nothing
 
 
--- Removes the last element from a List/Stack
-removeLast : List a -> Maybe (List a)
-removeLast list = 
-    case list of
-        [] ->
-            Nothing
-        other ->
-            Just (List.reverse (Maybe.withDefault [] (List.tail (List.reverse list))))
 
-
---
+-- CCW formula
 ccw : Point -> Point -> Point -> Int
 ccw (ax,ay) (bx,by) (cx,cy) =
     let
@@ -214,6 +206,7 @@ trust x =
 drawConvexHullAlgorithmsState : Model -> Html Msg
 drawConvexHullAlgorithmsState model =
     let 
+        _ = Debug.log "state" model
         svgBase extra =
             div [] [ svg [ width "800"
                          , height "600"
@@ -230,29 +223,27 @@ drawConvexHullAlgorithmsState model =
         then svgBase []
         else svgBase [ drawNextPoint <| trust <| nth model.next_point model.polygon ]
 
--- Draw the polygon, return svg message    
+-- Draw the polygon, return svg message
 drawPolygon : Model -> Svg msg
 drawPolygon model = 
-    svg []
-        (
-        [ polygon [ fill polygon_fill
-                  , stroke polygon_stroke
-                  , strokeWidth polygon_stroke_width
-                  , strokeLinecap polygon_stroke_cap
-                  , points (mapToSvg model.polygon)
-                  ]
-                  []
-        ]
-        ++ List.map
-                (\(x,y) -> 
-                circle [ fill point_color
-                       , cx <| fromFloat x
-                       , cy <| fromFloat y
-                       , r point_radius
-                       ] []
-                )
-                model.polygon
-        )
+    g []
+      (
+      [ polygon [ fill polygon_fill
+                 , stroke polygon_stroke
+                 , strokeWidth polygon_stroke_width
+                 , strokeLinecap polygon_stroke_cap
+                 , points (mapToSvg model.polygon)
+                 ]
+                 []
+      ]
+      ++ List.map (\(x,y) -> circle [ fill point_color
+                                    , cx <| fromFloat x
+                                    , cy <| fromFloat y
+                                    , r point_radius
+                                    ]
+                                    [] )
+                  model.polygon
+      )
  
 calcHullProgressPolyline : Model -> Polyline
 calcHullProgressPolyline model =
@@ -294,31 +285,54 @@ mapToSvg listPoint =
 -- Mapping point tuple into string
 pointToString : Point -> String
 pointToString (x, y) =
-   fromFloat x
-   ++ ","
-   ++ fromFloat y
+    fromFloat x
+    ++ ", "
+    ++ fromFloat y
 
+writePointAction : String -> Point -> String
+writePointAction action (x,y) =
+    action ++ ": (" ++ pointToString (x,y) ++ ")"
+
+listPenultimate : List a -> Maybe a
+listPenultimate list =
+    case List.reverse list of
+        a::b::rest -> Just b
+        _ -> Nothing
+
+stackPop : Stack a -> (Maybe a, Stack a)
+stackPop stack =
+    case List.reverse stack of
+        last::rest -> (Just last, List.reverse rest)
+        [] -> (Nothing, [])
 
 progressConvexHull : Model -> Model
 progressConvexHull model =
+    if model == before_start_state then
+        start_state
+    else
     let
-        top = Debug.log "top: " (Maybe.withDefault (0,0) (nth (Maybe.withDefault 0 (nth 0 (List.reverse model.stack))) model.polygon))
-        scd = Debug.log "scd: " (Maybe.withDefault (0,0) (nth (Maybe.withDefault 0 (nth 1 (List.reverse model.stack))) model.polygon))
-        next = Debug.log "next: " (Maybe.withDefault (0,0) (nth model.next_point model.polygon))
+        top = trust <| last model.polygon
+        _ = Debug.log "top: " top
+        scd = trust <| nth (trust <| listPenultimate model.stack) model.polygon
+        _ = Debug.log "scd: " scd
+        next = trust <| nth model.next_point model.polygon
+        _ = Debug.log "next: " next
+        _ = Debug.log "ccw(scd, top, nxt)" (ccw scd top next)
+        _ = if ccw scd top next < 1
+            then Debug.log "pop: " <| last model.stack
+            else Nothing
     in
-        if model.next_point >= List.length model.polygon then
-            model
-        else if Debug.log "ccw scd top next: " (ccw scd top next) < 1 then
-            { model | stack = Debug.log "pop: " (case removeLast model.stack of
-                              Nothing -> []
-                              Just stack -> stack)
-                    , step_log = ("Popped point: (" ++ (String.fromFloat (Tuple.first top)) ++ ", " ++ (String.fromFloat (Tuple.second top)) ++ ")") :: model.step_log
-            }
-        else
-            { model | stack = Debug.log "push: " (model.stack ++ [model.next_point])
-                    , next_point = model.next_point + 1
-                    , step_log = ("Pushed point: (" ++ (String.fromFloat (Tuple.first next)) ++ ", " ++ (String.fromFloat (Tuple.second next)) ++ ")") :: model.step_log
-            }
+    if model.next_point >= List.length model.polygon then
+        model
+    else if ccw scd top next < 1 then
+        { model | stack = Tuple.second <| stackPop model.stack
+                , step_log = (writePointAction "Popped point" top) :: model.step_log
+        }
+    else
+        { model | stack = Debug.log "push: " (model.stack ++ [model.next_point])
+                , next_point = clamp 0 ((List.length model.polygon)-1) model.next_point+1
+                , step_log = (writePointAction "Pushed point" next) :: model.step_log
+        }
 
 
 -- For displaying debug output
