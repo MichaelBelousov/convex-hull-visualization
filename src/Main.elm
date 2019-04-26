@@ -12,11 +12,10 @@ import List.Extra exposing (getAt, last, elemIndex)
 import Tuple
 import Debug
 import String exposing (..)
-import Svg exposing (Svg, svg, circle, polyline, polygon, g, path)
-import Svg.Attributes exposing (height, width, viewBox,
-                                fill, stroke, strokeWidth,
-                                strokeLinecap,
-                                cx, cy, r, points, d)
+import Svg exposing (Svg, svg, circle, polyline, polygon, g, path, image)
+import Svg.Attributes exposing (height, width, viewBox, xlinkHref, id,
+                                fill, stroke, strokeWidth, strokeLinecap,
+                                strokeDasharray, cx, cy, r, points, d, x, y)
 
 -- Browser Model
 
@@ -51,7 +50,7 @@ view model =
                          ]
                          [ tr [] 
                               [ td [ style "width" "50%" ]
-                                   [ div [] [ drawConvexHullAlgorithmsState model ]
+                                   [ div [] [ drawConvexHullAlgorithmsState <| flipCartesian model ]
                                    ]
                               , td [ style "width" "50%" ]
                                    [ div [] [ model.step_desc
@@ -92,19 +91,23 @@ init_polygon = makeCube 20
     -- Style
 point_color = "blue"
 point_radius = "1"
-next_point_color = "red"
+next_point_color = "green"
 polygon_fill = "none"
 polygon_stroke = "blue"
-polygon_stroke_width = fromFloat 1
+polygon_stroke_width = fromFloat 1.5
 polygon_stroke_cap = "round"
 polyline_fill = "none"
-polyline_stroke = "yellow"
-polyline_stroke_width = fromFloat 0.5
+polyline_stroke = "red"
+polyline_stroke_width = fromFloat 1
 polyline_stroke_cap = "round"
 ccw_triangle_fill = "none"
-ccw_triangle_stroke = "red"
-ccw_triangle_stroke_width = fromFloat 0.3
+ccw_triangle_stroke = "yellow"
+ccw_triangle_stroke_width = fromFloat 0.7
+ccw_triangle_stroke_dash = "20,10"
 ccw_wheel_radius = 5
+ccw_wheel_id = "ccw_wheel"
+
+-- NOTE: generate z-order constants from a priority list?
 
 -- UI Strings
 
@@ -123,16 +126,24 @@ intro = p
 
 started_desc : Html Msg
 started_desc =
-    p
-    []
-    [ text "Since we're given a "
-    , i [] [ text "simple polygon" ]
-    , text (" our points are ordered by the edges they connect to. Since it is simple "
-         ++ "they don't overlap each other "
-         ++ "Our simple polygon is already sorted in counter-clockwise order "
-         ++ "(if it weren't we'd just reverse it), so we'll just find the "
-         ++ "bottom-leftmost point and shift the polygon list to start at that point")
-    ]
+    div
+        []
+        [ p []
+            [ text "Since we're given a "
+            , i [] [ text "simple polygon" ]
+            , text (" our points are ordered by the edges they connect to, and by simplicity "
+                 ++ "they don't overlap each other. "
+                 ++ "Our simple polygon is already sorted in counter-clockwise order "
+                 ++ "(if it weren't we'd just reverse it), so we'll just find the "
+                 ++ "bottom-leftmost point and shift the polygon list to start at that point.")
+            ]
+        , p []
+            [ text ("To start, we put the first two points of our polygon in a stack, "
+                 ++ "and we start considering the remaining points in order. The point "
+                 ++ "we're considering is in green, and the triangle of CCW comparison is "
+                 ++ "the dashed red one")
+            ]
+        ]
 
 -- Utilities
 
@@ -142,6 +153,14 @@ makeCube half_sz =
     , (half_sz, half_sz)
     , (half_sz, -half_sz)
     , (-half_sz, -half_sz) ]
+
+    -- flip the cartesian points in the model to SVG
+flipCartesian : Model -> Model
+flipCartesian model =
+    { model | polygon = 
+                List.map (\(x,y) -> (x,-y))
+                model.polygon
+    }
 
 -- Interactions
 
@@ -304,33 +323,25 @@ drawCurrentCCW model =
         top = trust <| last model.polygon
         scd = trust <| nth (trust <| listPenultimate model.stack) model.polygon
         next = trust <| nth model.next_point model.polygon
+        (ccw_x, ccw_y) = polygonMidPoint model.polygon
     in
     g []
       [ polygon [ fill ccw_triangle_fill
                 , stroke ccw_triangle_stroke
                 , strokeWidth ccw_triangle_stroke_width
                 , strokeLinecap polygon_stroke_cap
-                , points <| svgPointsFromList model.polygon
+                , points <| svgPointsFromList [scd, top, next]
                 ]
                 []
-      , path [ id "ccw_wheel"
-             , d <| buildCCWWheelPathD <| polygonMidPoint [scd, top, next]
-             , stroke "black"
-             , fill "none"
-             ]
-             []
+      , image [ id ccw_wheel_id
+              , x <| fromFloat (ccw_x-ccw_wheel_radius)
+              , y <| fromFloat (ccw_y-ccw_wheel_radius)
+              , width <| fromFloat (2 * ccw_wheel_radius)
+              , height <| fromFloat (2 * ccw_wheel_radius)
+              , xlinkHref "static/ccw_wheel.svg"
+              ]
+              []
       ]
-
-buildCCWWheelPathD : Point -> String
-buildCCWWheelPathD (center_x, center_y) =
-    ( "M" ++ fromFloat center_x ++ " " ++ fromFloat center_y ++ "\n"
-    ++ "A"
-        ++ fromFloat (center_x-ccw_wheel_radius) ++ " "
-        ++ fromFloat (center_y) ++ " "
-        ++  " 270 " ++ " 1 " ++ " 1 "
-        ++ fromFloat (center_x) ++ " "
-        ++ fromFloat (center_y+ccw_wheel_radius)
-    )
 
 -- Mapping the list of points into svg attributes value
 svgPointsFromList : List Point-> String
