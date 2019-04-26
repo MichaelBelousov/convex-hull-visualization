@@ -4,7 +4,7 @@ module Main exposing (main)
 
 import Browser
 import Html exposing (Html, div, button, text, a,
-                      table, tr, td, p, i, b, ul, li)
+                      table, tr, td, p, i, b, ul, ol, li)
 import Html.Events exposing (onClick)
 import Html.Attributes exposing (..)
 import List
@@ -50,7 +50,6 @@ view model =
         [ div [] [ table [ style  "width" "100%"
                          , style "table-layout" "fixed"
                          ]
-                        -- TODO<Mike>: move styling to CSS
                          [ tr [] 
                               [ td [ style "width" "50%" ]
                                    [ div [] [ drawConvexHullAlgorithmsState model 
@@ -58,7 +57,8 @@ view model =
                                             ]
                                    ]
                               , td [ style "width" "50%" ]
-                                   [ div [] [ model.step_desc ]
+                                   [ div [] [ model.step_desc
+                                            , renderStepLog model.step_log ]
                                    , div [] [ button [ onClick StepAlgorithm ] 
                                                      [ text "next step" ]
                                             ]
@@ -203,6 +203,12 @@ trust x =
         Just y -> y
         Nothing -> Debug.todo "trust got Nothing"
 
+renderStepLog : List String -> Html Msg
+renderStepLog msgs =
+    ol []
+       (List.map (\msg -> li [] [text msg]) msgs)
+
+
 drawConvexHullAlgorithmsState : Model -> Html Msg
 drawConvexHullAlgorithmsState model =
     let 
@@ -308,7 +314,7 @@ stackPop stack =
 progressConvexHull : Model -> Model
 progressConvexHull model =
     if model == before_start_state then
-        start_state
+        start_state -- TODO: add first popped points to start state log
     else
     let
         top = trust <| last model.polygon
@@ -321,6 +327,9 @@ progressConvexHull model =
         _ = if ccw scd top next < 1
             then Debug.log "pop: " <| last model.stack
             else Nothing
+        _ = if ccw scd top next >= 1
+            then Debug.log "push: " <| model.stack ++ [model.next_point]
+            else []
     in
     if model.next_point >= List.length model.polygon then
         model
@@ -329,7 +338,7 @@ progressConvexHull model =
                 , step_log = (writePointAction "Popped point" top) :: model.step_log
         }
     else
-        { model | stack = Debug.log "push: " (model.stack ++ [model.next_point])
+        { model | stack = model.stack ++ [model.next_point]
                 , next_point = clamp 0 ((List.length model.polygon)-1) model.next_point+1
                 , step_log = (writePointAction "Pushed point" next) :: model.step_log
         }
