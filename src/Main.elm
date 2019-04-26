@@ -94,6 +94,7 @@ init_polygon = makeCube 20
     -- Style
 point_color = "green"
 point_radius = "1"
+next_point_color = "red"
 polygon_fill = "none"
 polygon_stroke = "blue"
 polygon_stroke_width = fromFloat 1
@@ -122,10 +123,10 @@ intro = p
 
 makeCube : Float -> Polygon
 makeCube half_sz = 
-    [ (half_sz, half_sz)
-    , (-half_sz, half_sz)
-    , (-half_sz, -half_sz)
-    , (half_sz, -half_sz) ]
+    [ (-half_sz,  half_sz)
+    , (half_sz, half_sz)
+    , (half_sz, -half_sz)
+    , (-half_sz, -half_sz) ]
 
 -- Interactions
 
@@ -273,7 +274,7 @@ drawPolyline model =
 -- Draw next point in each step, return svg message
 drawNextPoint : Point -> Svg Msg
 drawNextPoint (x,y) =
-    circle [ fill point_color
+    circle [ fill next_point_color
            , cx (fromFloat x)
            , cy (fromFloat y)
            , r point_radius
@@ -312,6 +313,10 @@ stackPop stack =
         last::rest -> (Just last, List.reverse rest)
         [] -> (Nothing, [])
 
+stackPush : Stack a -> a -> Stack a
+stackPush stack item =
+    stack ++ [item]
+
 progressConvexHull : Model -> Model
 progressConvexHull model =
     if model.next_point == -1 then
@@ -339,8 +344,8 @@ progressConvexHull model =
                 , step_log = (writePointAction "Popped point" top) :: model.step_log
         }
     else
-        { model | stack = model.stack ++ [model.next_point]
-                , next_point = clamp 0 ((List.length model.polygon)-1) model.next_point+1
+        { model | stack = stackPush model.stack model.next_point
+                , next_point = clamp 0 ((List.length model.polygon)-1) (model.next_point+1)
                 , step_log = (writePointAction "Pushed point" next) :: model.step_log
         }
 
