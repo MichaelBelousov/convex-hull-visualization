@@ -80,271 +80,6 @@ function A9(fun, a, b, c, d, e, f, g, h, i) {
 console.warn('Compiled in DEV mode. Follow the advice at https://elm-lang.org/0.19.0/optimize for better performance and smaller assets.');
 
 
-var _List_Nil_UNUSED = { $: 0 };
-var _List_Nil = { $: '[]' };
-
-function _List_Cons_UNUSED(hd, tl) { return { $: 1, a: hd, b: tl }; }
-function _List_Cons(hd, tl) { return { $: '::', a: hd, b: tl }; }
-
-
-var _List_cons = F2(_List_Cons);
-
-function _List_fromArray(arr)
-{
-	var out = _List_Nil;
-	for (var i = arr.length; i--; )
-	{
-		out = _List_Cons(arr[i], out);
-	}
-	return out;
-}
-
-function _List_toArray(xs)
-{
-	for (var out = []; xs.b; xs = xs.b) // WHILE_CONS
-	{
-		out.push(xs.a);
-	}
-	return out;
-}
-
-var _List_map2 = F3(function(f, xs, ys)
-{
-	for (var arr = []; xs.b && ys.b; xs = xs.b, ys = ys.b) // WHILE_CONSES
-	{
-		arr.push(A2(f, xs.a, ys.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map3 = F4(function(f, xs, ys, zs)
-{
-	for (var arr = []; xs.b && ys.b && zs.b; xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A3(f, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map4 = F5(function(f, ws, xs, ys, zs)
-{
-	for (var arr = []; ws.b && xs.b && ys.b && zs.b; ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A4(f, ws.a, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map5 = F6(function(f, vs, ws, xs, ys, zs)
-{
-	for (var arr = []; vs.b && ws.b && xs.b && ys.b && zs.b; vs = vs.b, ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A5(f, vs.a, ws.a, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_sortBy = F2(function(f, xs)
-{
-	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
-		return _Utils_cmp(f(a), f(b));
-	}));
-});
-
-var _List_sortWith = F2(function(f, xs)
-{
-	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
-		var ord = A2(f, a, b);
-		return ord === elm$core$Basics$EQ ? 0 : ord === elm$core$Basics$LT ? -1 : 1;
-	}));
-});
-
-
-
-// EQUALITY
-
-function _Utils_eq(x, y)
-{
-	for (
-		var pair, stack = [], isEqual = _Utils_eqHelp(x, y, 0, stack);
-		isEqual && (pair = stack.pop());
-		isEqual = _Utils_eqHelp(pair.a, pair.b, 0, stack)
-		)
-	{}
-
-	return isEqual;
-}
-
-function _Utils_eqHelp(x, y, depth, stack)
-{
-	if (depth > 100)
-	{
-		stack.push(_Utils_Tuple2(x,y));
-		return true;
-	}
-
-	if (x === y)
-	{
-		return true;
-	}
-
-	if (typeof x !== 'object' || x === null || y === null)
-	{
-		typeof x === 'function' && _Debug_crash(5);
-		return false;
-	}
-
-	/**/
-	if (x.$ === 'Set_elm_builtin')
-	{
-		x = elm$core$Set$toList(x);
-		y = elm$core$Set$toList(y);
-	}
-	if (x.$ === 'RBNode_elm_builtin' || x.$ === 'RBEmpty_elm_builtin')
-	{
-		x = elm$core$Dict$toList(x);
-		y = elm$core$Dict$toList(y);
-	}
-	//*/
-
-	/**_UNUSED/
-	if (x.$ < 0)
-	{
-		x = elm$core$Dict$toList(x);
-		y = elm$core$Dict$toList(y);
-	}
-	//*/
-
-	for (var key in x)
-	{
-		if (!_Utils_eqHelp(x[key], y[key], depth + 1, stack))
-		{
-			return false;
-		}
-	}
-	return true;
-}
-
-var _Utils_equal = F2(_Utils_eq);
-var _Utils_notEqual = F2(function(a, b) { return !_Utils_eq(a,b); });
-
-
-
-// COMPARISONS
-
-// Code in Generate/JavaScript.hs, Basics.js, and List.js depends on
-// the particular integer values assigned to LT, EQ, and GT.
-
-function _Utils_cmp(x, y, ord)
-{
-	if (typeof x !== 'object')
-	{
-		return x === y ? /*EQ*/ 0 : x < y ? /*LT*/ -1 : /*GT*/ 1;
-	}
-
-	/**/
-	if (x instanceof String)
-	{
-		var a = x.valueOf();
-		var b = y.valueOf();
-		return a === b ? 0 : a < b ? -1 : 1;
-	}
-	//*/
-
-	/**_UNUSED/
-	if (typeof x.$ === 'undefined')
-	//*/
-	/**/
-	if (x.$[0] === '#')
-	//*/
-	{
-		return (ord = _Utils_cmp(x.a, y.a))
-			? ord
-			: (ord = _Utils_cmp(x.b, y.b))
-				? ord
-				: _Utils_cmp(x.c, y.c);
-	}
-
-	// traverse conses until end of a list or a mismatch
-	for (; x.b && y.b && !(ord = _Utils_cmp(x.a, y.a)); x = x.b, y = y.b) {} // WHILE_CONSES
-	return ord || (x.b ? /*GT*/ 1 : y.b ? /*LT*/ -1 : /*EQ*/ 0);
-}
-
-var _Utils_lt = F2(function(a, b) { return _Utils_cmp(a, b) < 0; });
-var _Utils_le = F2(function(a, b) { return _Utils_cmp(a, b) < 1; });
-var _Utils_gt = F2(function(a, b) { return _Utils_cmp(a, b) > 0; });
-var _Utils_ge = F2(function(a, b) { return _Utils_cmp(a, b) >= 0; });
-
-var _Utils_compare = F2(function(x, y)
-{
-	var n = _Utils_cmp(x, y);
-	return n < 0 ? elm$core$Basics$LT : n ? elm$core$Basics$GT : elm$core$Basics$EQ;
-});
-
-
-// COMMON VALUES
-
-var _Utils_Tuple0_UNUSED = 0;
-var _Utils_Tuple0 = { $: '#0' };
-
-function _Utils_Tuple2_UNUSED(a, b) { return { a: a, b: b }; }
-function _Utils_Tuple2(a, b) { return { $: '#2', a: a, b: b }; }
-
-function _Utils_Tuple3_UNUSED(a, b, c) { return { a: a, b: b, c: c }; }
-function _Utils_Tuple3(a, b, c) { return { $: '#3', a: a, b: b, c: c }; }
-
-function _Utils_chr_UNUSED(c) { return c; }
-function _Utils_chr(c) { return new String(c); }
-
-
-// RECORDS
-
-function _Utils_update(oldRecord, updatedFields)
-{
-	var newRecord = {};
-
-	for (var key in oldRecord)
-	{
-		newRecord[key] = oldRecord[key];
-	}
-
-	for (var key in updatedFields)
-	{
-		newRecord[key] = updatedFields[key];
-	}
-
-	return newRecord;
-}
-
-
-// APPEND
-
-var _Utils_append = F2(_Utils_ap);
-
-function _Utils_ap(xs, ys)
-{
-	// append Strings
-	if (typeof xs === 'string')
-	{
-		return xs + ys;
-	}
-
-	// append Lists
-	if (!xs.b)
-	{
-		return ys;
-	}
-	var root = _List_Cons(xs.a, ys);
-	xs = xs.b
-	for (var curr = root; xs.b; xs = xs.b) // WHILE_CONS
-	{
-		curr = curr.b = _List_Cons(xs.a, ys);
-	}
-	return root;
-}
-
-
-
 var _JsArray_empty = [];
 
 function _JsArray_singleton(value)
@@ -790,6 +525,271 @@ function _Debug_regionToString(region)
 	}
 	return 'on lines ' + region.start.line + ' through ' + region.end.line;
 }
+
+
+
+// EQUALITY
+
+function _Utils_eq(x, y)
+{
+	for (
+		var pair, stack = [], isEqual = _Utils_eqHelp(x, y, 0, stack);
+		isEqual && (pair = stack.pop());
+		isEqual = _Utils_eqHelp(pair.a, pair.b, 0, stack)
+		)
+	{}
+
+	return isEqual;
+}
+
+function _Utils_eqHelp(x, y, depth, stack)
+{
+	if (depth > 100)
+	{
+		stack.push(_Utils_Tuple2(x,y));
+		return true;
+	}
+
+	if (x === y)
+	{
+		return true;
+	}
+
+	if (typeof x !== 'object' || x === null || y === null)
+	{
+		typeof x === 'function' && _Debug_crash(5);
+		return false;
+	}
+
+	/**/
+	if (x.$ === 'Set_elm_builtin')
+	{
+		x = elm$core$Set$toList(x);
+		y = elm$core$Set$toList(y);
+	}
+	if (x.$ === 'RBNode_elm_builtin' || x.$ === 'RBEmpty_elm_builtin')
+	{
+		x = elm$core$Dict$toList(x);
+		y = elm$core$Dict$toList(y);
+	}
+	//*/
+
+	/**_UNUSED/
+	if (x.$ < 0)
+	{
+		x = elm$core$Dict$toList(x);
+		y = elm$core$Dict$toList(y);
+	}
+	//*/
+
+	for (var key in x)
+	{
+		if (!_Utils_eqHelp(x[key], y[key], depth + 1, stack))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+var _Utils_equal = F2(_Utils_eq);
+var _Utils_notEqual = F2(function(a, b) { return !_Utils_eq(a,b); });
+
+
+
+// COMPARISONS
+
+// Code in Generate/JavaScript.hs, Basics.js, and List.js depends on
+// the particular integer values assigned to LT, EQ, and GT.
+
+function _Utils_cmp(x, y, ord)
+{
+	if (typeof x !== 'object')
+	{
+		return x === y ? /*EQ*/ 0 : x < y ? /*LT*/ -1 : /*GT*/ 1;
+	}
+
+	/**/
+	if (x instanceof String)
+	{
+		var a = x.valueOf();
+		var b = y.valueOf();
+		return a === b ? 0 : a < b ? -1 : 1;
+	}
+	//*/
+
+	/**_UNUSED/
+	if (typeof x.$ === 'undefined')
+	//*/
+	/**/
+	if (x.$[0] === '#')
+	//*/
+	{
+		return (ord = _Utils_cmp(x.a, y.a))
+			? ord
+			: (ord = _Utils_cmp(x.b, y.b))
+				? ord
+				: _Utils_cmp(x.c, y.c);
+	}
+
+	// traverse conses until end of a list or a mismatch
+	for (; x.b && y.b && !(ord = _Utils_cmp(x.a, y.a)); x = x.b, y = y.b) {} // WHILE_CONSES
+	return ord || (x.b ? /*GT*/ 1 : y.b ? /*LT*/ -1 : /*EQ*/ 0);
+}
+
+var _Utils_lt = F2(function(a, b) { return _Utils_cmp(a, b) < 0; });
+var _Utils_le = F2(function(a, b) { return _Utils_cmp(a, b) < 1; });
+var _Utils_gt = F2(function(a, b) { return _Utils_cmp(a, b) > 0; });
+var _Utils_ge = F2(function(a, b) { return _Utils_cmp(a, b) >= 0; });
+
+var _Utils_compare = F2(function(x, y)
+{
+	var n = _Utils_cmp(x, y);
+	return n < 0 ? elm$core$Basics$LT : n ? elm$core$Basics$GT : elm$core$Basics$EQ;
+});
+
+
+// COMMON VALUES
+
+var _Utils_Tuple0_UNUSED = 0;
+var _Utils_Tuple0 = { $: '#0' };
+
+function _Utils_Tuple2_UNUSED(a, b) { return { a: a, b: b }; }
+function _Utils_Tuple2(a, b) { return { $: '#2', a: a, b: b }; }
+
+function _Utils_Tuple3_UNUSED(a, b, c) { return { a: a, b: b, c: c }; }
+function _Utils_Tuple3(a, b, c) { return { $: '#3', a: a, b: b, c: c }; }
+
+function _Utils_chr_UNUSED(c) { return c; }
+function _Utils_chr(c) { return new String(c); }
+
+
+// RECORDS
+
+function _Utils_update(oldRecord, updatedFields)
+{
+	var newRecord = {};
+
+	for (var key in oldRecord)
+	{
+		newRecord[key] = oldRecord[key];
+	}
+
+	for (var key in updatedFields)
+	{
+		newRecord[key] = updatedFields[key];
+	}
+
+	return newRecord;
+}
+
+
+// APPEND
+
+var _Utils_append = F2(_Utils_ap);
+
+function _Utils_ap(xs, ys)
+{
+	// append Strings
+	if (typeof xs === 'string')
+	{
+		return xs + ys;
+	}
+
+	// append Lists
+	if (!xs.b)
+	{
+		return ys;
+	}
+	var root = _List_Cons(xs.a, ys);
+	xs = xs.b
+	for (var curr = root; xs.b; xs = xs.b) // WHILE_CONS
+	{
+		curr = curr.b = _List_Cons(xs.a, ys);
+	}
+	return root;
+}
+
+
+
+var _List_Nil_UNUSED = { $: 0 };
+var _List_Nil = { $: '[]' };
+
+function _List_Cons_UNUSED(hd, tl) { return { $: 1, a: hd, b: tl }; }
+function _List_Cons(hd, tl) { return { $: '::', a: hd, b: tl }; }
+
+
+var _List_cons = F2(_List_Cons);
+
+function _List_fromArray(arr)
+{
+	var out = _List_Nil;
+	for (var i = arr.length; i--; )
+	{
+		out = _List_Cons(arr[i], out);
+	}
+	return out;
+}
+
+function _List_toArray(xs)
+{
+	for (var out = []; xs.b; xs = xs.b) // WHILE_CONS
+	{
+		out.push(xs.a);
+	}
+	return out;
+}
+
+var _List_map2 = F3(function(f, xs, ys)
+{
+	for (var arr = []; xs.b && ys.b; xs = xs.b, ys = ys.b) // WHILE_CONSES
+	{
+		arr.push(A2(f, xs.a, ys.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map3 = F4(function(f, xs, ys, zs)
+{
+	for (var arr = []; xs.b && ys.b && zs.b; xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A3(f, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map4 = F5(function(f, ws, xs, ys, zs)
+{
+	for (var arr = []; ws.b && xs.b && ys.b && zs.b; ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A4(f, ws.a, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map5 = F6(function(f, vs, ws, xs, ys, zs)
+{
+	for (var arr = []; vs.b && ws.b && xs.b && ys.b && zs.b; vs = vs.b, ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A5(f, vs.a, ws.a, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_sortBy = F2(function(f, xs)
+{
+	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
+		return _Utils_cmp(f(a), f(b));
+	}));
+});
+
+var _List_sortWith = F2(function(f, xs)
+{
+	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
+		var ord = A2(f, a, b);
+		return ord === elm$core$Basics$EQ ? 0 : ord === elm$core$Basics$LT ? -1 : 1;
+	}));
+});
 
 
 
@@ -4313,26 +4313,34 @@ function _Browser_load(url)
 var elm$core$Basics$negate = function (n) {
 	return -n;
 };
-var elm$core$Basics$identity = function (x) {
-	return x;
-};
-var elm$core$Basics$False = {$: 'False'};
-var elm$core$Basics$True = {$: 'True'};
-var elm$core$Result$isOk = function (result) {
-	if (result.$ === 'Ok') {
-		return true;
-	} else {
-		return false;
-	}
-};
-var elm$core$Array$branchFactor = 32;
-var elm$core$Array$Array_elm_builtin = F4(
-	function (a, b, c, d) {
-		return {$: 'Array_elm_builtin', a: a, b: b, c: c, d: d};
-	});
 var elm$core$Basics$EQ = {$: 'EQ'};
-var elm$core$Basics$GT = {$: 'GT'};
 var elm$core$Basics$LT = {$: 'LT'};
+var elm$core$Elm$JsArray$foldr = _JsArray_foldr;
+var elm$core$Array$foldr = F3(
+	function (func, baseCase, _n0) {
+		var tree = _n0.c;
+		var tail = _n0.d;
+		var helper = F2(
+			function (node, acc) {
+				if (node.$ === 'SubTree') {
+					var subTree = node.a;
+					return A3(elm$core$Elm$JsArray$foldr, helper, acc, subTree);
+				} else {
+					var values = node.a;
+					return A3(elm$core$Elm$JsArray$foldr, func, acc, values);
+				}
+			});
+		return A3(
+			elm$core$Elm$JsArray$foldr,
+			helper,
+			A3(elm$core$Elm$JsArray$foldr, func, baseCase, tail),
+			tree);
+	});
+var elm$core$List$cons = _List_cons;
+var elm$core$Array$toList = function (array) {
+	return A3(elm$core$Array$foldr, elm$core$List$cons, _List_Nil, array);
+};
+var elm$core$Basics$GT = {$: 'GT'};
 var elm$core$Dict$foldr = F3(
 	function (func, acc, t) {
 		foldr:
@@ -4358,7 +4366,6 @@ var elm$core$Dict$foldr = F3(
 			}
 		}
 	});
-var elm$core$List$cons = _List_cons;
 var elm$core$Dict$toList = function (dict) {
 	return A3(
 		elm$core$Dict$foldr,
@@ -4386,30 +4393,34 @@ var elm$core$Set$toList = function (_n0) {
 	var dict = _n0.a;
 	return elm$core$Dict$keys(dict);
 };
-var elm$core$Elm$JsArray$foldr = _JsArray_foldr;
-var elm$core$Array$foldr = F3(
-	function (func, baseCase, _n0) {
-		var tree = _n0.c;
-		var tail = _n0.d;
-		var helper = F2(
-			function (node, acc) {
-				if (node.$ === 'SubTree') {
-					var subTree = node.a;
-					return A3(elm$core$Elm$JsArray$foldr, helper, acc, subTree);
-				} else {
-					var values = node.a;
-					return A3(elm$core$Elm$JsArray$foldr, func, acc, values);
-				}
-			});
-		return A3(
-			elm$core$Elm$JsArray$foldr,
-			helper,
-			A3(elm$core$Elm$JsArray$foldr, func, baseCase, tail),
-			tree);
-	});
-var elm$core$Array$toList = function (array) {
-	return A3(elm$core$Array$foldr, elm$core$List$cons, _List_Nil, array);
+var author$project$Main$makeCube = function (half_sz) {
+	return _List_fromArray(
+		[
+			_Utils_Tuple2(half_sz, half_sz),
+			_Utils_Tuple2(-half_sz, half_sz),
+			_Utils_Tuple2(-half_sz, -half_sz),
+			_Utils_Tuple2(half_sz, -half_sz)
+		]);
 };
+var author$project$Main$init_polygon = author$project$Main$makeCube(20);
+var elm$core$Basics$append = _Utils_append;
+var elm$core$Basics$identity = function (x) {
+	return x;
+};
+var elm$core$Basics$False = {$: 'False'};
+var elm$core$Basics$True = {$: 'True'};
+var elm$core$Result$isOk = function (result) {
+	if (result.$ === 'Ok') {
+		return true;
+	} else {
+		return false;
+	}
+};
+var elm$core$Array$branchFactor = 32;
+var elm$core$Array$Array_elm_builtin = F4(
+	function (a, b, c, d) {
+		return {$: 'Array_elm_builtin', a: a, b: b, c: c, d: d};
+	});
 var elm$core$Basics$ceiling = _Basics_ceiling;
 var elm$core$Basics$fdiv = _Basics_fdiv;
 var elm$core$Basics$logBase = F2(
@@ -4602,7 +4613,6 @@ var elm$json$Json$Decode$OneOf = function (a) {
 	return {$: 'OneOf', a: a};
 };
 var elm$core$Basics$and = _Basics_and;
-var elm$core$Basics$append = _Utils_append;
 var elm$core$Basics$or = _Basics_or;
 var elm$core$Char$toCode = _Char_toCode;
 var elm$core$Char$isLower = function (_char) {
@@ -4806,33 +4816,46 @@ var elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
 			return 3;
 	}
 };
+var elm$html$Html$li = _VirtualDom_node('li');
+var elm$html$Html$p = _VirtualDom_node('p');
 var elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var elm$html$Html$text = elm$virtual_dom$VirtualDom$text;
-var author$project$Main$initial_state = {
-	next_point: 2,
-	polygon: _List_fromArray(
+var elm$html$Html$ul = _VirtualDom_node('ul');
+var author$project$Main$intro = A2(
+	elm$html$Html$p,
+	_List_Nil,
+	_List_fromArray(
 		[
-			_Utils_Tuple2(2, 2),
-			_Utils_Tuple2(-2, 2),
-			_Utils_Tuple2(-2, -2),
-			_Utils_Tuple2(2, -2)
-		]),
-	stack: _List_fromArray(
-		[0, 1]),
-	step_desc: elm$html$Html$text('hello'),
-	step_log: _List_Nil
-};
-var author$project$Main$ccw = F3(
-	function (_n0, _n1, _n2) {
-		var ax = _n0.a;
-		var ay = _n0.b;
-		var bx = _n1.a;
-		var by = _n1.b;
-		var cx = _n2.a;
-		var cy = _n2.b;
-		var value = ((ax * (by - cy)) - (bx * (ay - cy))) + (cx * (ay - by));
-		return (value > 0) ? 1 : ((value < 0) ? (-1) : 0);
-	});
+			elm$html$Html$text('Welcome. Together, we\'re going to find the convex hull of this polygon ' + ('on the left. If you don\'t know what that is, Wikipedia and Google probably ' + 'still exist.')),
+			A2(
+			elm$html$Html$ul,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							elm$html$Html$text('Click and drag on points to move them around')
+						])),
+					A2(
+					elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							elm$html$Html$text('Double click on a point to delete it')
+						])),
+					A2(
+					elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							elm$html$Html$text('Click and drag on edges to add points')
+						]))
+				]))
+		]));
+var author$project$Main$before_start_state = {next_point: -1, polygon: author$project$Main$init_polygon, stack: _List_Nil, step_desc: author$project$Main$intro, step_log: _List_Nil};
 var author$project$Main$nth = F2(
 	function (n, list) {
 		nth:
@@ -4854,135 +4877,21 @@ var author$project$Main$nth = F2(
 			}
 		}
 	});
-var elm$core$List$tail = function (list) {
-	if (list.b) {
-		var x = list.a;
-		var xs = list.b;
-		return elm$core$Maybe$Just(xs);
+var elm$core$Debug$todo = _Debug_todo;
+var author$project$Main$trust = function (x) {
+	if (x.$ === 'Just') {
+		var y = x.a;
+		return y;
 	} else {
-		return elm$core$Maybe$Nothing;
+		return _Debug_todo(
+			'Main',
+			{
+				start: {line: 203, column: 20},
+				end: {line: 203, column: 30}
+			})('trust got Nothing');
 	}
 };
-var elm$core$Maybe$withDefault = F2(
-	function (_default, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return value;
-		} else {
-			return _default;
-		}
-	});
-var author$project$Main$removeLast = function (list) {
-	if (!list.b) {
-		return elm$core$Maybe$Nothing;
-	} else {
-		var other = list;
-		return elm$core$Maybe$Just(
-			elm$core$List$reverse(
-				A2(
-					elm$core$Maybe$withDefault,
-					_List_Nil,
-					elm$core$List$tail(
-						elm$core$List$reverse(list)))));
-	}
-};
-var elm$core$Basics$ge = _Utils_ge;
-var elm$core$Debug$log = _Debug_log;
-var elm$core$String$fromFloat = _String_fromNumber;
-var elm$core$Tuple$second = function (_n0) {
-	var y = _n0.b;
-	return y;
-};
-var author$project$Main$progressConvexHull = function (model) {
-	var top = A2(
-		elm$core$Debug$log,
-		'top: ',
-		A2(
-			elm$core$Maybe$withDefault,
-			_Utils_Tuple2(0, 0),
-			A2(
-				author$project$Main$nth,
-				A2(
-					elm$core$Maybe$withDefault,
-					0,
-					A2(
-						author$project$Main$nth,
-						0,
-						elm$core$List$reverse(model.stack))),
-				model.polygon)));
-	var scd = A2(
-		elm$core$Debug$log,
-		'scd: ',
-		A2(
-			elm$core$Maybe$withDefault,
-			_Utils_Tuple2(0, 0),
-			A2(
-				author$project$Main$nth,
-				A2(
-					elm$core$Maybe$withDefault,
-					0,
-					A2(
-						author$project$Main$nth,
-						1,
-						elm$core$List$reverse(model.stack))),
-				model.polygon)));
-	var next = A2(
-		elm$core$Debug$log,
-		'next: ',
-		A2(
-			elm$core$Maybe$withDefault,
-			_Utils_Tuple2(0, 0),
-			A2(author$project$Main$nth, model.next_point, model.polygon)));
-	return (_Utils_cmp(
-		model.next_point,
-		elm$core$List$length(model.polygon)) > -1) ? model : ((A2(
-		elm$core$Debug$log,
-		'ccw scd top next: ',
-		A3(author$project$Main$ccw, scd, top, next)) < 1) ? _Utils_update(
-		model,
-		{
-			stack: A2(
-				elm$core$Debug$log,
-				'pop: ',
-				function () {
-					var _n0 = author$project$Main$removeLast(model.stack);
-					if (_n0.$ === 'Nothing') {
-						return _List_Nil;
-					} else {
-						var stack = _n0.a;
-						return stack;
-					}
-				}()),
-			step_log: A2(
-				elm$core$List$cons,
-				'Popped point: (' + (elm$core$String$fromFloat(top.a) + (', ' + (elm$core$String$fromFloat(top.b) + ')'))),
-				model.step_log)
-		}) : _Utils_update(
-		model,
-		{
-			next_point: model.next_point + 1,
-			stack: A2(
-				elm$core$Debug$log,
-				'push: ',
-				_Utils_ap(
-					model.stack,
-					_List_fromArray(
-						[model.next_point]))),
-			step_log: A2(
-				elm$core$List$cons,
-				'Pushed point: (' + (elm$core$String$fromFloat(next.a) + (', ' + (elm$core$String$fromFloat(next.b) + ')'))),
-				model.step_log)
-		}));
-};
-var author$project$Main$update = F2(
-	function (msg, model) {
-		if (msg.$ === 'Start') {
-			return model;
-		} else {
-			return author$project$Main$progressConvexHull(model);
-		}
-	});
-var author$project$Main$Step = {$: 'Step'};
+var elm$core$Basics$neq = _Utils_notEqual;
 var elm$core$List$foldrHelper = F4(
 	function (fn, acc, ctr, ls) {
 		if (!ls.b) {
@@ -5038,6 +4947,209 @@ var elm$core$List$foldr = F3(
 	function (fn, acc, ls) {
 		return A4(elm$core$List$foldrHelper, fn, acc, 0, ls);
 	});
+var elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2(elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var author$project$Main$deletePoint = F2(
+	function (model, point_idx) {
+		var point = author$project$Main$trust(
+			A2(author$project$Main$nth, point_idx, model.polygon));
+		return (elm$core$List$length(model.polygon) > 3) ? _Utils_update(
+			model,
+			{
+				polygon: A2(
+					elm$core$List$filter,
+					function (p) {
+						return !_Utils_eq(p, point);
+					},
+					model.polygon)
+			}) : model;
+	});
+var author$project$Main$grabPoint = F2(
+	function (model, point_idx) {
+		return model;
+	});
+var author$project$Main$insertPoint = F2(
+	function (model, edge_idx) {
+		return model;
+	});
+var author$project$Main$ccw = F3(
+	function (_n0, _n1, _n2) {
+		var ax = _n0.a;
+		var ay = _n0.b;
+		var bx = _n1.a;
+		var by = _n1.b;
+		var cx = _n2.a;
+		var cy = _n2.b;
+		var value = ((ax * (by - cy)) - (bx * (ay - cy))) + (cx * (ay - by));
+		return (value > 0) ? 1 : ((value < 0) ? (-1) : 0);
+	});
+var author$project$Main$listPenultimate = function (list) {
+	var _n0 = elm$core$List$reverse(list);
+	if (_n0.b && _n0.b.b) {
+		var a = _n0.a;
+		var _n1 = _n0.b;
+		var b = _n1.a;
+		var rest = _n1.b;
+		return elm$core$Maybe$Just(b);
+	} else {
+		return elm$core$Maybe$Nothing;
+	}
+};
+var author$project$Main$stackPop = function (stack) {
+	var _n0 = elm$core$List$reverse(stack);
+	if (_n0.b) {
+		var last = _n0.a;
+		var rest = _n0.b;
+		return _Utils_Tuple2(
+			elm$core$Maybe$Just(last),
+			elm$core$List$reverse(rest));
+	} else {
+		return _Utils_Tuple2(elm$core$Maybe$Nothing, _List_Nil);
+	}
+};
+var author$project$Main$start_state = {
+	next_point: 2,
+	polygon: author$project$Main$init_polygon,
+	stack: _List_fromArray(
+		[0, 1]),
+	step_desc: elm$html$Html$text('WELCOME'),
+	step_log: _List_Nil
+};
+var elm$core$String$fromFloat = _String_fromNumber;
+var author$project$Main$pointToString = function (_n0) {
+	var x = _n0.a;
+	var y = _n0.b;
+	return elm$core$String$fromFloat(x) + (', ' + elm$core$String$fromFloat(y));
+};
+var author$project$Main$writePointAction = F2(
+	function (action, _n0) {
+		var x = _n0.a;
+		var y = _n0.b;
+		return action + (': (' + (author$project$Main$pointToString(
+			_Utils_Tuple2(x, y)) + ')'));
+	});
+var elm$core$Basics$clamp = F3(
+	function (low, high, number) {
+		return (_Utils_cmp(number, low) < 0) ? low : ((_Utils_cmp(number, high) > 0) ? high : number);
+	});
+var elm$core$Basics$ge = _Utils_ge;
+var elm$core$Debug$log = _Debug_log;
+var elm$core$Tuple$second = function (_n0) {
+	var y = _n0.b;
+	return y;
+};
+var elm_community$list_extra$List$Extra$last = function (items) {
+	last:
+	while (true) {
+		if (!items.b) {
+			return elm$core$Maybe$Nothing;
+		} else {
+			if (!items.b.b) {
+				var x = items.a;
+				return elm$core$Maybe$Just(x);
+			} else {
+				var rest = items.b;
+				var $temp$items = rest;
+				items = $temp$items;
+				continue last;
+			}
+		}
+	}
+};
+var author$project$Main$progressConvexHull = function (model) {
+	if (_Utils_eq(model, author$project$Main$before_start_state)) {
+		return author$project$Main$start_state;
+	} else {
+		var top = author$project$Main$trust(
+			elm_community$list_extra$List$Extra$last(model.polygon));
+		var scd = author$project$Main$trust(
+			A2(
+				author$project$Main$nth,
+				author$project$Main$trust(
+					author$project$Main$listPenultimate(model.stack)),
+				model.polygon));
+		var next = author$project$Main$trust(
+			A2(author$project$Main$nth, model.next_point, model.polygon));
+		var _n0 = A2(elm$core$Debug$log, 'top: ', top);
+		var _n1 = A2(elm$core$Debug$log, 'scd: ', scd);
+		var _n2 = A2(elm$core$Debug$log, 'next: ', next);
+		var _n3 = A2(
+			elm$core$Debug$log,
+			'ccw(scd, top, nxt)',
+			A3(author$project$Main$ccw, scd, top, next));
+		var _n4 = (A3(author$project$Main$ccw, scd, top, next) < 1) ? A2(
+			elm$core$Debug$log,
+			'pop: ',
+			elm_community$list_extra$List$Extra$last(model.stack)) : elm$core$Maybe$Nothing;
+		var _n5 = (A3(author$project$Main$ccw, scd, top, next) >= 1) ? A2(
+			elm$core$Debug$log,
+			'push: ',
+			_Utils_ap(
+				model.stack,
+				_List_fromArray(
+					[model.next_point]))) : _List_Nil;
+		return (_Utils_cmp(
+			model.next_point,
+			elm$core$List$length(model.polygon)) > -1) ? model : ((A3(author$project$Main$ccw, scd, top, next) < 1) ? _Utils_update(
+			model,
+			{
+				stack: author$project$Main$stackPop(model.stack).b,
+				step_log: A2(
+					elm$core$List$cons,
+					A2(author$project$Main$writePointAction, 'Popped point', top),
+					model.step_log)
+			}) : _Utils_update(
+			model,
+			{
+				next_point: A3(
+					elm$core$Basics$clamp,
+					0,
+					elm$core$List$length(model.polygon) - 1,
+					model.next_point) + 1,
+				stack: _Utils_ap(
+					model.stack,
+					_List_fromArray(
+						[model.next_point])),
+				step_log: A2(
+					elm$core$List$cons,
+					A2(author$project$Main$writePointAction, 'Pushed point', next),
+					model.step_log)
+			}));
+	}
+};
+var author$project$Main$releasePoint = F2(
+	function (model, point_idx) {
+		return model;
+	});
+var author$project$Main$update = F2(
+	function (msg, model) {
+		switch (msg.$) {
+			case 'StepAlgorithm':
+				return author$project$Main$progressConvexHull(model);
+			case 'DoubleClickPoint':
+				var point_idx = msg.a;
+				return A2(author$project$Main$deletePoint, model, point_idx);
+			case 'LeftClickEdge':
+				var edge_idx = msg.a;
+				return A2(author$project$Main$insertPoint, model, edge_idx);
+			case 'GrabPoint':
+				var point_idx = msg.a;
+				return A2(author$project$Main$grabPoint, model, point_idx);
+			default:
+				var point_idx = msg.a;
+				return A2(author$project$Main$releasePoint, model, point_idx);
+		}
+	});
+var author$project$Main$StepAlgorithm = {$: 'StepAlgorithm'};
 var elm$core$List$map = F2(
 	function (f, xs) {
 		return A3(
@@ -5080,7 +5192,7 @@ var author$project$Main$debugAlgorithmState = function (model) {
 					model.step_log))
 			]));
 };
-var author$project$Main$point_color = 'blue';
+var author$project$Main$point_color = 'green';
 var author$project$Main$point_radius = '1';
 var elm$svg$Svg$trustedNode = _VirtualDom_nodeNS('http://www.w3.org/2000/svg');
 var elm$svg$Svg$circle = elm$svg$Svg$trustedNode('circle');
@@ -5088,7 +5200,7 @@ var elm$svg$Svg$Attributes$cx = _VirtualDom_attribute('cx');
 var elm$svg$Svg$Attributes$cy = _VirtualDom_attribute('cy');
 var elm$svg$Svg$Attributes$fill = _VirtualDom_attribute('fill');
 var elm$svg$Svg$Attributes$r = _VirtualDom_attribute('r');
-var author$project$Main$drawNextPoints = function (_n0) {
+var author$project$Main$drawNextPoint = function (_n0) {
 	var x = _n0.a;
 	var y = _n0.b;
 	return A2(
@@ -5104,10 +5216,8 @@ var author$project$Main$drawNextPoints = function (_n0) {
 			]),
 		_List_Nil);
 };
-var author$project$Main$pointToString = function (_n0) {
-	var x = _n0.a;
-	var y = _n0.b;
-	return elm$core$String$fromFloat(x) + (',' + elm$core$String$fromFloat(y));
+var author$project$Main$DoubleClickPoint = function (a) {
+	return {$: 'DoubleClickPoint', a: a};
 };
 var author$project$Main$mapToSvg = function (listPoint) {
 	return A2(
@@ -5116,38 +5226,74 @@ var author$project$Main$mapToSvg = function (listPoint) {
 		A2(elm$core$List$map, author$project$Main$pointToString, listPoint));
 };
 var author$project$Main$polygon_fill = 'none';
-var author$project$Main$polygon_stroke = 'green';
-var author$project$Main$polygon_stroke_width = '2';
+var author$project$Main$polygon_stroke = 'blue';
+var author$project$Main$polygon_stroke_cap = 'round';
+var author$project$Main$polygon_stroke_width = elm$core$String$fromFloat(1);
+var elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
+};
+var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			elm$virtual_dom$VirtualDom$on,
+			event,
+			elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var elm$html$Html$Events$onDoubleClick = function (msg) {
+	return A2(
+		elm$html$Html$Events$on,
+		'dblclick',
+		elm$json$Json$Decode$succeed(msg));
+};
+var elm$svg$Svg$g = elm$svg$Svg$trustedNode('g');
 var elm$svg$Svg$polygon = elm$svg$Svg$trustedNode('polygon');
 var elm$svg$Svg$Attributes$points = _VirtualDom_attribute('points');
 var elm$svg$Svg$Attributes$stroke = _VirtualDom_attribute('stroke');
+var elm$svg$Svg$Attributes$strokeLinecap = _VirtualDom_attribute('stroke-linecap');
 var elm$svg$Svg$Attributes$strokeWidth = _VirtualDom_attribute('stroke-width');
 var author$project$Main$drawPolygon = function (model) {
 	return A2(
-		elm$svg$Svg$polygon,
-		_List_fromArray(
-			[
-				elm$svg$Svg$Attributes$fill(author$project$Main$polygon_fill),
-				elm$svg$Svg$Attributes$stroke(author$project$Main$polygon_stroke),
-				elm$svg$Svg$Attributes$strokeWidth(author$project$Main$polygon_stroke_width),
-				elm$svg$Svg$Attributes$points(
-				author$project$Main$mapToSvg(model.polygon))
-			]),
-		_List_Nil);
-};
-var elm$core$Debug$todo = _Debug_todo;
-var author$project$Main$trust = function (x) {
-	if (x.$ === 'Just') {
-		var y = x.a;
-		return y;
-	} else {
-		return _Debug_todo(
-			'Main',
-			{
-				start: {line: 128, column: 20},
-				end: {line: 128, column: 30}
-			})('Empty Input');
-	}
+		elm$svg$Svg$g,
+		_List_Nil,
+		_Utils_ap(
+			_List_fromArray(
+				[
+					A2(
+					elm$svg$Svg$polygon,
+					_List_fromArray(
+						[
+							elm$svg$Svg$Attributes$fill(author$project$Main$polygon_fill),
+							elm$svg$Svg$Attributes$stroke(author$project$Main$polygon_stroke),
+							elm$svg$Svg$Attributes$strokeWidth(author$project$Main$polygon_stroke_width),
+							elm$svg$Svg$Attributes$strokeLinecap(author$project$Main$polygon_stroke_cap),
+							elm$svg$Svg$Attributes$points(
+							author$project$Main$mapToSvg(model.polygon))
+						]),
+					_List_Nil)
+				]),
+			A2(
+				elm$core$List$indexedMap,
+				F2(
+					function (i, _n0) {
+						var x = _n0.a;
+						var y = _n0.b;
+						return A2(
+							elm$svg$Svg$circle,
+							_List_fromArray(
+								[
+									elm$svg$Svg$Attributes$fill(author$project$Main$point_color),
+									elm$svg$Svg$Attributes$cx(
+									elm$core$String$fromFloat(x)),
+									elm$svg$Svg$Attributes$cy(
+									elm$core$String$fromFloat(y)),
+									elm$svg$Svg$Attributes$r(author$project$Main$point_radius),
+									elm$html$Html$Events$onDoubleClick(
+									author$project$Main$DoubleClickPoint(i))
+								]),
+							_List_Nil);
+					}),
+				model.polygon)));
 };
 var author$project$Main$calcHullProgressPolyline = function (model) {
 	return A2(
@@ -5159,8 +5305,9 @@ var author$project$Main$calcHullProgressPolyline = function (model) {
 		model.stack);
 };
 var author$project$Main$polyline_fill = 'none';
-var author$project$Main$polyline_stroke = 'black';
-var author$project$Main$polyline_stroke_width = '2';
+var author$project$Main$polyline_stroke = 'yellow';
+var author$project$Main$polyline_stroke_cap = 'round';
+var author$project$Main$polyline_stroke_width = elm$core$String$fromFloat(0.5);
 var elm$svg$Svg$polyline = elm$svg$Svg$trustedNode('polyline');
 var author$project$Main$drawPolyline = function (model) {
 	return A2(
@@ -5170,6 +5317,7 @@ var author$project$Main$drawPolyline = function (model) {
 				elm$svg$Svg$Attributes$fill(author$project$Main$polyline_fill),
 				elm$svg$Svg$Attributes$stroke(author$project$Main$polyline_stroke),
 				elm$svg$Svg$Attributes$strokeWidth(author$project$Main$polyline_stroke_width),
+				elm$svg$Svg$Attributes$strokeLinecap(author$project$Main$polyline_stroke_cap),
 				elm$svg$Svg$Attributes$points(
 				author$project$Main$mapToSvg(
 					author$project$Main$calcHullProgressPolyline(model)))
@@ -5181,28 +5329,55 @@ var elm$svg$Svg$Attributes$height = _VirtualDom_attribute('height');
 var elm$svg$Svg$Attributes$viewBox = _VirtualDom_attribute('viewBox');
 var elm$svg$Svg$Attributes$width = _VirtualDom_attribute('width');
 var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
-	return A2(
-		elm$html$Html$div,
-		_List_Nil,
+	var svgBase = function (extra) {
+		return A2(
+			elm$html$Html$div,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					elm$svg$Svg$svg,
+					_List_fromArray(
+						[
+							elm$svg$Svg$Attributes$width('800'),
+							elm$svg$Svg$Attributes$height('600'),
+							elm$svg$Svg$Attributes$viewBox('-40 -30 80 60')
+						]),
+					_Utils_ap(
+						_List_fromArray(
+							[
+								author$project$Main$drawPolygon(model),
+								author$project$Main$drawPolyline(model)
+							]),
+						extra))
+				]));
+	};
+	var _n0 = A2(elm$core$Debug$log, 'state', model);
+	return _Utils_eq(model, author$project$Main$before_start_state) ? svgBase(_List_Nil) : svgBase(
 		_List_fromArray(
 			[
-				A2(
-				elm$svg$Svg$svg,
-				_List_fromArray(
-					[
-						elm$svg$Svg$Attributes$width('800'),
-						elm$svg$Svg$Attributes$height('600'),
-						elm$svg$Svg$Attributes$viewBox('-40 -30 80 60')
-					]),
-				_List_fromArray(
-					[
-						author$project$Main$drawPolygon(model),
-						author$project$Main$drawPolyline(model),
-						author$project$Main$drawNextPoints(
-						author$project$Main$trust(
-							A2(author$project$Main$nth, model.next_point, model.polygon)))
-					]))
+				author$project$Main$drawNextPoint(
+				author$project$Main$trust(
+					A2(author$project$Main$nth, model.next_point, model.polygon)))
 			]));
+};
+var elm$html$Html$ol = _VirtualDom_node('ol');
+var author$project$Main$renderStepLog = function (msgs) {
+	return A2(
+		elm$html$Html$ol,
+		_List_Nil,
+		A2(
+			elm$core$List$map,
+			function (msg) {
+				return A2(
+					elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							elm$html$Html$text(msg)
+						]));
+			},
+			msgs));
 };
 var elm$html$Html$a = _VirtualDom_node('a');
 var elm$html$Html$button = _VirtualDom_node('button');
@@ -5226,17 +5401,6 @@ var elm$html$Html$Attributes$href = function (url) {
 };
 var elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var elm$html$Html$Attributes$style = elm$virtual_dom$VirtualDom$style;
-var elm$virtual_dom$VirtualDom$Normal = function (a) {
-	return {$: 'Normal', a: a};
-};
-var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
-var elm$html$Html$Events$on = F2(
-	function (event, decoder) {
-		return A2(
-			elm$virtual_dom$VirtualDom$on,
-			event,
-			elm$virtual_dom$VirtualDom$Normal(decoder));
-	});
 var elm$html$Html$Events$onClick = function (msg) {
 	return A2(
 		elm$html$Html$Events$on,
@@ -5297,7 +5461,10 @@ var author$project$Main$view = function (model) {
 												elm$html$Html$div,
 												_List_Nil,
 												_List_fromArray(
-													[model.step_desc])),
+													[
+														model.step_desc,
+														author$project$Main$renderStepLog(model.step_log)
+													])),
 												A2(
 												elm$html$Html$div,
 												_List_Nil,
@@ -5307,7 +5474,7 @@ var author$project$Main$view = function (model) {
 														elm$html$Html$button,
 														_List_fromArray(
 															[
-																elm$html$Html$Events$onClick(author$project$Main$Step)
+																elm$html$Html$Events$onClick(author$project$Main$StepAlgorithm)
 															]),
 														_List_fromArray(
 															[
@@ -5588,6 +5755,6 @@ var elm$browser$Browser$sandbox = function (impl) {
 		});
 };
 var author$project$Main$main = elm$browser$Browser$sandbox(
-	{init: author$project$Main$initial_state, update: author$project$Main$update, view: author$project$Main$view});
+	{init: author$project$Main$before_start_state, update: author$project$Main$update, view: author$project$Main$view});
 _Platform_export({'Main':{'init':author$project$Main$main(
 	elm$json$Json$Decode$succeed(_Utils_Tuple0))(0)}});}(this));
