@@ -224,7 +224,7 @@ drawConvexHullAlgorithmsState model =
                          )
                     ]
     in
-        if model == before_start_state
+        if model.next_point == -1 -- TODO: add a tag meaning this is before_start
         then svgBase []
         else svgBase [ drawNextPoint <| trust <| nth model.next_point model.polygon ]
 
@@ -314,7 +314,7 @@ stackPop stack =
 
 progressConvexHull : Model -> Model
 progressConvexHull model =
-    if model == before_start_state then
+    if model.next_point == -1 then
         start_state -- TODO: add first popped points to start state log
     else
     let

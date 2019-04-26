@@ -5066,7 +5066,7 @@ var elm_community$list_extra$List$Extra$last = function (items) {
 	}
 };
 var author$project$Main$progressConvexHull = function (model) {
-	if (_Utils_eq(model, author$project$Main$before_start_state)) {
+	if (_Utils_eq(model.next_point, -1)) {
 		return author$project$Main$start_state;
 	} else {
 		var top = author$project$Main$trust(
@@ -5353,7 +5353,7 @@ var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
 				]));
 	};
 	var _n0 = A2(elm$core$Debug$log, 'state', model);
-	return _Utils_eq(model, author$project$Main$before_start_state) ? svgBase(_List_Nil) : svgBase(
+	return _Utils_eq(model.next_point, -1) ? svgBase(_List_Nil) : svgBase(
 		_List_fromArray(
 			[
 				author$project$Main$drawNextPoint(
