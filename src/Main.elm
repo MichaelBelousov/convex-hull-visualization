@@ -8,7 +8,7 @@ import Html exposing (Html, div, button, text, a,
 import Html.Events exposing (onClick, onDoubleClick)
 import Html.Attributes exposing (..)
 import List
-import List.Extra exposing (getAt, last, elemIndex)
+import List.Extra exposing (getAt, last, splitAt)
 import Tuple
 import Debug
 import String exposing (..)
@@ -184,7 +184,22 @@ deletePoint model point_idx =
 
 insertPoint : Model -> Int -> Model
 insertPoint model edge_idx =
-    model
+    let
+        (front, back) = splitAt (edge_idx+1) model.polygon
+        mdpt = case (last front, List.head back) of
+                (Just x, Just y) -> 
+                    polygonMidPoint [x, y]
+                (Just x, Nothing) -> 
+                    polygonMidPoint [ trust <| List.head front
+                                    , trust <| last front
+                                    ]
+                (Nothing, Just y) -> 
+                    polygonMidPoint [ trust <| List.head back
+                                    , trust <| last back
+                                    ]
+                _ -> Debug.todo "bad polygon"
+    in
+    { model | polygon = front ++ [mdpt] ++ back }
 
 grabPoint : Model -> Int -> Model
 grabPoint model point_idx =
@@ -306,13 +321,13 @@ drawPolygon model =
       (
       List.indexedMap
             (\i ((x1_,y1_),(x2_,y2_)) ->
-                    line [ fill polygon_fill
+                    line ([ fill polygon_fill
                          , stroke polygon_stroke
                          , strokeWidth polygon_stroke_width
                          , strokeLinecap polygon_stroke_cap
                          , x1 <| fromFloat x1_, y1 <| fromFloat y1_
                          , x2 <| fromFloat x2_, y2 <| fromFloat y2_
-                         ] [])
+                         ] ++ edge_click_handler i) [])
             (polygonToEdges model.polygon)
       ++
       List.indexedMap
