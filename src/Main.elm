@@ -54,9 +54,7 @@ view model =
                                          [ drawConvexHullAlgorithmsState <| flipCartesian model ]
                                    ]
                               , td [ style "width" "50%" ]
-                                   [ div [ class "process-desc" ]
-                                         [ model.step_desc
-                                         , renderStepLog model.step_log ]
+                                   [ div [ class "progress-log" ] model.progress_log
                                    , div [ class "next-btn-container" ]
                                          [ button [ onClick StepAlgorithm ] 
                                                   [ text "next step" ]
@@ -69,15 +67,19 @@ view model =
               [ a [ href "about.html" ] [ text "about" ] ]
         ]
 
-type alias Stack z = List z
+type ModelState
+    = NotStartedYet
+    | InProgress
+    | Done
 
 type alias Model =
     { polygon : Polygon
     , stack : Stack Int
+    , progress_state : ModelState
     , next_point : Int
-    , step_desc : Html Msg
-    , step_log : List String
+    , progress_log : List (Html Msg)
     }
+
 
 
 -- Domain Types
@@ -85,6 +87,7 @@ type alias Model =
 type alias Point = (Float, Float)
 type alias Polygon = List Point
 type alias Polyline = List Point
+type alias Stack z = List z
 
 -- Constants
 
@@ -93,7 +96,7 @@ init_polygon = makeCube 20
 
     -- Style
 point_color = "blue"
-point_radius = "2"
+point_radius = fromFloat 2
 next_point_color = "green"
 polygon_fill = "none"
 polygon_stroke = "blue"
@@ -101,7 +104,7 @@ polygon_stroke_width = fromFloat 1.5
 polygon_stroke_cap = "round"
 polyline_fill = "none"
 polyline_stroke = "red"
-polyline_stroke_width = fromFloat 1
+polyline_stroke_width = fromFloat 2
 polyline_stroke_cap = "round"
 ccw_triangle_fill = "none"
 ccw_triangle_stroke = "yellow"
@@ -197,9 +200,9 @@ before_start_state : Model
 before_start_state =
     { polygon = init_polygon
     , stack = []
+    , progress_state = NotStartedYet
     , next_point = -1
-    , step_desc = intro
-    , step_log = []
+    , progress_log = [intro]
     }
 
 -- Returns the nth element or Nothing (if not exists)
@@ -230,12 +233,6 @@ trust x =
         Nothing -> Debug.todo "trust got Nothing"
 
 
-renderStepLog : List String -> Html Msg
-renderStepLog msgs =
-    ol []
-       (List.map (\msg -> li [] [text msg]) <| List.reverse msgs)
-
-
 drawConvexHullAlgorithmsState : Model -> Html Msg
 drawConvexHullAlgorithmsState model =
     let 
@@ -254,11 +251,17 @@ drawConvexHullAlgorithmsState model =
                       )
                  ]
     in
-        if model.next_point == -1 -- TODO: add a tag meaning this is before_start
-        then svgBase []
-        else svgBase [ drawNextPoint <| trust <| nth model.next_point model.polygon
-                     , drawCurrentCCW model
-                     ]
+    case model.progress_state of
+        NotStartedYet ->
+            svgBase []
+        InProgress ->
+            svgBase [ drawNextPoint <| trust <| nth model.next_point model.polygon
+                    , drawCurrentCCW model
+                    ]
+        Done ->
+            svgBase [ drawNextPoint <| trust <| nth model.next_point model.polygon
+                    , drawCurrentCCW model
+                    ]
 
 
 drawStack : Model -> Svg Msg
@@ -422,44 +425,48 @@ restartAtBottomLeftMost polygon =
 
 startAlgorithmState : Model -> Model
 startAlgorithmState model =
-    { polygon = restartAtBottomLeftMost model.polygon
-    , stack = [0,1]
-    , next_point = 2
-    , step_desc = started_desc
-    , step_log = []
+    { model | polygon = restartAtBottomLeftMost model.polygon
+            , next_point = 2
+            , stack = [0,1]
+            , progress_state = InProgress
+            , progress_log = model.progress_log ++ [started_desc]
     }
 
 progressConvexHull : Model -> Model
 progressConvexHull model =
-    if model.next_point == -1 then
-        startAlgorithmState model
-    else
-    let
-        top = trust <| nth (trust <| last model.stack) model.polygon
-        _ = Debug.log "top: " top
-        scd = trust <| nth (trust <| listPenultimate model.stack) model.polygon
-        _ = Debug.log "scd: " scd
-        next = trust <| nth model.next_point model.polygon
-        _ = Debug.log "next: " next
-        _ = Debug.log "ccw(scd, top, nxt)" (ccw scd top next)
-        _ = if ccw scd top next < 1
-            then Debug.log "pop: " <| last model.stack
-            else Nothing
-        _ = if ccw scd top next >= 1
-            then Debug.log "push: " <| model.stack ++ [model.next_point]
-            else []
-    in
-    if model.next_point >= List.length model.polygon then
-        model
-    else if ccw scd top next < 1 then
-        { model | stack = Tuple.second <| stackPop model.stack
-                , step_log = (writePointAction "Popped point" top) :: model.step_log
-        }
-    else
-        { model | stack = stackPush model.stack model.next_point
-                , next_point = clamp 0 ((List.length model.polygon)-1) (model.next_point+1)
-                , step_log = (writePointAction "Pushed point" next) :: model.step_log
-        }
+    case model.progress_state of
+        NotStartedYet ->
+            startAlgorithmState model
+        InProgress ->
+            let
+                top = trust <| nth (trust <| last model.stack) model.polygon
+                _ = Debug.log "top: " top
+                scd = trust <| nth (trust <| listPenultimate model.stack) model.polygon
+                _ = Debug.log "scd: " scd
+                next = trust <| nth model.next_point model.polygon
+                _ = Debug.log "next: " next
+                _ = Debug.log "ccw(scd, top, nxt)" (ccw scd top next)
+                _ = if ccw scd top next < 1
+                    then Debug.log "pop: " <| last model.stack
+                    else Nothing
+                _ = if ccw scd top next >= 1
+                    then Debug.log "push: " <| model.stack ++ [model.next_point]
+                    else []
+            in
+            if ccw scd top next < 1
+            then
+                { model | stack = Tuple.second <| stackPop model.stack
+                        , progress_log = model.progress_log
+                                         ++ [ol [] [li [] [text <| writePointAction "Popped point" top] ] ]
+                }
+            else
+                { model | stack = stackPush model.stack model.next_point
+                        , next_point = clamp 0 ((List.length model.polygon)-1) (model.next_point+1) -- TODO: make go past model length?
+                        , progress_log = model.progress_log
+                                         ++ [ol [] [li [] [text <| writePointAction "Pushed point" next] ] ]
+                }
+        Done ->
+            model
 
 
 -- Browser Init
