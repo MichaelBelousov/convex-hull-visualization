@@ -12,10 +12,11 @@ import List.Extra exposing (getAt, last, elemIndex)
 import Tuple
 import Debug
 import String exposing (..)
-import Svg exposing (Svg, svg, circle, polyline, polygon, g, path, image)
+import Svg exposing (Svg, svg, circle, polyline, polygon, line, g, path, image)
 import Svg.Attributes exposing (height, width, viewBox, xlinkHref, id,
                                 fill, stroke, strokeWidth, strokeLinecap,
-                                strokeDasharray, cx, cy, r, points, d, x, y)
+                                strokeDasharray, cx, cy, r, points, d, x, y,
+                                x1, y1, x2, y2)
 
 -- Browser Model
 
@@ -277,28 +278,51 @@ drawStack model =
              model.stack
       )
 
+polylineToEdges : Polyline -> List (Point, Point)
+polylineToEdges polyline =
+    List.map2 (\p q -> (p,q))
+              polyline
+              (trust <| List.tail polyline)
+
+polygonToEdges : Polygon -> List (Point, Point)
+polygonToEdges polygon =
+    (polylineToEdges polygon)
+    ++ [(trust <| last polygon,
+         trust <| List.head polygon)]
+
 
 -- Draw the polygon, return svg message
 drawPolygon : Model -> Svg Msg
 drawPolygon model = 
+    let
+        edge_click_handler i = if model.progress_state == NotStartedYet
+                               then [onClick (LeftClickEdge i)]
+                               else []
+        pt_dblclick_handler i = if model.progress_state == NotStartedYet
+                                then [onDoubleClick (DoubleClickPoint i)]
+                                else []
+    in
     g []
       (
-      [ polygon [ fill polygon_fill
-                 , stroke polygon_stroke
-                 , strokeWidth polygon_stroke_width
-                 , strokeLinecap polygon_stroke_cap
-                 , points (svgPointsFromList model.polygon)
-                 ]
-                 []
-      ]
-      ++ List.indexedMap
-            (\i (x,y) -> circle [ fill point_color
-                              , cx <| fromFloat x
-                              , cy <| fromFloat y
-                              , r point_radius
-                              , onDoubleClick (DoubleClickPoint i)
-                              ]
-                              [] )
+      List.indexedMap
+            (\i ((x1_,y1_),(x2_,y2_)) ->
+                    line [ fill polygon_fill
+                         , stroke polygon_stroke
+                         , strokeWidth polygon_stroke_width
+                         , strokeLinecap polygon_stroke_cap
+                         , x1 <| fromFloat x1_, y1 <| fromFloat y1_
+                         , x2 <| fromFloat x2_, y2 <| fromFloat y2_
+                         ] [])
+            (polygonToEdges model.polygon)
+      ++
+      List.indexedMap
+            (\i (x,y) ->
+                    circle ([ fill point_color
+                            , cx <| fromFloat x
+                            , cy <| fromFloat y
+                            , r point_radius
+                            ] ++ pt_dblclick_handler i)
+                            [])
             model.polygon
       )
  
