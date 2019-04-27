@@ -39,6 +39,14 @@ button {
     100% { transform: rotate(0deg); }
 }
 
+.process-desc {
+
+}
+
+.next-btn-container {
+    text-align: center;
+}
+
 #ccw_wheel {
     animation: spin 60s linear infinite;
     transform-origin:

@@ -54,9 +54,10 @@ view model =
                                          [ drawConvexHullAlgorithmsState <| flipCartesian model ]
                                    ]
                               , td [ style "width" "50%" ]
-                                   [ div [] [ model.step_desc
-                                            , renderStepLog model.step_log ]
-                                   , div [ style "text-align" "center" ]
+                                   [ div [ class "process-desc" ]
+                                         [ model.step_desc
+                                         , renderStepLog model.step_log ]
+                                   , div [ class "next-btn-container" ]
                                          [ button [ onClick StepAlgorithm ] 
                                                   [ text "next step" ]
                                          ]
@@ -232,7 +233,7 @@ trust x =
 renderStepLog : List String -> Html Msg
 renderStepLog msgs =
     ol []
-       (List.map (\msg -> li [] [text msg]) msgs)
+       (List.map (\msg -> li [] [text msg]) <| List.reverse msgs)
 
 
 drawConvexHullAlgorithmsState : Model -> Html Msg
@@ -248,6 +249,7 @@ drawConvexHullAlgorithmsState model =
                       (
                       [ drawPolygon model
                       , drawPolyline model
+                      , drawStack model
                       ] ++ extra
                       )
                  ]
@@ -257,6 +259,21 @@ drawConvexHullAlgorithmsState model =
         else svgBase [ drawNextPoint <| trust <| nth model.next_point model.polygon
                      , drawCurrentCCW model
                      ]
+
+
+drawStack : Model -> Svg Msg
+drawStack model =
+    g []
+      (
+      [ path [ d "M 50 50 v -30 h 20 v 30" ] []
+      ] ++ List.indexedMap
+             (\i n -> g [ x "90"
+                        , y <| fromInt (80 + 10*i)
+                        ]
+                        [ text <| fromInt n ])
+             model.stack
+      )
+
 
 -- Draw the polygon, return svg message
 drawPolygon : Model -> Svg Msg
