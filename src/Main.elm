@@ -32,6 +32,7 @@ type Msg
     | LeftClickEdge Int
     | GrabPoint Int
     | ReleasePoint
+    | Restart
     | InteractiveMsg Interactive.Msg
 
 type alias InteractiveModel = (Model, Cmd Msg)
@@ -69,6 +70,8 @@ update msg model =
             nocmd <| { grabbed_moved | grabbed = Just point_idx }
         ReleasePoint ->
             nocmd <| { grabbed_moved | grabbed = Nothing }
+        Restart ->
+            before_start_state
 
 
 interactiveUpdate : Model -> Interactive.Msg -> InteractiveModel
@@ -162,7 +165,7 @@ init_polygon = makeCube 20
     -- Style
 point_color = "blue"
 point_radius = fromFloat 2
-next_point_color = "green"
+next_point_color = "yellow"
 polygon_fill = "none"
 polygon_stroke = "blue"
 polygon_stroke_width = fromFloat 1.5
@@ -331,16 +334,12 @@ drawConvexHullAlgorithmsState model =
                  ]
     in
     case model.progress_state of
-        NotStartedYet ->
-            svgBase []
         InProgress ->
             svgBase [ drawNextPoint <| trust <| nth model.next_point model.polygon
                     , drawCurrentCCW model
                     ]
-        Done ->
-            svgBase [ drawNextPoint <| trust <| nth model.next_point model.polygon
-                    , drawCurrentCCW model
-                    ]
+        _ ->
+            svgBase []
 
 
 drawStack : Model -> Svg Msg
@@ -543,7 +542,13 @@ restartAtBottomLeftMost polygon =
 
 startAlgorithmState : Model -> Model
 startAlgorithmState model =
-    { model | polygon = restartAtBottomLeftMost model.polygon
+    let 
+        sorted_polygon = model.polygon
+                        {- sortWith (\a b -> case compare ccw a b of)
+                            model.polygon -}
+        shifted_polygon = restartAtBottomLeftMost sorted_polygon
+    in
+    { model | polygon = shifted_polygon
             , next_point = 2
             , stack = [0,1]
             , progress_state = InProgress
@@ -556,35 +561,28 @@ progressConvexHull model =
         NotStartedYet ->
             startAlgorithmState model
         InProgress ->
-            let
-                top = trust <| nth (trust <| last model.stack) model.polygon
-                _ = Debug.log "top: " top
-                scd = trust <| nth (trust <| listPenultimate model.stack) model.polygon
-                _ = Debug.log "scd: " scd
-                next = trust <| nth model.next_point model.polygon
-                _ = Debug.log "next: " next
-                _ = Debug.log "ccw(scd, top, nxt)" (ccw scd top next)
-                _ = if ccw scd top next < 1
-                    then Debug.log "pop: " <| last model.stack
-                    else Nothing
-                _ = if ccw scd top next >= 1
-                    then Debug.log "push: " <| model.stack ++ [model.next_point]
-                    else []
-            in
-            if ccw scd top next < 1
-            then
-                { model
-                  | stack = Tuple.second <| stackPop model.stack
-                  , progress_log = model.progress_log
-                      ++ [ol [] [li [] [text <| writePointAction "Popped point" top] ] ]
-                }
+            if model.next_point == 1
+            then { model | progress_state = Done }
             else
-                { model
-                  | stack = stackPush model.stack model.next_point
-                  , next_point = clamp 0 ((List.length model.polygon)-1) (model.next_point+1)
-                  , progress_log = model.progress_log
-                      ++ [ol [] [li [] [text <| writePointAction "Pushed point" next] ] ]
-                }
+                let
+                    top = trust <| nth (trust <| last model.stack) model.polygon
+                    scd = trust <| nth (trust <| listPenultimate model.stack) model.polygon
+                    next = trust <| nth model.next_point model.polygon
+                in
+                if ccw scd top next < 1
+                then
+                    { model
+                      | stack = Tuple.second <| stackPop model.stack
+                      , progress_log = model.progress_log
+                          ++ [ul [] [li [] [text <| writePointAction "Popped point" top] ] ]
+                    }
+                else
+                    { model
+                      | stack = stackPush model.stack model.next_point
+                      , next_point = remainderBy (List.length model.polygon) (model.next_point+1)  
+                      , progress_log = model.progress_log
+                          ++ [ul [] [li [] [text <| writePointAction "Pushed point" next] ] ]
+                    }
         Done ->
             model
 

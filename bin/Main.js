@@ -5728,8 +5728,8 @@ var author$project$Main$trust = function (x) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 312, column: 20},
-				end: {line: 312, column: 30}
+				start: {line: 315, column: 20},
+				end: {line: 315, column: 30}
 			})('trust got Nothing');
 	}
 };
@@ -5999,8 +5999,8 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 264, column: 22},
-							end: {line: 264, column: 32}
+							start: {line: 267, column: 22},
+							end: {line: 267, column: 32}
 						})('bad polygon');
 				}
 			}
@@ -6561,6 +6561,7 @@ var author$project$Main$interactiveUpdate = F2(
 				}),
 			elm$core$Platform$Cmd$none);
 	});
+var author$project$Main$Done = {$: 'Done'};
 var author$project$Main$ccw = F3(
 	function (_n0, _n1, _n2) {
 		var ax = _n0.a;
@@ -6675,11 +6676,13 @@ var author$project$Main$started_desc = A2(
 				]))
 		]));
 var author$project$Main$startAlgorithmState = function (model) {
+	var sorted_polygon = model.polygon;
+	var shifted_polygon = author$project$Main$restartAtBottomLeftMost(sorted_polygon);
 	return _Utils_update(
 		model,
 		{
 			next_point: 2,
-			polygon: author$project$Main$restartAtBottomLeftMost(model.polygon),
+			polygon: shifted_polygon,
 			progress_log: _Utils_ap(
 				model.progress_log,
 				_List_fromArray(
@@ -6702,107 +6705,85 @@ var author$project$Main$writePointAction = F2(
 		return action + (': (' + (author$project$Main$pointToString(
 			_Utils_Tuple2(x, y)) + ')'));
 	});
-var elm$core$Basics$clamp = F3(
-	function (low, high, number) {
-		return (_Utils_cmp(number, low) < 0) ? low : ((_Utils_cmp(number, high) > 0) ? high : number);
-	});
-var elm$core$Basics$ge = _Utils_ge;
-var elm$core$Debug$log = _Debug_log;
-var elm$html$Html$ol = _VirtualDom_node('ol');
 var author$project$Main$progressConvexHull = function (model) {
 	var _n0 = model.progress_state;
 	switch (_n0.$) {
 		case 'NotStartedYet':
 			return author$project$Main$startAlgorithmState(model);
 		case 'InProgress':
-			var top = author$project$Main$trust(
-				A2(
-					author$project$Main$nth,
-					author$project$Main$trust(
-						elm_community$list_extra$List$Extra$last(model.stack)),
-					model.polygon));
-			var scd = author$project$Main$trust(
-				A2(
-					author$project$Main$nth,
-					author$project$Main$trust(
-						author$project$Main$listPenultimate(model.stack)),
-					model.polygon));
-			var next = author$project$Main$trust(
-				A2(author$project$Main$nth, model.next_point, model.polygon));
-			var _n1 = A2(elm$core$Debug$log, 'top: ', top);
-			var _n2 = A2(elm$core$Debug$log, 'scd: ', scd);
-			var _n3 = A2(elm$core$Debug$log, 'next: ', next);
-			var _n4 = A2(
-				elm$core$Debug$log,
-				'ccw(scd, top, nxt)',
-				A3(author$project$Main$ccw, scd, top, next));
-			var _n5 = (A3(author$project$Main$ccw, scd, top, next) < 1) ? A2(
-				elm$core$Debug$log,
-				'pop: ',
-				elm_community$list_extra$List$Extra$last(model.stack)) : elm$core$Maybe$Nothing;
-			var _n6 = (A3(author$project$Main$ccw, scd, top, next) >= 1) ? A2(
-				elm$core$Debug$log,
-				'push: ',
-				_Utils_ap(
-					model.stack,
-					_List_fromArray(
-						[model.next_point]))) : _List_Nil;
-			return (A3(author$project$Main$ccw, scd, top, next) < 1) ? _Utils_update(
-				model,
-				{
-					progress_log: _Utils_ap(
-						model.progress_log,
-						_List_fromArray(
-							[
-								A2(
-								elm$html$Html$ol,
-								_List_Nil,
-								_List_fromArray(
-									[
-										A2(
-										elm$html$Html$li,
-										_List_Nil,
-										_List_fromArray(
-											[
-												elm$html$Html$text(
-												A2(author$project$Main$writePointAction, 'Popped point', top))
-											]))
-									]))
-							])),
-					stack: author$project$Main$stackPop(model.stack).b
-				}) : _Utils_update(
-				model,
-				{
-					next_point: A3(
-						elm$core$Basics$clamp,
-						0,
-						elm$core$List$length(model.polygon) - 1,
-						model.next_point + 1),
-					progress_log: _Utils_ap(
-						model.progress_log,
-						_List_fromArray(
-							[
-								A2(
-								elm$html$Html$ol,
-								_List_Nil,
-								_List_fromArray(
-									[
-										A2(
-										elm$html$Html$li,
-										_List_Nil,
-										_List_fromArray(
-											[
-												elm$html$Html$text(
-												A2(author$project$Main$writePointAction, 'Pushed point', next))
-											]))
-									]))
-							])),
-					stack: A2(author$project$Main$stackPush, model.stack, model.next_point)
-				});
+			if (model.next_point === 1) {
+				return _Utils_update(
+					model,
+					{progress_state: author$project$Main$Done});
+			} else {
+				var top = author$project$Main$trust(
+					A2(
+						author$project$Main$nth,
+						author$project$Main$trust(
+							elm_community$list_extra$List$Extra$last(model.stack)),
+						model.polygon));
+				var scd = author$project$Main$trust(
+					A2(
+						author$project$Main$nth,
+						author$project$Main$trust(
+							author$project$Main$listPenultimate(model.stack)),
+						model.polygon));
+				var next = author$project$Main$trust(
+					A2(author$project$Main$nth, model.next_point, model.polygon));
+				return (A3(author$project$Main$ccw, scd, top, next) < 1) ? _Utils_update(
+					model,
+					{
+						progress_log: _Utils_ap(
+							model.progress_log,
+							_List_fromArray(
+								[
+									A2(
+									elm$html$Html$ul,
+									_List_Nil,
+									_List_fromArray(
+										[
+											A2(
+											elm$html$Html$li,
+											_List_Nil,
+											_List_fromArray(
+												[
+													elm$html$Html$text(
+													A2(author$project$Main$writePointAction, 'Popped point', top))
+												]))
+										]))
+								])),
+						stack: author$project$Main$stackPop(model.stack).b
+					}) : _Utils_update(
+					model,
+					{
+						next_point: (model.next_point + 1) % elm$core$List$length(model.polygon),
+						progress_log: _Utils_ap(
+							model.progress_log,
+							_List_fromArray(
+								[
+									A2(
+									elm$html$Html$ul,
+									_List_Nil,
+									_List_fromArray(
+										[
+											A2(
+											elm$html$Html$li,
+											_List_Nil,
+											_List_fromArray(
+												[
+													elm$html$Html$text(
+													A2(author$project$Main$writePointAction, 'Pushed point', next))
+												]))
+										]))
+								])),
+						stack: A2(author$project$Main$stackPush, model.stack, model.next_point)
+					});
+			}
 		default:
 			return model;
 	}
 };
+var elm$core$Debug$log = _Debug_log;
 var author$project$Main$windowToSvgSpace = F2(
 	function (model, _n0) {
 		var x = _n0.a;
@@ -6873,11 +6854,13 @@ var author$project$Main$update = F2(
 						{
 							grabbed: elm$core$Maybe$Just(point_idx)
 						}));
-			default:
+			case 'ReleasePoint':
 				return nocmd(
 					_Utils_update(
 						grabbed_moved,
 						{grabbed: elm$core$Maybe$Nothing}));
+			default:
+				return author$project$Main$before_start_state;
 		}
 	});
 var author$project$Main$StepAlgorithm = {$: 'StepAlgorithm'};
@@ -6975,7 +6958,7 @@ var author$project$Main$drawCurrentCCW = function (model) {
 				_List_Nil)
 			]));
 };
-var author$project$Main$next_point_color = 'green';
+var author$project$Main$next_point_color = 'yellow';
 var author$project$Main$point_radius = elm$core$String$fromFloat(2);
 var elm$svg$Svg$circle = elm$svg$Svg$trustedNode('circle');
 var elm$svg$Svg$Attributes$cx = _VirtualDom_attribute('cx');
@@ -7284,27 +7267,17 @@ var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
 	};
 	var _n0 = A2(elm$core$Debug$log, 'state', model);
 	var _n1 = model.progress_state;
-	switch (_n1.$) {
-		case 'NotStartedYet':
-			return svgBase(_List_Nil);
-		case 'InProgress':
-			return svgBase(
-				_List_fromArray(
-					[
-						author$project$Main$drawNextPoint(
-						author$project$Main$trust(
-							A2(author$project$Main$nth, model.next_point, model.polygon))),
-						author$project$Main$drawCurrentCCW(model)
-					]));
-		default:
-			return svgBase(
-				_List_fromArray(
-					[
-						author$project$Main$drawNextPoint(
-						author$project$Main$trust(
-							A2(author$project$Main$nth, model.next_point, model.polygon))),
-						author$project$Main$drawCurrentCCW(model)
-					]));
+	if (_n1.$ === 'InProgress') {
+		return svgBase(
+			_List_fromArray(
+				[
+					author$project$Main$drawNextPoint(
+					author$project$Main$trust(
+						A2(author$project$Main$nth, model.next_point, model.polygon))),
+					author$project$Main$drawCurrentCCW(model)
+				]));
+	} else {
+		return svgBase(_List_Nil);
 	}
 };
 var author$project$Main$flipCartesian = function (model) {
