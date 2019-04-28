@@ -40,7 +40,7 @@ button {
 }
 
 .progress-log {
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 .next-btn-container {
