@@ -7,28 +7,22 @@ import Html exposing (Html, Attribute, div, button, text, a,
                       table, tr, td, p, i, b, ul, ol, li)
 import Html.Events exposing (onClick, onDoubleClick, on)
 import Html.Attributes exposing (..)
-import DOM exposing (target, boundingClientRect, Rectangle)
 import Interactive
 import List
-import List.Extra exposing (getAt, last, splitAt)
+import List.Extra exposing (last, splitAt)
 import Tuple
 import Debug
-import Json.Decode as Decode exposing (Decoder)
+import Json.Decode as Decode
 import String exposing (..)
 import Svg exposing (Svg, svg, circle, polyline, polygon, line, g, path, image)
-import Svg.Events
 import Svg.Attributes exposing (height, width, viewBox, xlinkHref, id,
                                 fill, stroke, strokeWidth, strokeLinecap,
                                 strokeDasharray, cx, cy, r, points, d, x, y,
                                 x1, y1, x2, y2)
-
 onMouseDown message =
     on "mousedown" (Decode.succeed message)
 onMouseUp message =
     on "mouseup" (Decode.succeed message)
-
-onSvgResize msg =
-    on "mousemove" (Decode.map msg (target boundingClientRect))
 
 -- Browser Model
 
@@ -37,9 +31,8 @@ type Msg
     | DoubleClickPoint Int
     | LeftClickEdge Int
     | GrabPoint Int
-    | ReleasePoint Int
+    | ReleasePoint
     | InteractiveMsg Interactive.Msg
-    | UpdateSvgRect Rectangle
 
 type alias InteractiveModel = (Model, Cmd Msg)
 
@@ -68,13 +61,14 @@ update msg model =
         DoubleClickPoint point_idx ->
             nocmd <| deletePoint model point_idx
         LeftClickEdge edge_idx ->
-            nocmd <| insertPoint grabbed_moved edge_idx
+            let
+                insert_done = insertPoint grabbed_moved edge_idx
+            in
+                nocmd <| { insert_done | grabbed = Just (edge_idx+1) }
         GrabPoint point_idx ->
             nocmd <| { grabbed_moved | grabbed = Just point_idx }
-        ReleasePoint point_idx ->
+        ReleasePoint ->
             nocmd <| { grabbed_moved | grabbed = Nothing }
-        UpdateSvgRect rect ->
-            nocmd <| { grabbed_moved | svg_rect = Debug.log "rect" rect }
 
 
 interactiveUpdate : Model -> Interactive.Msg -> InteractiveModel
@@ -132,7 +126,6 @@ type alias Model =
     , next_point : Int
     , grabbed : Maybe Int
     , progress_log : List (Html Msg)
-    , svg_rect : Rectangle
     , interactive : Interactive.Model
     }
 
@@ -147,7 +140,7 @@ windowToSvgSpace model (x,y) =
     -- I think I need to get the live size of the SVG object and it's position,
     -- then calculate
     ( x / 10 - 40
-    , y 
+    , y / -10 + 30
     )
 
 
@@ -286,7 +279,6 @@ before_start_state =
       , next_point = -1
       , grabbed = Nothing
       , progress_log = [intro]
-      , svg_rect = {top=-1, left=-1, height=-1, width=-1}
       , interactive = subModel
       }
     , Cmd.map InteractiveMsg subCmd
@@ -329,7 +321,6 @@ drawConvexHullAlgorithmsState model =
                 [ svg [ width "800"
                       , height "600"
                       , viewBox "-40 -30 80 60"
-                      , onSvgResize UpdateSvgRect
                       ]
                       (
                       [ drawPolygon model
@@ -387,7 +378,9 @@ drawPolygon model =
         edge_click_handler i =
             case model.progress_state of
                 NotStartedYet ->
-                     [onClick (LeftClickEdge i)]
+                     [ onMouseDown (LeftClickEdge i)
+                     , onMouseUp   (ReleasePoint)
+                     ]
                 _ -> []
         pt_dblclick_handler i =
             case model.progress_state of
@@ -398,7 +391,7 @@ drawPolygon model =
             case model.progress_state of
                 NotStartedYet ->
                      [ onMouseDown (GrabPoint i)
-                     , onMouseUp (ReleasePoint i)
+                     , onMouseUp (ReleasePoint)
                      ]
                 _ -> []
     in

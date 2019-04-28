@@ -5192,8 +5192,7 @@ var author$project$Main$before_start_state = function () {
 			progress_log: _List_fromArray(
 				[author$project$Main$intro]),
 			progress_state: author$project$Main$NotStartedYet,
-			stack: _List_Nil,
-			svg_rect: {height: -1, left: -1, top: -1, width: -1}
+			stack: _List_Nil
 		},
 		A2(elm$core$Platform$Cmd$map, author$project$Main$InteractiveMsg, subCmd));
 }();
@@ -5729,8 +5728,8 @@ var author$project$Main$trust = function (x) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 320, column: 20},
-				end: {line: 320, column: 30}
+				start: {line: 312, column: 20},
+				end: {line: 312, column: 30}
 			})('trust got Nothing');
 	}
 };
@@ -6000,8 +5999,8 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 271, column: 22},
-							end: {line: 271, column: 32}
+							start: {line: 264, column: 22},
+							end: {line: 264, column: 32}
 						})('bad polygon');
 				}
 			}
@@ -6820,7 +6819,7 @@ var author$project$Main$windowToSvgSpace = F2(
 					author$project$Main$nth,
 					author$project$Main$trust(model.grabbed),
 					model.polygon)));
-		return _Utils_Tuple2((x / 10) - 40, y);
+		return _Utils_Tuple2((x / 10) - 40, (y / (-10)) + 30);
 	});
 var author$project$Main$update = F2(
 	function (msg, model) {
@@ -6859,8 +6858,13 @@ var author$project$Main$update = F2(
 					A2(author$project$Main$deletePoint, model, point_idx));
 			case 'LeftClickEdge':
 				var edge_idx = msg.a;
+				var insert_done = A2(author$project$Main$insertPoint, grabbed_moved, edge_idx);
 				return nocmd(
-					A2(author$project$Main$insertPoint, grabbed_moved, edge_idx));
+					_Utils_update(
+						insert_done,
+						{
+							grabbed: elm$core$Maybe$Just(edge_idx + 1)
+						}));
 			case 'GrabPoint':
 				var point_idx = msg.a;
 				return nocmd(
@@ -6869,27 +6873,15 @@ var author$project$Main$update = F2(
 						{
 							grabbed: elm$core$Maybe$Just(point_idx)
 						}));
-			case 'ReleasePoint':
-				var point_idx = msg.a;
+			default:
 				return nocmd(
 					_Utils_update(
 						grabbed_moved,
 						{grabbed: elm$core$Maybe$Nothing}));
-			default:
-				var rect = msg.a;
-				return nocmd(
-					_Utils_update(
-						grabbed_moved,
-						{
-							svg_rect: A2(elm$core$Debug$log, 'rect', rect)
-						}));
 		}
 	});
 var author$project$Main$StepAlgorithm = {$: 'StepAlgorithm'};
 var author$project$Main$app_title = 'Polygon Convex Hull';
-var author$project$Main$UpdateSvgRect = function (a) {
-	return {$: 'UpdateSvgRect', a: a};
-};
 var author$project$Main$ccw_triangle_fill = 'none';
 var author$project$Main$ccw_triangle_stroke = 'yellow';
 var author$project$Main$ccw_triangle_stroke_dash = '3,2';
@@ -7014,9 +7006,7 @@ var author$project$Main$GrabPoint = function (a) {
 var author$project$Main$LeftClickEdge = function (a) {
 	return {$: 'LeftClickEdge', a: a};
 };
-var author$project$Main$ReleasePoint = function (a) {
-	return {$: 'ReleasePoint', a: a};
-};
+var author$project$Main$ReleasePoint = {$: 'ReleasePoint'};
 var elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
 };
@@ -7076,12 +7066,6 @@ var author$project$Main$polygonToEdges = function (polygon) {
 var author$project$Main$polygon_fill = 'none';
 var author$project$Main$polygon_stroke = 'blue';
 var author$project$Main$polygon_stroke_width = elm$core$String$fromFloat(1.5);
-var elm$html$Html$Events$onClick = function (msg) {
-	return A2(
-		elm$html$Html$Events$on,
-		'click',
-		elm$json$Json$Decode$succeed(msg));
-};
 var elm$html$Html$Events$onDoubleClick = function (msg) {
 	return A2(
 		elm$html$Html$Events$on,
@@ -7113,8 +7097,7 @@ var author$project$Main$drawPolygon = function (model) {
 				[
 					author$project$Main$onMouseDown(
 					author$project$Main$GrabPoint(i)),
-					author$project$Main$onMouseUp(
-					author$project$Main$ReleasePoint(i))
+					author$project$Main$onMouseUp(author$project$Main$ReleasePoint)
 				]);
 		} else {
 			return _List_Nil;
@@ -7125,8 +7108,9 @@ var author$project$Main$drawPolygon = function (model) {
 		if (_n4.$ === 'NotStartedYet') {
 			return _List_fromArray(
 				[
-					elm$html$Html$Events$onClick(
-					author$project$Main$LeftClickEdge(i))
+					author$project$Main$onMouseDown(
+					author$project$Main$LeftClickEdge(i)),
+					author$project$Main$onMouseUp(author$project$Main$ReleasePoint)
 				]);
 		} else {
 			return _List_Nil;
@@ -7259,74 +7243,6 @@ var author$project$Main$drawStack = function (model) {
 					}),
 				model.stack)));
 };
-var debois$elm_dom$DOM$offsetHeight = A2(elm$json$Json$Decode$field, 'offsetHeight', elm$json$Json$Decode$float);
-var debois$elm_dom$DOM$offsetWidth = A2(elm$json$Json$Decode$field, 'offsetWidth', elm$json$Json$Decode$float);
-var debois$elm_dom$DOM$offsetLeft = A2(elm$json$Json$Decode$field, 'offsetLeft', elm$json$Json$Decode$float);
-var elm$json$Json$Decode$null = _Json_decodeNull;
-var elm$json$Json$Decode$oneOf = _Json_oneOf;
-var debois$elm_dom$DOM$offsetParent = F2(
-	function (x, decoder) {
-		return elm$json$Json$Decode$oneOf(
-			_List_fromArray(
-				[
-					A2(
-					elm$json$Json$Decode$field,
-					'offsetParent',
-					elm$json$Json$Decode$null(x)),
-					A2(elm$json$Json$Decode$field, 'offsetParent', decoder)
-				]));
-	});
-var debois$elm_dom$DOM$offsetTop = A2(elm$json$Json$Decode$field, 'offsetTop', elm$json$Json$Decode$float);
-var debois$elm_dom$DOM$scrollLeft = A2(elm$json$Json$Decode$field, 'scrollLeft', elm$json$Json$Decode$float);
-var debois$elm_dom$DOM$scrollTop = A2(elm$json$Json$Decode$field, 'scrollTop', elm$json$Json$Decode$float);
-var elm$json$Json$Decode$andThen = _Json_andThen;
-var elm$json$Json$Decode$map4 = _Json_map4;
-var debois$elm_dom$DOM$position = F2(
-	function (x, y) {
-		return A2(
-			elm$json$Json$Decode$andThen,
-			function (_n0) {
-				var x_ = _n0.a;
-				var y_ = _n0.b;
-				return A2(
-					debois$elm_dom$DOM$offsetParent,
-					_Utils_Tuple2(x_, y_),
-					A2(debois$elm_dom$DOM$position, x_, y_));
-			},
-			A5(
-				elm$json$Json$Decode$map4,
-				F4(
-					function (scrollLeftP, scrollTopP, offsetLeftP, offsetTopP) {
-						return _Utils_Tuple2((x + offsetLeftP) - scrollLeftP, (y + offsetTopP) - scrollTopP);
-					}),
-				debois$elm_dom$DOM$scrollLeft,
-				debois$elm_dom$DOM$scrollTop,
-				debois$elm_dom$DOM$offsetLeft,
-				debois$elm_dom$DOM$offsetTop));
-	});
-var debois$elm_dom$DOM$boundingClientRect = A4(
-	elm$json$Json$Decode$map3,
-	F3(
-		function (_n0, width, height) {
-			var x = _n0.a;
-			var y = _n0.b;
-			return {height: height, left: x, top: y, width: width};
-		}),
-	A2(debois$elm_dom$DOM$position, 0, 0),
-	debois$elm_dom$DOM$offsetWidth,
-	debois$elm_dom$DOM$offsetHeight);
-var debois$elm_dom$DOM$target = function (decoder) {
-	return A2(elm$json$Json$Decode$field, 'target', decoder);
-};
-var author$project$Main$onSvgResize = function (msg) {
-	return A2(
-		elm$html$Html$Events$on,
-		'mousemove',
-		A2(
-			elm$json$Json$Decode$map,
-			msg,
-			debois$elm_dom$DOM$target(debois$elm_dom$DOM$boundingClientRect)));
-};
 var elm$json$Json$Encode$string = _Json_wrap;
 var elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
@@ -7354,8 +7270,7 @@ var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
 						[
 							elm$svg$Svg$Attributes$width('800'),
 							elm$svg$Svg$Attributes$height('600'),
-							elm$svg$Svg$Attributes$viewBox('-40 -30 80 60'),
-							author$project$Main$onSvgResize(author$project$Main$UpdateSvgRect)
+							elm$svg$Svg$Attributes$viewBox('-40 -30 80 60')
 						]),
 					_Utils_ap(
 						_List_fromArray(
@@ -7419,6 +7334,12 @@ var elm$html$Html$Attributes$href = function (url) {
 };
 var elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var elm$html$Html$Attributes$style = elm$virtual_dom$VirtualDom$style;
+var elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		elm$html$Html$Events$on,
+		'click',
+		elm$json$Json$Decode$succeed(msg));
+};
 var author$project$Main$view = function (model) {
 	return {
 		body: _List_fromArray(
