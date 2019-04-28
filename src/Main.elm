@@ -108,15 +108,15 @@ view model =
                          , style "table-layout" "fixed"
                          ]
                          [ tr [] 
-                              [ td [ style "width" "50%" ]
+                              [ td [ class "visualization" ]
                                    [ div [] [ drawConvexHullAlgorithmsState <| flipCartesian model ]
-                                   ]
-                              , td [ style "width" "50%" ]
-                                   [ div [ class "progress-log" ] model.progress_log
                                    , div [ class "next-btn-container" ]
                                          [ button [ onClick btn_action ] 
                                                   [ text btn_label ]
                                          ]
+                                   ]
+                              , td [ class "description" ]
+                                   [ div [ class "progress-log" ] model.progress_log
                                    ]
                               ]
                          ]
@@ -514,9 +514,9 @@ svgPointsFromList listPoint =
 -- Mapping point tuple into string
 pointToString : Point -> String
 pointToString (x, y) =
-    fromFloat x
+    fromFloat (Basics.toFloat(round(x * 100)) / 100.0)
     ++ ", "
-    ++ fromFloat y
+    ++ fromFloat (Basics.toFloat(round(y * 100)) / 100.0)
 
 writePointAction : String -> Point -> String
 writePointAction action (x,y) =
