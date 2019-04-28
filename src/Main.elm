@@ -7,6 +7,7 @@ import Html exposing (Html, div, button, text, a,
                       table, tr, td, p, i, b, ul, ol, li)
 import Html.Events exposing (onClick, onDoubleClick)
 import Html.Attributes exposing (..)
+import Interactive
 import List
 import List.Extra exposing (getAt, last, splitAt)
 import Tuple
@@ -26,25 +27,60 @@ type Msg
     | LeftClickEdge Int
     | GrabPoint Int
     | ReleasePoint Int
+    | InteractiveMsg Interactive.Msg
 
+type alias InteractiveModel = (Model, Cmd Msg)
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> InteractiveModel
 update msg model =
+    let
+        nocmd model_ = (model_, Cmd.none)
+    in
     case msg of
+        InteractiveMsg subMsg ->
+            interactiveUpdate model subMsg
         StepAlgorithm ->
-            progressConvexHull model
+            nocmd <| progressConvexHull model
         DoubleClickPoint point_idx ->
-            deletePoint model point_idx
+            nocmd <| deletePoint model point_idx
         LeftClickEdge edge_idx ->
-            insertPoint model edge_idx
+            nocmd <| insertPoint model edge_idx
         GrabPoint point_idx ->
-            grabPoint model point_idx
+            nocmd <| { model | grabbed = Just point_idx }
         ReleasePoint point_idx ->
-            releasePoint model point_idx
+            nocmd <| { model | grabbed = Nothing }
 
 
-view : Model -> Html Msg
+interactiveUpdate : Model -> Interactive.Msg -> InteractiveModel
+interactiveUpdate model subMsg =
+    let
+        nocmd model_ = (model_, Cmd.none)
+    in
+    case subMsg of
+        {-
+        Interactive.OutMouse (x,y) ->
+            case model.grabbed of
+                Just grabbed ->
+                    nocmd <| { model | polygon =
+                                        List.indexedMap
+                                            (\i p -> if i == grabbed
+                                                     then (x,y)
+                                                     else p)
+                                            model.polygon }
+                Nothing ->
+                    nocmd <| model
+        -}
+        _ ->
+            nocmd <| model
+
+subscriptions : Model -> Sub Msg
+subscriptions _ = 
+    Sub.map InteractiveMsg Interactive.subMouse
+
+view : Model -> Browser.Document Msg
 view model =
+    { title = app_title
+    , body = [
     div []
         [ div [] [ table [ style  "width" "100%"
                          , style "table-layout" "fixed"
@@ -67,6 +103,7 @@ view model =
         , div [ class "footer" ] 
               [ a [ href "about.html" ] [ text "about" ] ]
         ]
+    ]}
 
 type ModelState
     = NotStartedYet
@@ -78,7 +115,9 @@ type alias Model =
     , stack : Stack Int
     , progress_state : ModelState
     , next_point : Int
+    , grabbed : Maybe Int
     , progress_log : List (Html Msg)
+    , interactive : Interactive.Model
     }
 
 
@@ -91,6 +130,9 @@ type alias Polyline = List Point
 type alias Stack z = List z
 
 -- Constants
+    
+    -- App Constants
+app_title = "Polygon Convex Hull"
 
     -- States
 init_polygon = makeCube 20
@@ -201,25 +243,24 @@ insertPoint model edge_idx =
     in
     { model | polygon = front ++ [mdpt] ++ back }
 
-grabPoint : Model -> Int -> Model
-grabPoint model point_idx =
-    model
-
-releasePoint : Model -> Int -> Model
-releasePoint model point_idx =
-    model
-
 -- initial page state
 
     -- state when the app starts
-before_start_state : Model
+before_start_state : InteractiveModel
 before_start_state =
-    { polygon = init_polygon
-    , stack = []
-    , progress_state = NotStartedYet
-    , next_point = -1
-    , progress_log = [intro]
-    }
+    let
+        (subModel, subCmd) = Interactive.init
+    in
+    ( { polygon = init_polygon
+      , stack = []
+      , progress_state = NotStartedYet
+      , next_point = -1
+      , grabbed = Nothing
+      , progress_log = [intro]
+      , interactive = subModel
+      }
+    , Cmd.map InteractiveMsg subCmd
+    )
 
 -- Returns the nth element or Nothing (if not exists)
 nth : Int -> List a -> Maybe a
@@ -512,8 +553,9 @@ progressConvexHull model =
 
 main : Program () Model Msg
 main =
-    Browser.sandbox
-        { init = before_start_state
+    Browser.document
+        { init = (\f -> before_start_state)
         , view = view
         , update = update
+        , subscriptions = subscriptions
         }
