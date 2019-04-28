@@ -92,6 +92,15 @@ subscriptions _ =
 
 view : Model -> Browser.Document Msg
 view model =
+    let 
+        (btn_action, btn_label) = case model.progress_state of
+            NotStartedYet ->
+                (StepAlgorithm, "start!")
+            InProgress ->
+                (StepAlgorithm, "next step")
+            Done -> 
+                (Restart, "restart")
+    in
     { title = app_title
     , body = [
     div []
@@ -105,8 +114,8 @@ view model =
                               , td [ style "width" "50%" ]
                                    [ div [ class "progress-log" ] model.progress_log
                                    , div [ class "next-btn-container" ]
-                                         [ button [ onClick StepAlgorithm ] 
-                                                  [ text "next step" ]
+                                         [ button [ onClick btn_action ] 
+                                                  [ text btn_label ]
                                          ]
                                    ]
                               ]

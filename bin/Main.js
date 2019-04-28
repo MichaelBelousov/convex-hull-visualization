@@ -5728,8 +5728,8 @@ var author$project$Main$trust = function (x) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 315, column: 20},
-				end: {line: 315, column: 30}
+				start: {line: 324, column: 20},
+				end: {line: 324, column: 30}
 			})('trust got Nothing');
 	}
 };
@@ -5999,8 +5999,8 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 267, column: 22},
-							end: {line: 267, column: 32}
+							start: {line: 276, column: 22},
+							end: {line: 276, column: 32}
 						})('bad polygon');
 				}
 			}
@@ -6863,6 +6863,7 @@ var author$project$Main$update = F2(
 				return author$project$Main$before_start_state;
 		}
 	});
+var author$project$Main$Restart = {$: 'Restart'};
 var author$project$Main$StepAlgorithm = {$: 'StepAlgorithm'};
 var author$project$Main$app_title = 'Polygon Convex Hull';
 var author$project$Main$ccw_triangle_fill = 'none';
@@ -7316,6 +7317,19 @@ var elm$html$Html$Events$onClick = function (msg) {
 		elm$json$Json$Decode$succeed(msg));
 };
 var author$project$Main$view = function (model) {
+	var _n0 = function () {
+		var _n1 = model.progress_state;
+		switch (_n1.$) {
+			case 'NotStartedYet':
+				return _Utils_Tuple2(author$project$Main$StepAlgorithm, 'start!');
+			case 'InProgress':
+				return _Utils_Tuple2(author$project$Main$StepAlgorithm, 'next step');
+			default:
+				return _Utils_Tuple2(author$project$Main$Restart, 'restart');
+		}
+	}();
+	var btn_action = _n0.a;
+	var btn_label = _n0.b;
 	return {
 		body: _List_fromArray(
 			[
@@ -7387,11 +7401,11 @@ var author$project$Main$view = function (model) {
 																elm$html$Html$button,
 																_List_fromArray(
 																	[
-																		elm$html$Html$Events$onClick(author$project$Main$StepAlgorithm)
+																		elm$html$Html$Events$onClick(btn_action)
 																	]),
 																_List_fromArray(
 																	[
-																		elm$html$Html$text('next step')
+																		elm$html$Html$text(btn_label)
 																	]))
 															]))
 													]))
