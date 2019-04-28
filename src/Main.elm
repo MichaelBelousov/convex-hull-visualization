@@ -514,9 +514,9 @@ svgPointsFromList listPoint =
 -- Mapping point tuple into string
 pointToString : Point -> String
 pointToString (x, y) =
-    fromFloat x
+    fromFloat (Basics.toFloat(round(x * 100)) / 100.0)
     ++ ", "
-    ++ fromFloat y
+    ++ fromFloat (Basics.toFloat(round(y * 100)) / 100.0)
 
 writePointAction : String -> Point -> String
 writePointAction action (x,y) =

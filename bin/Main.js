@@ -6692,11 +6692,14 @@ var author$project$Main$startAlgorithmState = function (model) {
 				[0, 1])
 		});
 };
+var elm$core$Basics$round = _Basics_round;
 var elm$core$String$fromFloat = _String_fromNumber;
 var author$project$Main$pointToString = function (_n0) {
 	var x = _n0.a;
 	var y = _n0.b;
-	return elm$core$String$fromFloat(x) + (', ' + elm$core$String$fromFloat(y));
+	return elm$core$String$fromFloat(
+		elm$core$Basics$round(x * 100) / 100.0) + (', ' + elm$core$String$fromFloat(
+		elm$core$Basics$round(y * 100) / 100.0));
 };
 var author$project$Main$writePointAction = F2(
 	function (action, _n0) {
