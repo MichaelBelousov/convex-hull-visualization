@@ -51,3 +51,8 @@ button {
     animation: spin 60s linear infinite;
     transform-origin:
 }
+
+.stack-entry {
+    font-size: 3pt;
+    font-weight: bold;
+}

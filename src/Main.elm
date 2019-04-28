@@ -14,7 +14,8 @@ import Tuple
 import Debug
 import Json.Decode as Decode
 import String exposing (..)
-import Svg exposing (Svg, svg, circle, polyline, polygon, line, g, path, image)
+import Svg exposing (Svg, svg, circle, polyline, polygon,
+                     line, g, path, image, text_)
 import Svg.Attributes exposing (height, width, viewBox, xlinkHref, id,
                                 fill, stroke, strokeWidth, strokeLinecap,
                                 strokeDasharray, cx, cy, r, points, d, x, y,
@@ -99,8 +100,7 @@ view model =
                          ]
                          [ tr [] 
                               [ td [ style "width" "50%" ]
-                                   [ div [ class "resizable-svg-container" ]
-                                         [ drawConvexHullAlgorithmsState <| flipCartesian model ]
+                                   [ div [] [ drawConvexHullAlgorithmsState <| flipCartesian model ]
                                    ]
                               , td [ style "width" "50%" ]
                                    [ div [ class "progress-log" ] model.progress_log
@@ -160,7 +160,7 @@ type alias Stack z = List z
 app_title = "Polygon Convex Hull"
 
     -- States
-init_polygon = makeCube 20
+init_polygon = makeCube 15
 
     -- Style
 point_color = "blue"
@@ -320,10 +320,13 @@ drawConvexHullAlgorithmsState model =
     let 
         _ = Debug.log "state" model
         svgBase extra =
-            div [ class "resizable-svg" ]
+            div [ -- class "resizable-svg-container" ]
+                ]
                 [ svg [ width "800"
                       , height "600"
                       , viewBox "-40 -30 80 60"
+                      -- , Svg.Attributes.class "resizable-svg"
+                      -- TODO: use when we don't hardcode svg
                       ]
                       (
                       [ drawPolygon model
@@ -346,12 +349,17 @@ drawStack : Model -> Svg Msg
 drawStack model =
     g []
       (
-      [ path [ d "M 50 50 v -30 h 20 v 30" ] []
+          -- TODO: move to constants
+      [ path [ d "M -36 0 v 20 h 5 v -20" 
+             , fill "none"
+             , stroke "grey" ]
+             []
       ] ++ List.indexedMap
-             (\i n -> g [ x "90"
-                        , y <| fromInt (80 + 10*i)
-                        ]
-                        [ text <| fromInt n ])
+             (\i n -> text_ [ x "-34.5"
+                            , y <| fromInt (18 - 4*i)
+                            , Svg.Attributes.class "stack-entry"
+                            ]
+                            [ text <| fromInt n ])
              model.stack
       )
 

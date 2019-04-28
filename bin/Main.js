@@ -4406,7 +4406,7 @@ var author$project$Main$makeCube = function (half_sz) {
 			_Utils_Tuple2(-half_sz, half_sz)
 		]);
 };
-var author$project$Main$init_polygon = author$project$Main$makeCube(20);
+var author$project$Main$init_polygon = author$project$Main$makeCube(15);
 var elm$core$Basics$append = _Utils_append;
 var elm$core$Basics$identity = function (x) {
 	return x;
@@ -7190,6 +7190,8 @@ var author$project$Main$drawPolyline = function (model) {
 		_List_Nil);
 };
 var elm$svg$Svg$path = elm$svg$Svg$trustedNode('path');
+var elm$svg$Svg$text_ = elm$svg$Svg$trustedNode('text');
+var elm$svg$Svg$Attributes$class = _VirtualDom_attribute('class');
 var elm$svg$Svg$Attributes$d = _VirtualDom_attribute('d');
 var author$project$Main$drawStack = function (model) {
 	return A2(
@@ -7202,7 +7204,9 @@ var author$project$Main$drawStack = function (model) {
 					elm$svg$Svg$path,
 					_List_fromArray(
 						[
-							elm$svg$Svg$Attributes$d('M 50 50 v -30 h 20 v 30')
+							elm$svg$Svg$Attributes$d('M -36 0 v 20 h 5 v -20'),
+							elm$svg$Svg$Attributes$fill('none'),
+							elm$svg$Svg$Attributes$stroke('grey')
 						]),
 					_List_Nil)
 				]),
@@ -7211,12 +7215,13 @@ var author$project$Main$drawStack = function (model) {
 				F2(
 					function (i, n) {
 						return A2(
-							elm$svg$Svg$g,
+							elm$svg$Svg$text_,
 							_List_fromArray(
 								[
-									elm$svg$Svg$Attributes$x('90'),
+									elm$svg$Svg$Attributes$x('-34.5'),
 									elm$svg$Svg$Attributes$y(
-									elm$core$String$fromInt(80 + (10 * i)))
+									elm$core$String$fromInt(18 - (4 * i))),
+									elm$svg$Svg$Attributes$class('stack-entry')
 								]),
 							_List_fromArray(
 								[
@@ -7226,25 +7231,13 @@ var author$project$Main$drawStack = function (model) {
 					}),
 				model.stack)));
 };
-var elm$json$Json$Encode$string = _Json_wrap;
-var elm$html$Html$Attributes$stringProperty = F2(
-	function (key, string) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			elm$json$Json$Encode$string(string));
-	});
-var elm$html$Html$Attributes$class = elm$html$Html$Attributes$stringProperty('className');
 var elm$svg$Svg$svg = elm$svg$Svg$trustedNode('svg');
 var elm$svg$Svg$Attributes$viewBox = _VirtualDom_attribute('viewBox');
 var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
 	var svgBase = function (extra) {
 		return A2(
 			elm$html$Html$div,
-			_List_fromArray(
-				[
-					elm$html$Html$Attributes$class('resizable-svg')
-				]),
+			_List_Nil,
 			_List_fromArray(
 				[
 					A2(
@@ -7299,6 +7292,15 @@ var elm$html$Html$button = _VirtualDom_node('button');
 var elm$html$Html$table = _VirtualDom_node('table');
 var elm$html$Html$td = _VirtualDom_node('td');
 var elm$html$Html$tr = _VirtualDom_node('tr');
+var elm$json$Json$Encode$string = _Json_wrap;
+var elm$html$Html$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			elm$json$Json$Encode$string(string));
+	});
+var elm$html$Html$Attributes$class = elm$html$Html$Attributes$stringProperty('className');
 var elm$html$Html$Attributes$href = function (url) {
 	return A2(
 		elm$html$Html$Attributes$stringProperty,
@@ -7351,10 +7353,7 @@ var author$project$Main$view = function (model) {
 													[
 														A2(
 														elm$html$Html$div,
-														_List_fromArray(
-															[
-																elm$html$Html$Attributes$class('resizable-svg-container')
-															]),
+														_List_Nil,
 														_List_fromArray(
 															[
 																author$project$Main$drawConvexHullAlgorithmsState(
