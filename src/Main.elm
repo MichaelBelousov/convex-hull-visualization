@@ -108,15 +108,15 @@ view model =
                          , style "table-layout" "fixed"
                          ]
                          [ tr [] 
-                              [ td [ style "width" "50%" ]
+                              [ td [ class "visualization" ]
                                    [ div [] [ drawConvexHullAlgorithmsState <| flipCartesian model ]
-                                   ]
-                              , td [ style "width" "50%" ]
-                                   [ div [ class "progress-log" ] model.progress_log
                                    , div [ class "next-btn-container" ]
                                          [ button [ onClick btn_action ] 
                                                   [ text btn_label ]
                                          ]
+                                   ]
+                              , td [ class "description" ]
+                                   [ div [ class "progress-log" ] model.progress_log
                                    ]
                               ]
                          ]

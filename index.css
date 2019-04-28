@@ -56,3 +56,13 @@ button {
     font-size: 3pt;
     font-weight: bold;
 }
+
+.visualization {
+    vertical-align: top;
+    width: 50%;
+}
+
+.description {
+    vertical-align: top;
+    width: 50%;
+}

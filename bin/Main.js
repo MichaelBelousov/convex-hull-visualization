@@ -7361,7 +7361,7 @@ var author$project$Main$view = function (model) {
 												elm$html$Html$td,
 												_List_fromArray(
 													[
-														A2(elm$html$Html$Attributes$style, 'width', '50%')
+														elm$html$Html$Attributes$class('visualization')
 													]),
 												_List_fromArray(
 													[
@@ -7372,23 +7372,7 @@ var author$project$Main$view = function (model) {
 															[
 																author$project$Main$drawConvexHullAlgorithmsState(
 																author$project$Main$flipCartesian(model))
-															]))
-													])),
-												A2(
-												elm$html$Html$td,
-												_List_fromArray(
-													[
-														A2(elm$html$Html$Attributes$style, 'width', '50%')
-													]),
-												_List_fromArray(
-													[
-														A2(
-														elm$html$Html$div,
-														_List_fromArray(
-															[
-																elm$html$Html$Attributes$class('progress-log')
-															]),
-														model.progress_log),
+															])),
 														A2(
 														elm$html$Html$div,
 														_List_fromArray(
@@ -7408,6 +7392,22 @@ var author$project$Main$view = function (model) {
 																		elm$html$Html$text(btn_label)
 																	]))
 															]))
+													])),
+												A2(
+												elm$html$Html$td,
+												_List_fromArray(
+													[
+														elm$html$Html$Attributes$class('description')
+													]),
+												_List_fromArray(
+													[
+														A2(
+														elm$html$Html$div,
+														_List_fromArray(
+															[
+																elm$html$Html$Attributes$class('progress-log')
+															]),
+														model.progress_log)
 													]))
 											]))
 									]))
