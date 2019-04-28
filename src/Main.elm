@@ -3,21 +3,32 @@ module Main exposing (main)
 -- Imports
 
 import Browser
-import Html exposing (Html, div, button, text, a,
+import Html exposing (Html, Attribute, div, button, text, a,
                       table, tr, td, p, i, b, ul, ol, li)
-import Html.Events exposing (onClick, onDoubleClick)
+import Html.Events exposing (onClick, onDoubleClick, on)
 import Html.Attributes exposing (..)
+import DOM exposing (target, boundingClientRect, Rectangle)
 import Interactive
 import List
 import List.Extra exposing (getAt, last, splitAt)
 import Tuple
 import Debug
+import Json.Decode as Decode exposing (Decoder)
 import String exposing (..)
 import Svg exposing (Svg, svg, circle, polyline, polygon, line, g, path, image)
+import Svg.Events
 import Svg.Attributes exposing (height, width, viewBox, xlinkHref, id,
                                 fill, stroke, strokeWidth, strokeLinecap,
                                 strokeDasharray, cx, cy, r, points, d, x, y,
                                 x1, y1, x2, y2)
+
+onMouseDown message =
+    on "mousedown" (Decode.succeed message)
+onMouseUp message =
+    on "mouseup" (Decode.succeed message)
+
+onSvgResize msg =
+    on "mousemove" (Decode.map msg (target boundingClientRect))
 
 -- Browser Model
 
@@ -28,27 +39,42 @@ type Msg
     | GrabPoint Int
     | ReleasePoint Int
     | InteractiveMsg Interactive.Msg
+    | UpdateSvgRect Rectangle
 
 type alias InteractiveModel = (Model, Cmd Msg)
 
 update : Msg -> Model -> InteractiveModel
 update msg model =
     let
+        grabbed_moved =
+            case model.grabbed of
+                Just grabbed ->
+                     { model
+                       | polygon = List.indexedMap
+                                       (\i p -> if i == grabbed
+                                                then windowToSvgSpace model model.interactive.mouse
+                                                else p)
+                                       model.polygon
+                     }
+                Nothing ->
+                    model
         nocmd model_ = (model_, Cmd.none)
     in
     case msg of
         InteractiveMsg subMsg ->
-            interactiveUpdate model subMsg
+            interactiveUpdate grabbed_moved subMsg
         StepAlgorithm ->
-            nocmd <| progressConvexHull model
+            nocmd <| progressConvexHull grabbed_moved
         DoubleClickPoint point_idx ->
             nocmd <| deletePoint model point_idx
         LeftClickEdge edge_idx ->
-            nocmd <| insertPoint model edge_idx
+            nocmd <| insertPoint grabbed_moved edge_idx
         GrabPoint point_idx ->
-            nocmd <| { model | grabbed = Just point_idx }
+            nocmd <| { grabbed_moved | grabbed = Just point_idx }
         ReleasePoint point_idx ->
-            nocmd <| { model | grabbed = Nothing }
+            nocmd <| { grabbed_moved | grabbed = Nothing }
+        UpdateSvgRect rect ->
+            nocmd <| { grabbed_moved | svg_rect = Debug.log "rect" rect }
 
 
 interactiveUpdate : Model -> Interactive.Msg -> InteractiveModel
@@ -56,22 +82,11 @@ interactiveUpdate model subMsg =
     let
         nocmd model_ = (model_, Cmd.none)
     in
-    case subMsg of
-        {-
-        Interactive.OutMouse (x,y) ->
-            case model.grabbed of
-                Just grabbed ->
-                    nocmd <| { model | polygon =
-                                        List.indexedMap
-                                            (\i p -> if i == grabbed
-                                                     then (x,y)
-                                                     else p)
-                                            model.polygon }
-                Nothing ->
-                    nocmd <| model
-        -}
-        _ ->
-            nocmd <| model
+    ( { model
+        | interactive = Tuple.first (Interactive.update subMsg model.interactive)
+      }
+    , Cmd.none
+    )
 
 subscriptions : Model -> Sub Msg
 subscriptions _ = 
@@ -117,9 +132,23 @@ type alias Model =
     , next_point : Int
     , grabbed : Maybe Int
     , progress_log : List (Html Msg)
+    , svg_rect : Rectangle
     , interactive : Interactive.Model
     }
 
+
+windowToSvgSpace : Model -> Point -> Point
+windowToSvgSpace model (x,y) =
+    let
+        _ = Debug.log "window" (x,y)
+        _ = Debug.log "polygon" <| trust <| nth (trust model.grabbed) model.polygon
+    in
+    -- FIXME: this is hackery, but I consider it elm's fault
+    -- I think I need to get the live size of the SVG object and it's position,
+    -- then calculate
+    ( x / 10 - 40
+    , y 
+    )
 
 
 -- Domain Types
@@ -207,9 +236,9 @@ makeCube half_sz =
     -- flip the cartesian points in the model to SVG
 flipCartesian : Model -> Model
 flipCartesian model =
-    { model | polygon = 
-                List.map (\(x,y) -> (x,-y))
-                model.polygon
+    { model
+      | polygon = List.map (\(x,y) -> (x,-y))
+                           model.polygon
     }
 
 -- Interactions
@@ -257,6 +286,7 @@ before_start_state =
       , next_point = -1
       , grabbed = Nothing
       , progress_log = [intro]
+      , svg_rect = {top=-1, left=-1, height=-1, width=-1}
       , interactive = subModel
       }
     , Cmd.map InteractiveMsg subCmd
@@ -299,6 +329,7 @@ drawConvexHullAlgorithmsState model =
                 [ svg [ width "800"
                       , height "600"
                       , viewBox "-40 -30 80 60"
+                      , onSvgResize UpdateSvgRect
                       ]
                       (
                       [ drawPolygon model
@@ -334,11 +365,13 @@ drawStack model =
              model.stack
       )
 
+
 polylineToEdges : Polyline -> List (Point, Point)
 polylineToEdges polyline =
     List.map2 (\p q -> (p,q))
               polyline
               (trust <| List.tail polyline)
+
 
 polygonToEdges : Polygon -> List (Point, Point)
 polygonToEdges polygon =
@@ -351,12 +384,23 @@ polygonToEdges polygon =
 drawPolygon : Model -> Svg Msg
 drawPolygon model = 
     let
-        edge_click_handler i = if model.progress_state == NotStartedYet
-                               then [onClick (LeftClickEdge i)]
-                               else []
-        pt_dblclick_handler i = if model.progress_state == NotStartedYet
-                                then [onDoubleClick (DoubleClickPoint i)]
-                                else []
+        edge_click_handler i =
+            case model.progress_state of
+                NotStartedYet ->
+                     [onClick (LeftClickEdge i)]
+                _ -> []
+        pt_dblclick_handler i =
+            case model.progress_state of
+                NotStartedYet ->
+                     [onDoubleClick (DoubleClickPoint i)]
+                _ -> []
+        pt_click_handler i =
+            case model.progress_state of
+                NotStartedYet ->
+                     [ onMouseDown (GrabPoint i)
+                     , onMouseUp (ReleasePoint i)
+                     ]
+                _ -> []
     in
     g []
       (
@@ -377,7 +421,8 @@ drawPolygon model =
                             , cx <| fromFloat x
                             , cy <| fromFloat y
                             , r point_radius
-                            ] ++ pt_dblclick_handler i)
+                            ] ++ pt_dblclick_handler i
+                              ++ pt_click_handler i)
                             [])
             model.polygon
       )
@@ -535,15 +580,17 @@ progressConvexHull model =
             in
             if ccw scd top next < 1
             then
-                { model | stack = Tuple.second <| stackPop model.stack
-                        , progress_log = model.progress_log
-                                         ++ [ol [] [li [] [text <| writePointAction "Popped point" top] ] ]
+                { model
+                  | stack = Tuple.second <| stackPop model.stack
+                  , progress_log = model.progress_log
+                      ++ [ol [] [li [] [text <| writePointAction "Popped point" top] ] ]
                 }
             else
-                { model | stack = stackPush model.stack model.next_point
-                        , next_point = clamp 0 ((List.length model.polygon)-1) (model.next_point+1) -- TODO: make go past model length?
-                        , progress_log = model.progress_log
-                                         ++ [ol [] [li [] [text <| writePointAction "Pushed point" next] ] ]
+                { model
+                  | stack = stackPush model.stack model.next_point
+                  , next_point = clamp 0 ((List.length model.polygon)-1) (model.next_point+1)
+                  , progress_log = model.progress_log
+                      ++ [ol [] [li [] [text <| writePointAction "Pushed point" next] ] ]
                 }
         Done ->
             model
