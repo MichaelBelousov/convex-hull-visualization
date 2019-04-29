@@ -14,9 +14,25 @@
   <body>
     <main></main>
     <script>
+
       var app = Elm.Main.init({
         node: document.querySelector('main')
       });
+
+      var svg = document.querySelector('svg');
+      var mouseInSvgCoords = svg.createSVGPoint();
+
+      function cursorPoint(evt) {
+        mouseInSvgCoords.x = evt.clientX;
+        mouseInSvgCoords.y = evt.clientY;
+        return mouseInSvgCoords.matrixTransform(svg.getScreenCTM().inverse());
+      }
+
+      svg.addEventListener('mousemove', evt => {
+        var newloc = cursorPoint(evt);
+        app.ports.mouseToSvgCoords.send(newloc);
+      }, false);
+
     </script>
   </body>
 </html>
