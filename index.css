@@ -11,6 +11,7 @@ button {
     padding: 5px 15px 5px 15px;
     font-style: bold;
     font-size: 16pt;
+    text-align: center;
 }
 
 button:hover {
@@ -72,6 +73,6 @@ button:hover {
 }
 
 .description {
-    vertical-align: top;
+    vertical-align: middle;
     width: 50%;
 }
