@@ -361,16 +361,6 @@ drawConvexHullAlgorithmsState model =
 
 drawStack : Model -> Svg Msg
 drawStack model =
-    let
-        -- FIXME: currently hiding the duplicate 0 on the stack,
-        -- might be better to remove it from the stack in general
-        -- and finish the polyline as an edge case of the Done state
-        stack = case model.progress_state of
-            Done ->
-                Tuple.second <| stackPop model.stack
-            _ ->
-                model.stack
-    in
     g []
       (
           -- TODO: move to constants
@@ -384,7 +374,7 @@ drawStack model =
                             , Svg.Attributes.class "stack-entry"
                             ]
                             [ text <| fromInt n ])
-             stack
+             model.stack
       )
 
 
@@ -453,7 +443,11 @@ drawPolygon model =
 
 calcHullProgressPolyline : Model -> Polyline
 calcHullProgressPolyline model =
-    model.stack
+    (case model.progress_state of
+        Done ->
+            stackPush model.stack 0
+        _ ->
+            model.stack)
     |> List.map (\n -> trust <| nth n model.polygon)
 
 
@@ -464,7 +458,7 @@ drawPolyline model =
              , stroke polyline_stroke
              , strokeWidth polyline_stroke_width
              , strokeLinecap polyline_stroke_cap
-             , points (svgPointsFromList (calcHullProgressPolyline model))
+             , points <| svgPointsFromList <| calcHullProgressPolyline model
              ]
              []
 
@@ -593,30 +587,36 @@ progressConvexHull model =
         NotStartedYet ->
             startAlgorithmState model
         InProgress ->
+            let
+                top = trust <| nth (trust <| last model.stack) model.polygon
+                scd = trust <| nth (trust <| listPenultimate model.stack) model.polygon
+                next = trust <| nth model.next_point model.polygon
+                is_ccw = ccw scd top next < 1
+                next_stack = if is_ccw then Tuple.second <| stackPop model.stack
+                                       else stackPush model.stack model.next_point
+                next_log = model.progress_log
+                        ++ (if is_ccw
+                            then [ul [] [li [] [text <| writePointAction "Pushed point" next]]]
+                            else [ul [] [li [] [text <| writePointAction "Popped point" top]]])
+            in
             case model.next_point of
                 0 ->
                     { model
                       | progress_state = Done
-                      , stack = stackPush model.stack model.next_point
+                      , stack = next_stack
+                      , progress_log = next_log
                     }
                 _ ->
-                    let
-                        top = trust <| nth (trust <| last model.stack) model.polygon
-                        scd = trust <| nth (trust <| listPenultimate model.stack) model.polygon
-                        next = trust <| nth model.next_point model.polygon
-                    in
                     if ccw scd top next < 1
                     then { model
-                           | stack = Tuple.second <| stackPop model.stack
-                           , progress_log = model.progress_log
-                               ++ [ul [] [li [] [text <| writePointAction "Popped point" top]]]
+                           | stack = next_stack
+                           , progress_log = next_log
                          }
                     else { model
-                           | stack = stackPush model.stack model.next_point
+                           | stack = next_stack
                            , next_point = remainderBy (List.length model.polygon) (model.next_point+1)
-                           , progress_log = model.progress_log
-                              ++ [ul [] [li [] [text <| writePointAction "Pushed point" next]]]
-                        }
+                           , progress_log = next_log
+                         }
         Done ->
             model
 

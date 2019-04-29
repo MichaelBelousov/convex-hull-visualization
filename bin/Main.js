@@ -6714,76 +6714,71 @@ var author$project$Main$progressConvexHull = function (model) {
 		case 'NotStartedYet':
 			return author$project$Main$startAlgorithmState(model);
 		case 'InProgress':
+			var top = author$project$Main$trust(
+				A2(
+					author$project$Main$nth,
+					author$project$Main$trust(
+						elm_community$list_extra$List$Extra$last(model.stack)),
+					model.polygon));
+			var scd = author$project$Main$trust(
+				A2(
+					author$project$Main$nth,
+					author$project$Main$trust(
+						author$project$Main$listPenultimate(model.stack)),
+					model.polygon));
+			var next = author$project$Main$trust(
+				A2(author$project$Main$nth, model.next_point, model.polygon));
+			var is_ccw = A3(author$project$Main$ccw, scd, top, next) < 1;
+			var next_log = _Utils_ap(
+				model.progress_log,
+				is_ccw ? _List_fromArray(
+					[
+						A2(
+						elm$html$Html$ul,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A2(
+								elm$html$Html$li,
+								_List_Nil,
+								_List_fromArray(
+									[
+										elm$html$Html$text(
+										A2(author$project$Main$writePointAction, 'Pushed point', next))
+									]))
+							]))
+					]) : _List_fromArray(
+					[
+						A2(
+						elm$html$Html$ul,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A2(
+								elm$html$Html$li,
+								_List_Nil,
+								_List_fromArray(
+									[
+										elm$html$Html$text(
+										A2(author$project$Main$writePointAction, 'Popped point', top))
+									]))
+							]))
+					]));
+			var next_stack = is_ccw ? author$project$Main$stackPop(model.stack).b : A2(author$project$Main$stackPush, model.stack, model.next_point);
 			var _n1 = model.next_point;
 			if (!_n1) {
 				return _Utils_update(
 					model,
-					{
-						progress_state: author$project$Main$Done,
-						stack: A2(author$project$Main$stackPush, model.stack, model.next_point)
-					});
+					{progress_log: next_log, progress_state: author$project$Main$Done, stack: next_stack});
 			} else {
-				var top = author$project$Main$trust(
-					A2(
-						author$project$Main$nth,
-						author$project$Main$trust(
-							elm_community$list_extra$List$Extra$last(model.stack)),
-						model.polygon));
-				var scd = author$project$Main$trust(
-					A2(
-						author$project$Main$nth,
-						author$project$Main$trust(
-							author$project$Main$listPenultimate(model.stack)),
-						model.polygon));
-				var next = author$project$Main$trust(
-					A2(author$project$Main$nth, model.next_point, model.polygon));
 				return (A3(author$project$Main$ccw, scd, top, next) < 1) ? _Utils_update(
 					model,
-					{
-						progress_log: _Utils_ap(
-							model.progress_log,
-							_List_fromArray(
-								[
-									A2(
-									elm$html$Html$ul,
-									_List_Nil,
-									_List_fromArray(
-										[
-											A2(
-											elm$html$Html$li,
-											_List_Nil,
-											_List_fromArray(
-												[
-													elm$html$Html$text(
-													A2(author$project$Main$writePointAction, 'Popped point', top))
-												]))
-										]))
-								])),
-						stack: author$project$Main$stackPop(model.stack).b
-					}) : _Utils_update(
+					{progress_log: next_log, stack: next_stack}) : _Utils_update(
 					model,
 					{
 						next_point: (model.next_point + 1) % elm$core$List$length(model.polygon),
-						progress_log: _Utils_ap(
-							model.progress_log,
-							_List_fromArray(
-								[
-									A2(
-									elm$html$Html$ul,
-									_List_Nil,
-									_List_fromArray(
-										[
-											A2(
-											elm$html$Html$li,
-											_List_Nil,
-											_List_fromArray(
-												[
-													elm$html$Html$text(
-													A2(author$project$Main$writePointAction, 'Pushed point', next))
-												]))
-										]))
-								])),
-						stack: A2(author$project$Main$stackPush, model.stack, model.next_point)
+						progress_log: next_log,
+						stack: next_stack
 					});
 			}
 		default:
@@ -7182,7 +7177,14 @@ var author$project$Main$calcHullProgressPolyline = function (model) {
 			return author$project$Main$trust(
 				A2(author$project$Main$nth, n, model.polygon));
 		},
-		model.stack);
+		function () {
+			var _n0 = model.progress_state;
+			if (_n0.$ === 'Done') {
+				return A2(author$project$Main$stackPush, model.stack, 0);
+			} else {
+				return model.stack;
+			}
+		}());
 };
 var author$project$Main$polyline_fill = 'none';
 var author$project$Main$polyline_stroke = 'red';
@@ -7209,14 +7211,6 @@ var elm$svg$Svg$text_ = elm$svg$Svg$trustedNode('text');
 var elm$svg$Svg$Attributes$class = _VirtualDom_attribute('class');
 var elm$svg$Svg$Attributes$d = _VirtualDom_attribute('d');
 var author$project$Main$drawStack = function (model) {
-	var stack = function () {
-		var _n0 = model.progress_state;
-		if (_n0.$ === 'Done') {
-			return author$project$Main$stackPop(model.stack).b;
-		} else {
-			return model.stack;
-		}
-	}();
 	return A2(
 		elm$svg$Svg$g,
 		_List_Nil,
@@ -7252,7 +7246,7 @@ var author$project$Main$drawStack = function (model) {
 									elm$core$String$fromInt(n))
 								]));
 					}),
-				stack)));
+				model.stack)));
 };
 var elm$svg$Svg$svg = elm$svg$Svg$trustedNode('svg');
 var elm$svg$Svg$Attributes$viewBox = _VirtualDom_attribute('viewBox');
