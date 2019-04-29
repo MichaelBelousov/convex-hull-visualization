@@ -10,7 +10,7 @@ import List
 import List.Extra exposing (last, splitAt)
 import Tuple
 import Debug
-import Json.Decode as Decode exposing (Decoder)
+import Json.Decode as Decode
 import Json.Encode as Encode
 import String exposing (..)
 import Svg exposing (Svg, svg, circle, polyline, polygon,
@@ -19,7 +19,8 @@ import Svg.Attributes exposing (height, width, viewBox, xlinkHref, id,
                                 fill, stroke, strokeWidth, strokeLinecap,
                                 strokeDasharray, cx, cy, r, points, d, x, y,
                                 x1, y1, x2, y2)
-import SvgPorts exposing (mouseToSvgCoords)
+import SvgPorts exposing (mouseToSvgCoords, SvgPoint,
+                          decodeSvgPoint)
 
 -- Browser Model
 
@@ -44,7 +45,6 @@ update msg model =
                      { model
                        | polygon = List.indexedMap
                                        (\i p -> if i == grabbed
-                                --then windowToSvgSpace model model.interactive.mouse
                                                 then model.mouse_in_svg
                                                 else p)
                                        model.polygon
@@ -74,7 +74,7 @@ update msg model =
                 Ok {x, y} ->
                     nocmd <| { grabbed_moved | mouse_in_svg = (x,y) }
                 Err _ ->
-                    Debug.log "bad value" nocmd <| grabbed_moved
+                    Debug.todo "bad value sent over svgCoords port sub"
         Restart ->
             let
                 (before_start_model , before_start_cmd) = before_start_state
@@ -82,17 +82,6 @@ update msg model =
             ( { before_start_model | polygon = model.polygon }
             , before_start_cmd
             )
-
-type alias SvgPoint =
-    { x : Float
-    , y : Float
-    }
-
-decodeSvgPoint : Decoder SvgPoint
-decodeSvgPoint =
-    Decode.map2 SvgPoint
-        (Decode.field "x" Decode.float)
-        (Decode.field "y" Decode.float)
 
 interactiveUpdate : Model -> Interactive.Msg -> InteractiveModel
 interactiveUpdate model subMsg =
@@ -131,7 +120,7 @@ view model =
                          ]
                          [ tr []
                               [ td [ class "visualization" ]
-                                   [ div [] [ drawConvexHullAlgorithmsState <| flipCartesian model ]
+                                   [ div [] [ drawConvexHullAlgorithmsState model ]
                                    , div [ class "next-btn-container" ]
                                          [ button [ onClick btn_action ]
                                                   [ text btn_label ]

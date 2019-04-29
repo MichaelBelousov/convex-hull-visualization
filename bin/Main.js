@@ -5205,17 +5205,6 @@ var author$project$SvgPorts$mouseToSvgCoords = _Platform_incomingPort('mouseToSv
 var author$project$Main$subscriptions = function (_n0) {
 	return author$project$SvgPorts$mouseToSvgCoords(author$project$Main$MouseMoved);
 };
-var author$project$Main$SvgPoint = F2(
-	function (x, y) {
-		return {x: x, y: y};
-	});
-var elm$json$Json$Decode$field = _Json_decodeField;
-var elm$json$Json$Decode$float = _Json_decodeFloat;
-var author$project$Main$decodeSvgPoint = A3(
-	elm$json$Json$Decode$map2,
-	author$project$Main$SvgPoint,
-	A2(elm$json$Json$Decode$field, 'x', elm$json$Json$Decode$float),
-	A2(elm$json$Json$Decode$field, 'y', elm$json$Json$Decode$float));
 var author$project$Main$nth = F2(
 	function (n, list) {
 		nth:
@@ -5246,8 +5235,8 @@ var author$project$Main$trust = function (x) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 356, column: 20},
-				end: {line: 356, column: 30}
+				start: {line: 334, column: 20},
+				end: {line: 334, column: 30}
 			})('trust got Nothing');
 	}
 };
@@ -5517,8 +5506,8 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 307, column: 22},
-							end: {line: 307, column: 32}
+							start: {line: 285, column: 22},
+							end: {line: 285, column: 32}
 						})('bad polygon');
 				}
 			}
@@ -6314,7 +6303,17 @@ var author$project$Main$progressConvexHull = function (model) {
 			return model;
 	}
 };
-var elm$core$Debug$log = _Debug_log;
+var author$project$SvgPorts$SvgPoint = F2(
+	function (x, y) {
+		return {x: x, y: y};
+	});
+var elm$json$Json$Decode$field = _Json_decodeField;
+var elm$json$Json$Decode$float = _Json_decodeFloat;
+var author$project$SvgPorts$decodeSvgPoint = A3(
+	elm$json$Json$Decode$map2,
+	author$project$SvgPorts$SvgPoint,
+	A2(elm$json$Json$Decode$field, 'x', elm$json$Json$Decode$float),
+	A2(elm$json$Json$Decode$field, 'y', elm$json$Json$Decode$float));
 var elm$json$Json$Decode$decodeValue = _Json_run;
 var author$project$Main$update = F2(
 	function (msg, model) {
@@ -6375,7 +6374,7 @@ var author$project$Main$update = F2(
 						{grabbed: elm$core$Maybe$Nothing}));
 			case 'MouseMoved':
 				var received = msg.a;
-				var _n1 = A2(elm$json$Json$Decode$decodeValue, author$project$Main$decodeSvgPoint, received);
+				var _n1 = A2(elm$json$Json$Decode$decodeValue, author$project$SvgPorts$decodeSvgPoint, received);
 				if (_n1.$ === 'Ok') {
 					var x = _n1.a.x;
 					var y = _n1.a.y;
@@ -6386,7 +6385,12 @@ var author$project$Main$update = F2(
 								mouse_in_svg: _Utils_Tuple2(x, y)
 							}));
 				} else {
-					return A3(elm$core$Debug$log, 'bad value', nocmd, grabbed_moved);
+					return _Debug_todo(
+						'Main',
+						{
+							start: {line: 77, column: 21},
+							end: {line: 77, column: 31}
+						})('bad value sent over svgCoords port sub');
 				}
 			default:
 				var _n2 = author$project$Main$before_start_state;
@@ -6414,6 +6418,7 @@ var author$project$Main$svgPointsFromList = function (listPoint) {
 		' ',
 		A2(elm$core$List$map, author$project$Main$pointToString, listPoint));
 };
+var elm$core$Debug$log = _Debug_log;
 var elm$svg$Svg$trustedNode = _VirtualDom_nodeNS('http://www.w3.org/2000/svg');
 var elm$svg$Svg$g = elm$svg$Svg$trustedNode('g');
 var elm$svg$Svg$image = elm$svg$Svg$trustedNode('image');
@@ -6817,9 +6822,6 @@ var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
 		return svgBase(_List_Nil);
 	}
 };
-var author$project$Main$flipCartesian = function (model) {
-	return model;
-};
 var elm$html$Html$a = _VirtualDom_node('a');
 var elm$html$Html$button = _VirtualDom_node('button');
 var elm$html$Html$table = _VirtualDom_node('table');
@@ -6902,8 +6904,7 @@ var author$project$Main$view = function (model) {
 														_List_Nil,
 														_List_fromArray(
 															[
-																author$project$Main$drawConvexHullAlgorithmsState(
-																author$project$Main$flipCartesian(model))
+																author$project$Main$drawConvexHullAlgorithmsState(model)
 															])),
 														A2(
 														elm$html$Html$div,
