@@ -43,6 +43,10 @@ button {
     overflow-y: auto;
 }
 
+.progress-log > *:last-child ::first-line {
+    font-size: 120%;
+}
+
 .next-btn-container {
     text-align: center;
 }
