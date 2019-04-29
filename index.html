@@ -28,10 +28,20 @@
         return mouseInSvgCoords.matrixTransform(svg.getScreenCTM().inverse());
       }
 
+      // SvgPorts
       svg.addEventListener('mousemove', evt => {
         var newloc = cursorPoint(evt);
         app.ports.mouseToSvgCoords.send(newloc);
       }, false);
+
+      // ScrollPorts
+      app.ports.scrollToBottom_.subscribe(() => {
+        window.setTimeout(() => {
+          var last_log_elem =
+            document.querySelector('.progress-log > :last-child');
+          last_log_elem.scrollIntoView();
+        }, 15);  // FIXME: update on next elm update rather than use delay
+      });
 
     </script>
   </body>
