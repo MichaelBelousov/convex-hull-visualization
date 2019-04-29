@@ -4883,8 +4883,8 @@ var author$project$Main$trust = function (x) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 273, column: 20},
-				end: {line: 273, column: 30}
+				start: {line: 275, column: 20},
+				end: {line: 275, column: 30}
 			})('trust got Nothing');
 	}
 };
@@ -5228,8 +5228,8 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 240, column: 22},
-							end: {line: 240, column: 32}
+							start: {line: 242, column: 22},
+							end: {line: 242, column: 32}
 						})('bad polygon');
 				}
 			}
@@ -5360,8 +5360,7 @@ var author$project$Main$started_desc = A2(
 				]))
 		]));
 var author$project$Main$startAlgorithmState = function (model) {
-	var sorted_polygon = model.polygon;
-	var shifted_polygon = author$project$Main$restartAtBottomLeftMost(sorted_polygon);
+	var shifted_polygon = author$project$Main$restartAtBottomLeftMost(model.polygon);
 	return _Utils_update(
 		model,
 		{
@@ -5385,12 +5384,12 @@ var author$project$Main$pointToString = function (_n0) {
 		elm$core$Basics$round(x * 100) / 100.0) + (', ' + elm$core$String$fromFloat(
 		elm$core$Basics$round(y * 100) / 100.0));
 };
-var author$project$Main$writePointAction = F2(
-	function (action, _n0) {
+var author$project$Main$writePointAction = F3(
+	function (action, _n0, index) {
 		var x = _n0.a;
 		var y = _n0.b;
-		return action + (': (' + (author$project$Main$pointToString(
-			_Utils_Tuple2(x, y)) + ')'));
+		return action + (' point: ' + (elm$core$String$fromInt(index) + (' at (' + (author$project$Main$pointToString(
+			_Utils_Tuple2(x, y)) + ')'))));
 	});
 var author$project$Main$progressConvexHull = function (model) {
 	var _n0 = model.progress_state;
@@ -5398,12 +5397,10 @@ var author$project$Main$progressConvexHull = function (model) {
 		case 'NotStartedYet':
 			return author$project$Main$startAlgorithmState(model);
 		case 'InProgress':
+			var top_idx = author$project$Main$trust(
+				elm_community$list_extra$List$Extra$last(model.stack));
 			var top = author$project$Main$trust(
-				A2(
-					elm_community$list_extra$List$Extra$getAt,
-					author$project$Main$trust(
-						elm_community$list_extra$List$Extra$last(model.stack)),
-					model.polygon));
+				A2(elm_community$list_extra$List$Extra$getAt, top_idx, model.polygon));
 			var scd = author$project$Main$trust(
 				A2(
 					elm_community$list_extra$List$Extra$getAt,
@@ -5412,10 +5409,10 @@ var author$project$Main$progressConvexHull = function (model) {
 					model.polygon));
 			var next = author$project$Main$trust(
 				A2(elm_community$list_extra$List$Extra$getAt, model.next_point, model.polygon));
-			var not_ccw = A3(author$project$Main$ccw, scd, top, next) < 1;
+			var is_not_ccw = A3(author$project$Main$ccw, scd, top, next) < 1;
 			var next_log = _Utils_ap(
 				model.progress_log,
-				not_ccw ? _List_fromArray(
+				is_not_ccw ? _List_fromArray(
 					[
 						A2(
 						elm$html$Html$ul,
@@ -5428,7 +5425,7 @@ var author$project$Main$progressConvexHull = function (model) {
 								_List_fromArray(
 									[
 										elm$html$Html$text(
-										A2(author$project$Main$writePointAction, 'Popped point', next))
+										A3(author$project$Main$writePointAction, 'Popped', top, top_idx))
 									]))
 							]))
 					]) : _List_fromArray(
@@ -5444,12 +5441,12 @@ var author$project$Main$progressConvexHull = function (model) {
 								_List_fromArray(
 									[
 										elm$html$Html$text(
-										A2(author$project$Main$writePointAction, 'Pushed point', top))
+										A3(author$project$Main$writePointAction, 'Pushed', next, model.next_point))
 									]))
 							]))
 					]));
 			var next_stack = function () {
-				var _n2 = _Utils_Tuple2(not_ccw, model.next_point);
+				var _n2 = _Utils_Tuple2(is_not_ccw, model.next_point);
 				if (_n2.a) {
 					return author$project$Main$stackPop(model.stack).b;
 				} else {
@@ -5466,7 +5463,7 @@ var author$project$Main$progressConvexHull = function (model) {
 					model,
 					{progress_log: next_log, progress_state: author$project$Main$Done, stack: next_stack});
 			} else {
-				return (A3(author$project$Main$ccw, scd, top, next) < 1) ? _Utils_update(
+				return is_not_ccw ? _Utils_update(
 					model,
 					{progress_log: next_log, stack: next_stack}) : _Utils_update(
 					model,
@@ -5566,6 +5563,8 @@ var author$project$Main$update = F2(
 var author$project$Main$Restart = {$: 'Restart'};
 var author$project$Main$StepAlgorithm = {$: 'StepAlgorithm'};
 var author$project$Main$app_title = 'Polygon Convex Hull';
+var elm$svg$Svg$Attributes$transform = _VirtualDom_attribute('transform');
+var author$project$Main$cartesian_area = elm$svg$Svg$Attributes$transform('scale(1, -1)');
 var author$project$Main$ccw_triangle_fill = 'none';
 var author$project$Main$ccw_triangle_stroke = 'yellow';
 var author$project$Main$ccw_triangle_stroke_dash = '3,2';
@@ -5578,18 +5577,35 @@ var author$project$Main$svgPointsFromList = function (listPoint) {
 		' ',
 		A2(elm$core$List$map, author$project$Main$pointToString, listPoint));
 };
-var elm$core$Debug$log = _Debug_log;
 var elm$svg$Svg$trustedNode = _VirtualDom_nodeNS('http://www.w3.org/2000/svg');
+var elm$svg$Svg$animateTransform = elm$svg$Svg$trustedNode('animateTransform');
 var elm$svg$Svg$g = elm$svg$Svg$trustedNode('g');
 var elm$svg$Svg$image = elm$svg$Svg$trustedNode('image');
 var elm$svg$Svg$polygon = elm$svg$Svg$trustedNode('polygon');
+var elm$svg$Svg$Attributes$additive = _VirtualDom_attribute('additive');
+var elm$svg$Svg$Attributes$attributeName = _VirtualDom_attribute('attributeName');
+var elm$svg$Svg$Attributes$dur = _VirtualDom_attribute('dur');
 var elm$svg$Svg$Attributes$fill = _VirtualDom_attribute('fill');
+var elm$svg$Svg$Attributes$from = function (value) {
+	return A2(
+		_VirtualDom_attribute,
+		'from',
+		_VirtualDom_noJavaScriptUri(value));
+};
 var elm$svg$Svg$Attributes$height = _VirtualDom_attribute('height');
 var elm$svg$Svg$Attributes$points = _VirtualDom_attribute('points');
+var elm$svg$Svg$Attributes$repeatCount = _VirtualDom_attribute('repeatCount');
 var elm$svg$Svg$Attributes$stroke = _VirtualDom_attribute('stroke');
 var elm$svg$Svg$Attributes$strokeDasharray = _VirtualDom_attribute('stroke-dasharray');
 var elm$svg$Svg$Attributes$strokeLinecap = _VirtualDom_attribute('stroke-linecap');
 var elm$svg$Svg$Attributes$strokeWidth = _VirtualDom_attribute('stroke-width');
+var elm$svg$Svg$Attributes$to = function (value) {
+	return A2(
+		_VirtualDom_attribute,
+		'to',
+		_VirtualDom_noJavaScriptUri(value));
+};
+var elm$svg$Svg$Attributes$type_ = _VirtualDom_attribute('type');
 var elm$svg$Svg$Attributes$width = _VirtualDom_attribute('width');
 var elm$svg$Svg$Attributes$x = _VirtualDom_attribute('x');
 var elm$svg$Svg$Attributes$xlinkHref = function (value) {
@@ -5620,11 +5636,6 @@ var author$project$Main$drawCurrentCCW = function (model) {
 	var _n0 = author$project$Main$polygonMidPoint(ccw_triangle);
 	var ccw_x = _n0.a;
 	var ccw_y = _n0.b;
-	var _n1 = A2(elm$core$Debug$log, 'ccw state', model);
-	var _n2 = A2(
-		elm$core$Debug$log,
-		'ccw',
-		_Utils_Tuple3(ccw_x, ccw_y, ccw_triangle));
 	return A2(
 		elm$svg$Svg$g,
 		_List_Nil,
@@ -5655,9 +5666,28 @@ var author$project$Main$drawCurrentCCW = function (model) {
 						elm$core$String$fromFloat(2 * author$project$Main$ccw_wheel_radius)),
 						elm$svg$Svg$Attributes$height(
 						elm$core$String$fromFloat(2 * author$project$Main$ccw_wheel_radius)),
-						elm$svg$Svg$Attributes$xlinkHref('static/ccw_wheel.svg')
+						elm$svg$Svg$Attributes$xlinkHref('static/ccw_wheel.svg'),
+						elm$svg$Svg$Attributes$transform(
+						'translate(0,' + (elm$core$String$fromFloat(2 * ccw_y) + ') scale(1, -1)'))
 					]),
-				_List_Nil)
+				_List_fromArray(
+					[
+						A2(
+						elm$svg$Svg$animateTransform,
+						_List_fromArray(
+							[
+								elm$svg$Svg$Attributes$attributeName('transform'),
+								elm$svg$Svg$Attributes$type_('rotate'),
+								elm$svg$Svg$Attributes$dur('1s'),
+								elm$svg$Svg$Attributes$repeatCount('indefinite'),
+								elm$svg$Svg$Attributes$from(
+								'0 ' + (elm$core$String$fromFloat(ccw_x) + (' ' + elm$core$String$fromFloat(ccw_y)))),
+								elm$svg$Svg$Attributes$to(
+								'-360 ' + (elm$core$String$fromFloat(ccw_x) + (' ' + elm$core$String$fromFloat(ccw_y)))),
+								elm$svg$Svg$Attributes$additive('sum')
+							]),
+						_List_Nil)
+					]))
 			]));
 };
 var author$project$Main$next_point_color = 'yellow';
@@ -5692,7 +5722,6 @@ var author$project$Main$LeftClickEdge = function (a) {
 	return {$: 'LeftClickEdge', a: a};
 };
 var author$project$Main$ReleasePoint = {$: 'ReleasePoint'};
-var author$project$Main$point_color = 'blue';
 var elm$core$List$tail = function (list) {
 	if (list.b) {
 		var x = list.a;
@@ -5728,6 +5757,72 @@ var author$project$Main$polygonToEdges = function (polygon) {
 var author$project$Main$polygon_fill = 'none';
 var author$project$Main$polygon_stroke = 'blue';
 var author$project$Main$polygon_stroke_width = elm$core$String$fromFloat(1.5);
+var elm$svg$Svg$line = elm$svg$Svg$trustedNode('line');
+var elm$svg$Svg$Attributes$x1 = _VirtualDom_attribute('x1');
+var elm$svg$Svg$Attributes$x2 = _VirtualDom_attribute('x2');
+var elm$svg$Svg$Attributes$y1 = _VirtualDom_attribute('y1');
+var elm$svg$Svg$Attributes$y2 = _VirtualDom_attribute('y2');
+var author$project$Main$drawPolygonEdges = F2(
+	function (polygon, interactions) {
+		return A2(
+			elm$core$List$indexedMap,
+			F2(
+				function (i, _n0) {
+					var _n1 = _n0.a;
+					var x1_ = _n1.a;
+					var y1_ = _n1.b;
+					var _n2 = _n0.b;
+					var x2_ = _n2.a;
+					var y2_ = _n2.b;
+					return A2(
+						elm$svg$Svg$line,
+						_Utils_ap(
+							_List_fromArray(
+								[
+									elm$svg$Svg$Attributes$fill(author$project$Main$polygon_fill),
+									elm$svg$Svg$Attributes$stroke(author$project$Main$polygon_stroke),
+									elm$svg$Svg$Attributes$strokeWidth(author$project$Main$polygon_stroke_width),
+									elm$svg$Svg$Attributes$strokeLinecap(author$project$Main$polygon_stroke_cap),
+									elm$svg$Svg$Attributes$x1(
+									elm$core$String$fromFloat(x1_)),
+									elm$svg$Svg$Attributes$y1(
+									elm$core$String$fromFloat(y1_)),
+									elm$svg$Svg$Attributes$x2(
+									elm$core$String$fromFloat(x2_)),
+									elm$svg$Svg$Attributes$y2(
+									elm$core$String$fromFloat(y2_))
+								]),
+							interactions(i)),
+						_List_Nil);
+				}),
+			author$project$Main$polygonToEdges(polygon));
+	});
+var author$project$Main$point_color = 'blue';
+var author$project$Main$drawPolygonVerts = F2(
+	function (polygon, interactions) {
+		return A2(
+			elm$core$List$indexedMap,
+			F2(
+				function (i, _n0) {
+					var x = _n0.a;
+					var y = _n0.b;
+					return A2(
+						elm$svg$Svg$circle,
+						_Utils_ap(
+							_List_fromArray(
+								[
+									elm$svg$Svg$Attributes$fill(author$project$Main$point_color),
+									elm$svg$Svg$Attributes$cx(
+									elm$core$String$fromFloat(x)),
+									elm$svg$Svg$Attributes$cy(
+									elm$core$String$fromFloat(y)),
+									elm$svg$Svg$Attributes$r(author$project$Main$point_radius)
+								]),
+							interactions(i)),
+						_List_Nil);
+				}),
+			polygon);
+	});
 var elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
 };
@@ -5757,110 +5852,58 @@ var elm$html$Html$Events$onMouseUp = function (msg) {
 		'mouseup',
 		elm$json$Json$Decode$succeed(msg));
 };
-var elm$svg$Svg$line = elm$svg$Svg$trustedNode('line');
-var elm$svg$Svg$Attributes$x1 = _VirtualDom_attribute('x1');
-var elm$svg$Svg$Attributes$x2 = _VirtualDom_attribute('x2');
-var elm$svg$Svg$Attributes$y1 = _VirtualDom_attribute('y1');
-var elm$svg$Svg$Attributes$y2 = _VirtualDom_attribute('y2');
 var author$project$Main$drawPolygon = function (model) {
-	var pt_dblclick_handler = function (i) {
-		var _n6 = model.progress_state;
-		if (_n6.$ === 'NotStartedYet') {
-			return _List_fromArray(
-				[
-					elm$html$Html$Events$onDoubleClick(
-					author$project$Main$DoubleClickPoint(i))
-				]);
-		} else {
+	var _n0 = model.progress_state;
+	if (_n0.$ === 'NotStartedYet') {
+		var edge_click_handlers = function (i) {
 			return _List_Nil;
-		}
-	};
-	var pt_click_handler = function (i) {
-		var _n5 = model.progress_state;
-		if (_n5.$ === 'NotStartedYet') {
-			return _List_fromArray(
-				[
-					elm$html$Html$Events$onMouseDown(
-					author$project$Main$GrabPoint(i)),
-					elm$html$Html$Events$onMouseUp(author$project$Main$ReleasePoint)
-				]);
-		} else {
-			return _List_Nil;
-		}
-	};
-	var edge_click_handler = function (i) {
-		var _n4 = model.progress_state;
-		if (_n4.$ === 'NotStartedYet') {
-			return _List_fromArray(
-				[
-					elm$html$Html$Events$onMouseDown(
-					author$project$Main$LeftClickEdge(i)),
-					elm$html$Html$Events$onMouseUp(author$project$Main$ReleasePoint)
-				]);
-		} else {
-			return _List_Nil;
-		}
-	};
-	return A2(
-		elm$svg$Svg$g,
-		_List_Nil,
-		_Utils_ap(
-			A2(
-				elm$core$List$indexedMap,
-				F2(
-					function (i, _n0) {
-						var _n1 = _n0.a;
-						var x1_ = _n1.a;
-						var y1_ = _n1.b;
-						var _n2 = _n0.b;
-						var x2_ = _n2.a;
-						var y2_ = _n2.b;
-						return A2(
-							elm$svg$Svg$line,
-							_Utils_ap(
-								_List_fromArray(
-									[
-										elm$svg$Svg$Attributes$fill(author$project$Main$polygon_fill),
-										elm$svg$Svg$Attributes$stroke(author$project$Main$polygon_stroke),
-										elm$svg$Svg$Attributes$strokeWidth(author$project$Main$polygon_stroke_width),
-										elm$svg$Svg$Attributes$strokeLinecap(author$project$Main$polygon_stroke_cap),
-										elm$svg$Svg$Attributes$x1(
-										elm$core$String$fromFloat(x1_)),
-										elm$svg$Svg$Attributes$y1(
-										elm$core$String$fromFloat(y1_)),
-										elm$svg$Svg$Attributes$x2(
-										elm$core$String$fromFloat(x2_)),
-										elm$svg$Svg$Attributes$y2(
-										elm$core$String$fromFloat(y2_))
-									]),
-								edge_click_handler(i)),
-							_List_Nil);
+		};
+		return A2(
+			elm$svg$Svg$g,
+			_List_Nil,
+			_Utils_ap(
+				A2(
+					author$project$Main$drawPolygonEdges,
+					model.polygon,
+					function (i) {
+						return _List_fromArray(
+							[
+								elm$html$Html$Events$onMouseDown(
+								author$project$Main$LeftClickEdge(i)),
+								elm$html$Html$Events$onMouseUp(author$project$Main$ReleasePoint)
+							]);
 					}),
-				author$project$Main$polygonToEdges(model.polygon)),
-			A2(
-				elm$core$List$indexedMap,
-				F2(
-					function (i, _n3) {
-						var x = _n3.a;
-						var y = _n3.b;
-						return A2(
-							elm$svg$Svg$circle,
-							_Utils_ap(
-								_List_fromArray(
-									[
-										elm$svg$Svg$Attributes$fill(author$project$Main$point_color),
-										elm$svg$Svg$Attributes$cx(
-										elm$core$String$fromFloat(x)),
-										elm$svg$Svg$Attributes$cy(
-										elm$core$String$fromFloat(y)),
-										elm$svg$Svg$Attributes$r(author$project$Main$point_radius)
-									]),
-								_Utils_ap(
-									pt_dblclick_handler(i),
-									pt_click_handler(i))),
-							_List_Nil);
+				A2(
+					author$project$Main$drawPolygonVerts,
+					model.polygon,
+					function (i) {
+						return _List_fromArray(
+							[
+								elm$html$Html$Events$onDoubleClick(
+								author$project$Main$DoubleClickPoint(i)),
+								elm$html$Html$Events$onMouseDown(
+								author$project$Main$GrabPoint(i)),
+								elm$html$Html$Events$onMouseUp(author$project$Main$ReleasePoint)
+							]);
+					})));
+	} else {
+		return A2(
+			elm$svg$Svg$g,
+			_List_Nil,
+			_Utils_ap(
+				A2(
+					author$project$Main$drawPolygonEdges,
+					model.polygon,
+					function (i) {
+						return _List_Nil;
 					}),
-				model.polygon)));
+				A2(
+					author$project$Main$drawPolygonVerts,
+					model.polygon,
+					function (i) {
+						return _List_Nil;
+					})));
+	}
 };
 var author$project$Main$calcHullProgressPolyline = function (model) {
 	return A2(
@@ -5898,6 +5941,7 @@ var author$project$Main$drawPolyline = function (model) {
 			]),
 		_List_Nil);
 };
+var author$project$Main$cartesian_flip = elm$svg$Svg$Attributes$transform('scale(1, -1)');
 var elm$svg$Svg$path = elm$svg$Svg$trustedNode('path');
 var elm$svg$Svg$text_ = elm$svg$Svg$trustedNode('text');
 var elm$svg$Svg$Attributes$class = _VirtualDom_attribute('class');
@@ -5913,7 +5957,7 @@ var author$project$Main$drawStack = function (model) {
 					elm$svg$Svg$path,
 					_List_fromArray(
 						[
-							elm$svg$Svg$Attributes$d('M -36 0 v 20 h 5 v -20'),
+							elm$svg$Svg$Attributes$d('M -36 0 v -20 h 5 v 20'),
 							elm$svg$Svg$Attributes$fill('none'),
 							elm$svg$Svg$Attributes$stroke('grey')
 						]),
@@ -5930,7 +5974,8 @@ var author$project$Main$drawStack = function (model) {
 									elm$svg$Svg$Attributes$x('-34.5'),
 									elm$svg$Svg$Attributes$y(
 									elm$core$String$fromInt(18 - (4 * i))),
-									elm$svg$Svg$Attributes$class('stack-entry')
+									elm$svg$Svg$Attributes$class('stack-entry'),
+									author$project$Main$cartesian_flip
 								]),
 							_List_fromArray(
 								[
@@ -5952,25 +5997,6 @@ var elm$html$Html$Attributes$class = elm$html$Html$Attributes$stringProperty('cl
 var elm$svg$Svg$svg = elm$svg$Svg$trustedNode('svg');
 var elm$svg$Svg$Attributes$viewBox = _VirtualDom_attribute('viewBox');
 var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
-	var model_ = function () {
-		var _n1 = model.progress_state;
-		if (_n1.$ === 'NotStartedYet') {
-			return model;
-		} else {
-			return _Utils_update(
-				model,
-				{
-					polygon: A2(
-						elm$core$List$map,
-						function (_n2) {
-							var x = _n2.a;
-							var y = _n2.b;
-							return _Utils_Tuple2(x, -y);
-						},
-						model.polygon)
-				});
-		}
-	}();
 	var svgBase = function (extra) {
 		return A2(
 			elm$html$Html$div,
@@ -5987,14 +6013,15 @@ var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
 							elm$svg$Svg$Attributes$width('800'),
 							elm$svg$Svg$Attributes$height('600'),
 							elm$svg$Svg$Attributes$viewBox('-40 -30 80 60'),
-							elm$svg$Svg$Attributes$class('resizable-svg')
+							elm$svg$Svg$Attributes$class('resizable-svg'),
+							author$project$Main$cartesian_area
 						]),
 					_Utils_ap(
 						_List_fromArray(
 							[
-								author$project$Main$drawPolygon(model_),
-								author$project$Main$drawPolyline(model_),
-								author$project$Main$drawStack(model_)
+								author$project$Main$drawPolygon(model),
+								author$project$Main$drawPolyline(model),
+								author$project$Main$drawStack(model)
 							]),
 						extra))
 				]));
@@ -6006,8 +6033,8 @@ var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
 				[
 					author$project$Main$drawNextPoint(
 					author$project$Main$trust(
-						A2(elm_community$list_extra$List$Extra$getAt, model_.next_point, model_.polygon))),
-					author$project$Main$drawCurrentCCW(model_)
+						A2(elm_community$list_extra$List$Extra$getAt, model.next_point, model.polygon))),
+					author$project$Main$drawCurrentCCW(model)
 				]));
 	} else {
 		return svgBase(_List_Nil);

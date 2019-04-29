@@ -13,13 +13,13 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 import String exposing (..)
 import Svg exposing (Svg, svg, circle, polyline, polygon,
-                     line, g, path, image, text_)
+                     line, g, path, image, text_, animateTransform)
 import Svg.Attributes exposing (height, width, viewBox, xlinkHref, id,
                                 fill, stroke, strokeWidth, strokeLinecap,
                                 strokeDasharray, cx, cy, r, points, d, x, y,
-                                x1, y1, x2, y2)
-import SvgPorts exposing (mouseToSvgCoords, SvgPoint,
-                          decodeSvgPoint)
+                                x1, y1, x2, y2, transform, attributeName,
+                                type_, dur, repeatCount, from, to, additive)
+import SvgPorts exposing (mouseToSvgCoords, decodeSvgPoint)
 
 -- Browser Model
 
@@ -142,6 +142,8 @@ app_title = "Polygon Convex Hull"
 init_polygon = makeCube 15
 
     -- Style
+cartesian_area = transform "scale(1, -1)"
+cartesian_flip= transform "scale(1, -1)"
 point_color = "blue"
 point_radius = fromFloat 2
 next_point_color = "yellow"
@@ -276,33 +278,26 @@ trust x =
 drawConvexHullAlgorithmsState : Model -> Html Msg
 drawConvexHullAlgorithmsState model =
     let
-        model_ = 
-            case model.progress_state of
-                NotStartedYet ->
-                    model
-                _ ->
-                    { model
-                      | polygon = List.map (\(x,y) -> (x,-y)) model.polygon
-                    }
         svgBase extra =
             div [ class "resizable-svg-container" ]
                 [ svg [ width "800"
                       , height "600"
                       , viewBox "-40 -30 80 60"
                       , Svg.Attributes.class "resizable-svg"
+                      , cartesian_area
                       ]
                       (
-                      [ drawPolygon model_
-                      , drawPolyline model_
-                      , drawStack model_
+                      [ drawPolygon model
+                      , drawPolyline model
+                      , drawStack model
                       ] ++ extra
                       )
                  ]
     in
     case model.progress_state of
         InProgress ->
-            svgBase [ drawNextPoint <| trust <| getAt model_.next_point model_.polygon
-                    , drawCurrentCCW model_
+            svgBase [ drawNextPoint <| trust <| getAt model.next_point model.polygon
+                    , drawCurrentCCW model
                     ]
         _ ->
             svgBase []
@@ -313,7 +308,7 @@ drawStack model =
     g []
       (
           -- TODO: move to constants
-      [ path [ d "M -36 0 v 20 h 5 v -20"
+      [ path [ d "M -36 0 v -20 h 5 v 20"
              , fill "none"
              , stroke "grey" ]
              []
@@ -321,6 +316,7 @@ drawStack model =
              (\i n -> text_ [ x "-34.5"
                             , y <| fromInt (18 - 4*i)
                             , Svg.Attributes.class "stack-entry"
+                            , cartesian_flip
                             ]
                             [ text <| fromInt n ])
              model.stack
@@ -344,51 +340,55 @@ polygonToEdges polygon =
 -- Draw the polygon, return svg message
 drawPolygon : Model -> Svg Msg
 drawPolygon model =
-    let
-        edge_click_handler i =
-            case model.progress_state of
-                NotStartedYet ->
-                     [ onMouseDown (LeftClickEdge i)
-                     , onMouseUp   (ReleasePoint)
-                     ]
-                _ -> []
-        pt_dblclick_handler i =
-            case model.progress_state of
-                NotStartedYet ->
-                     [onDoubleClick (DoubleClickPoint i)]
-                _ -> []
-        pt_click_handler i =
-            case model.progress_state of
-                NotStartedYet ->
-                     [ onMouseDown (GrabPoint i)
-                     , onMouseUp (ReleasePoint)
-                     ]
-                _ -> []
-    in
-    g []
-      (
-      List.indexedMap
-            (\i ((x1_,y1_),(x2_,y2_)) ->
-                    line ([ fill polygon_fill
-                         , stroke polygon_stroke
-                         , strokeWidth polygon_stroke_width
-                         , strokeLinecap polygon_stroke_cap
-                         , x1 <| fromFloat x1_, y1 <| fromFloat y1_
-                         , x2 <| fromFloat x2_, y2 <| fromFloat y2_
-                         ] ++ edge_click_handler i) [])
-            (polygonToEdges model.polygon)
-      ++
-      List.indexedMap
-            (\i (x,y) ->
-                    circle ([ fill point_color
-                            , cx <| fromFloat x
-                            , cy <| fromFloat y
-                            , r point_radius
-                            ] ++ pt_dblclick_handler i
-                              ++ pt_click_handler i)
-                            [])
-            model.polygon
-      )
+    case model.progress_state of
+        -- attach  polygon editing handlers if algorithm not started yet
+        NotStartedYet ->
+            let
+             edge_click_handlers i = [
+                                     ]
+            in
+            g []
+              (  drawPolygonEdges model.polygon (\i -> [ onMouseDown (LeftClickEdge i)
+                                                       , onMouseUp   (ReleasePoint)
+                                                       ])
+              ++ drawPolygonVerts model.polygon (\i -> [ onDoubleClick (DoubleClickPoint i)
+                                                       , onMouseDown   (GrabPoint i)
+                                                       , onMouseUp     (ReleasePoint)
+                                                       ])
+              )
+        _ -> 
+            g []
+              (  drawPolygonEdges model.polygon (\i->[])
+              ++ drawPolygonVerts model.polygon (\i->[])
+              )
+
+drawPolygonEdges : Polygon -> (Int -> List (Attribute m)) -> List (Svg m)
+drawPolygonEdges polygon interactions =
+    List.indexedMap
+        (\i ((x1_,y1_),(x2_,y2_)) ->
+                line ([ fill polygon_fill
+                     , stroke polygon_stroke
+                     , strokeWidth polygon_stroke_width
+                     , strokeLinecap polygon_stroke_cap
+                     , x1 <| fromFloat x1_, y1 <| fromFloat y1_
+                     , x2 <| fromFloat x2_, y2 <| fromFloat y2_
+                     ] ++ interactions i) [])
+        (polygonToEdges polygon)
+
+drawPolygonVerts : Polygon -> (Int -> List (Attribute m)) -> List (Svg m)
+drawPolygonVerts polygon interactions =
+    List.indexedMap
+        (\i (x,y) ->
+                circle (
+                       [ fill point_color
+                       , cx <| fromFloat x
+                       , cy <| fromFloat y
+                       , r point_radius
+                       ] ++ interactions i
+                       )
+                       []
+                       )
+        polygon
 
 calcHullProgressPolyline : Model -> Polyline
 calcHullProgressPolyline model =
@@ -436,13 +436,11 @@ polygonMidPoint polygon =
 drawCurrentCCW : Model -> Svg Msg
 drawCurrentCCW model =
     let
-        _ = Debug.log "ccw state" model
         top = trust <| getAt (trust <| last model.stack) model.polygon
         scd = trust <| getAt (trust <| listPenultimate model.stack) model.polygon
         next = trust <| getAt model.next_point model.polygon
         ccw_triangle = [scd, top, next]
         (ccw_x, ccw_y) = polygonMidPoint ccw_triangle
-        _ = Debug.log "ccw" (ccw_x, ccw_y, ccw_triangle)
     in
     g []
       [ polygon [ fill ccw_triangle_fill
@@ -451,14 +449,26 @@ drawCurrentCCW model =
                 , strokeLinecap polygon_stroke_cap
                 , strokeDasharray ccw_triangle_stroke_dash
                 , points <| svgPointsFromList ccw_triangle
-                ]
-                []
+                ] []
+        -- flip with corrective translation
       , image [ x <| fromFloat (ccw_x-ccw_wheel_radius)
               , y <| fromFloat (ccw_y-ccw_wheel_radius)
               , width <| fromFloat (2 * ccw_wheel_radius)
               , height <| fromFloat (2 * ccw_wheel_radius)
               , xlinkHref "static/ccw_wheel.svg"
-              ] []
+              , transform ("translate(0,"
+                        ++ fromFloat (2*ccw_y)
+                        ++ ") scale(1, -1)")
+              ]
+              [ animateTransform [ attributeName "transform"
+                                 , type_ "rotate"
+                                 , dur "1s"
+                                 , repeatCount "indefinite"
+                                 , from ("0 "++fromFloat ccw_x++" "++fromFloat ccw_y)
+                                 , to ("-360 "++fromFloat ccw_x++" "++fromFloat ccw_y)
+                                 , additive "sum"
+                                 ] []
+              ]
       ]
 
 -- Mapping the list of points into svg attributes value
@@ -476,9 +486,10 @@ pointToString (x, y) =
     ++ ", "
     ++ fromFloat (Basics.toFloat(round(y * 100)) / 100.0)
 
-writePointAction : String -> Point -> String
-writePointAction action (x,y) =
-    action ++ ": (" ++ pointToString (x,y) ++ ")"
+writePointAction : String -> Point -> Int -> String
+writePointAction action (x,y) index =
+    action ++ " point: " ++ fromInt index
+    ++ " at (" ++ pointToString (x,y) ++ ")"
 
 listPenultimate : List a -> Maybe a
 listPenultimate list =
@@ -515,13 +526,15 @@ restartAtBottomLeftMost polygon =
             else restartAtBottomLeftMost (rest ++ [first])
 
 
+svgToCartesian : Polygon -> Polygon
+svgToCartesian pts =
+    List.map (\(x,y)->(x,-y)) pts
+
+
 startAlgorithmState : Model -> Model
 startAlgorithmState model =
     let
-        sorted_polygon = model.polygon
-                        {- sortWith (\a b -> case compare ccw a b of)
-                            model.polygon -}
-        shifted_polygon = restartAtBottomLeftMost sorted_polygon
+        shifted_polygon = restartAtBottomLeftMost model.polygon
     in
     { model | polygon = shifted_polygon
             , next_point = 2
@@ -537,21 +550,28 @@ progressConvexHull model =
             startAlgorithmState model
         InProgress ->
             let
-                top = trust <| getAt (trust <| last model.stack) model.polygon
+                top_idx = trust <| last model.stack
+                top = trust <| getAt top_idx model.polygon
                 scd = trust <| getAt (trust <| listPenultimate model.stack) model.polygon
                 next = trust <| getAt model.next_point model.polygon
-                not_ccw = ccw scd top next < 1
-                next_stack = case (not_ccw, model.next_point) of
+                is_not_ccw = ccw scd top next < 1
+                next_stack = case (is_not_ccw, model.next_point) of
                     (True, _) ->
                         Tuple.second <| stackPop model.stack
                     (False, 0) ->
-                        model.stack
+                        model.stack -- don't push the first point again
                     (False, _) ->
                         stackPush model.stack model.next_point
                 next_log = model.progress_log
-                        ++ (if not_ccw
-                            then [ul [] [li [] [text <| writePointAction "Popped point" next]]]
-                            else [ul [] [li [] [text <| writePointAction "Pushed point" top]]])
+                        ++ (if is_not_ccw
+                            then [ul [] [li [] [text <| writePointAction
+                                                            "Popped"
+                                                            top
+                                                            top_idx]]]
+                            else [ul [] [li [] [text <| writePointAction
+                                                            "Pushed"
+                                                            next
+                                                            model.next_point]]])
             in
             case model.next_point of
                 0 ->
@@ -561,14 +581,15 @@ progressConvexHull model =
                       , progress_log = next_log
                     }
                 _ ->
-                    if ccw scd top next < 1
+                    if is_not_ccw
                     then { model
                            | stack = next_stack
                            , progress_log = next_log
                          }
                     else { model
                            | stack = next_stack
-                           , next_point = remainderBy (List.length model.polygon) (model.next_point+1)
+                           , next_point = remainderBy (List.length model.polygon)
+                                                      (model.next_point+1)
                            , progress_log = next_log
                          }
         Done ->

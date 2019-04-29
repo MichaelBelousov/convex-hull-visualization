@@ -30,7 +30,6 @@
 
       svg.addEventListener('mousemove', evt => {
         var newloc = cursorPoint(evt);
-        console.log(newloc);
         app.ports.mouseToSvgCoords.send(newloc);
       }, false);
 
