@@ -6,10 +6,15 @@ button {
     color: #fff;
     box-shadow: 2px;
     border-radius: 5px;
-    background-color: #aac;
+    background-color: #1acec5;
     border: none;
     padding: 5px 15px 5px 15px;
-    font-style: italic;
+    font-style: bold;
+    font-size: 16pt;
+}
+
+button:hover {
+    background-color: #1a8ebb;
 }
 
 .resizable-svg {
