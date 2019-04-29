@@ -592,8 +592,13 @@ progressConvexHull model =
                 scd = trust <| nth (trust <| listPenultimate model.stack) model.polygon
                 next = trust <| nth model.next_point model.polygon
                 is_ccw = ccw scd top next < 1
-                next_stack = if is_ccw then Tuple.second <| stackPop model.stack
-                                       else stackPush model.stack model.next_point
+                next_stack = case (is_ccw, model.next_point) of
+                    (True, _) ->
+                        Tuple.second <| stackPop model.stack
+                    (False, 0) ->
+                        model.stack
+                    (False, _) ->
+                        stackPush model.stack model.next_point
                 next_log = model.progress_log
                         ++ (if is_ccw
                             then [ul [] [li [] [text <| writePointAction "Pushed point" next]]]

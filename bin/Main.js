@@ -6764,7 +6764,18 @@ var author$project$Main$progressConvexHull = function (model) {
 									]))
 							]))
 					]));
-			var next_stack = is_ccw ? author$project$Main$stackPop(model.stack).b : A2(author$project$Main$stackPush, model.stack, model.next_point);
+			var next_stack = function () {
+				var _n2 = _Utils_Tuple2(is_ccw, model.next_point);
+				if (_n2.a) {
+					return author$project$Main$stackPop(model.stack).b;
+				} else {
+					if (!_n2.b) {
+						return model.stack;
+					} else {
+						return A2(author$project$Main$stackPush, model.stack, model.next_point);
+					}
+				}
+			}();
 			var _n1 = model.next_point;
 			if (!_n1) {
 				return _Utils_update(
