@@ -1,7 +1,5 @@
 module Main exposing (main)
 
--- Imports
-
 import Browser
 import Html exposing (Html, Attribute, div, button, text, a,
                       table, tr, td, p, i, b, ul, ol, li)
@@ -222,15 +220,17 @@ started_desc =
             , i [] [ text "simple polygon" ]
             , text (" our points are ordered by the edges they connect to, and by simplicity "
                  ++ "they don't overlap each other. "
-                 ++ "Our simple polygon is already sorted in counter-clockwise order "
+                 ++ "Our simple polygon is already sorted in counter-clockwise (CCW) order "
                  ++ "(if it weren't we'd just reverse it), so we'll just find the "
                  ++ "bottom-leftmost point and shift the polygon list to start at that point.")
             ]
         , p []
             [ text ("To start, we put the first two points of our polygon in a stack, "
                  ++ "and we start considering the remaining points in order. The point "
-                 ++ "we're considering is in green, and the triangle of CCW comparison is "
-                 ++ "the dashed red one")
+                 ++ "we're considering is in yellow, and the dashed yellow triangle "
+                 ++ "is a CCW test between the top two members of the stack, and that "
+                 ++ "point of consideration. Note the black spinny arrow that should "
+                 ++ "helpfully illustrate whether the triangle's points are in CCW order.")
             ]
         ]
 
