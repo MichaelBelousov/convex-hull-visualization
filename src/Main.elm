@@ -92,18 +92,18 @@ interactiveUpdate model subMsg =
     )
 
 subscriptions : Model -> Sub Msg
-subscriptions _ = 
+subscriptions _ =
     Sub.map InteractiveMsg Interactive.subMouse
 
 view : Model -> Browser.Document Msg
 view model =
-    let 
+    let
         (btn_action, btn_label) = case model.progress_state of
             NotStartedYet ->
                 (StepAlgorithm, "start!")
             InProgress ->
                 (StepAlgorithm, "next step")
-            Done -> 
+            Done ->
                 (Restart, "restart")
     in
     { title = app_title
@@ -112,11 +112,11 @@ view model =
         [ div [] [ table [ style  "width" "100%"
                          , style "table-layout" "fixed"
                          ]
-                         [ tr [] 
+                         [ tr []
                               [ td [ class "visualization" ]
                                    [ div [] [ drawConvexHullAlgorithmsState <| flipCartesian model ]
                                    , div [ class "next-btn-container" ]
-                                         [ button [ onClick btn_action ] 
+                                         [ button [ onClick btn_action ]
                                                   [ text btn_label ]
                                          ]
                                    ]
@@ -126,7 +126,7 @@ view model =
                               ]
                          ]
                  ]
-        , div [ class "footer" ] 
+        , div [ class "footer" ]
               [ a [ href "about.html" ] [ text "about" ] ]
         ]
     ]}
@@ -169,7 +169,7 @@ type alias Polyline = List Point
 type alias Stack z = List z
 
 -- Constants
-    
+
     -- App Constants
 app_title = "Polygon Convex Hull"
 
@@ -237,7 +237,7 @@ started_desc =
 -- Utilities
 
 makeCube : Float -> Polygon
-makeCube half_sz = 
+makeCube half_sz =
     [ (-half_sz,  -half_sz)
     , (half_sz, -half_sz)
     , (half_sz, half_sz)
@@ -268,13 +268,13 @@ insertPoint model edge_idx =
     let
         (front, back) = splitAt (edge_idx+1) model.polygon
         mdpt = case (last front, List.head back) of
-                (Just x, Just y) -> 
+                (Just x, Just y) ->
                     polygonMidPoint [x, y]
-                (Just x, Nothing) -> 
+                (Just x, Nothing) ->
                     polygonMidPoint [ trust <| List.head front
                                     , trust <| last front
                                     ]
-                (Nothing, Just y) -> 
+                (Nothing, Just y) ->
                     polygonMidPoint [ trust <| List.head back
                                     , trust <| last back
                                     ]
@@ -305,10 +305,10 @@ before_start_state =
 nth : Int -> List a -> Maybe a
 nth n list =
     case list of
-        head::rest -> 
+        head::rest ->
             if n==0 then Just head
                     else nth (n-1) rest
-        [] -> 
+        [] ->
             Nothing
 
 -- CCW formula
@@ -320,10 +320,10 @@ ccw (ax,ay) (bx,by) (cx,cy) =
         if value > 0 then 1
         else if value < 0 then -1
         else 0
-            
+
 -- trust that a Maybe is fulfilled
 trust : Maybe a -> a
-trust x = 
+trust x =
     case x of
         Just y -> y
         Nothing -> Debug.todo "trust got Nothing"
@@ -331,7 +331,7 @@ trust x =
 
 drawConvexHullAlgorithmsState : Model -> Html Msg
 drawConvexHullAlgorithmsState model =
-    let 
+    let
         _ = Debug.log "state" model
         svgBase extra =
             div [ -- class "resizable-svg-container" ]
@@ -361,10 +361,20 @@ drawConvexHullAlgorithmsState model =
 
 drawStack : Model -> Svg Msg
 drawStack model =
+    let
+        -- FIXME: currently hiding the duplicate 0 on the stack,
+        -- might be better to remove it from the stack in general
+        -- and finish the polyline as an edge case of the Done state
+        stack = case model.progress_state of
+            Done ->
+                Tuple.second <| stackPop model.stack
+            _ ->
+                model.stack
+    in
     g []
       (
           -- TODO: move to constants
-      [ path [ d "M -36 0 v 20 h 5 v -20" 
+      [ path [ d "M -36 0 v 20 h 5 v -20"
              , fill "none"
              , stroke "grey" ]
              []
@@ -374,7 +384,7 @@ drawStack model =
                             , Svg.Attributes.class "stack-entry"
                             ]
                             [ text <| fromInt n ])
-             model.stack
+             stack
       )
 
 
@@ -394,7 +404,7 @@ polygonToEdges polygon =
 
 -- Draw the polygon, return svg message
 drawPolygon : Model -> Svg Msg
-drawPolygon model = 
+drawPolygon model =
     let
         edge_click_handler i =
             case model.progress_state of
@@ -440,7 +450,7 @@ drawPolygon model =
                             [])
             model.polygon
       )
- 
+
 calcHullProgressPolyline : Model -> Polyline
 calcHullProgressPolyline model =
     model.stack
@@ -478,7 +488,7 @@ polygonMidPoint polygon =
     in
         ( xsum / Basics.toFloat len
         , ysum / Basics.toFloat len)
-    
+
 
 drawCurrentCCW : Model -> Svg Msg
 drawCurrentCCW model =
@@ -513,7 +523,7 @@ svgPointsFromList : List Point-> String
 svgPointsFromList listPoint =
     listPoint
         |> List.map pointToString
-        |> join " " 
+        |> join " "
 
 
 -- Mapping point tuple into string
@@ -564,7 +574,7 @@ restartAtBottomLeftMost polygon =
 
 startAlgorithmState : Model -> Model
 startAlgorithmState model =
-    let 
+    let
         sorted_polygon = model.polygon
                         {- sortWith (\a b -> case compare ccw a b of)
                             model.polygon -}
@@ -583,28 +593,30 @@ progressConvexHull model =
         NotStartedYet ->
             startAlgorithmState model
         InProgress ->
-            if model.next_point == 1
-            then { model | progress_state = Done }
-            else
-                let
-                    top = trust <| nth (trust <| last model.stack) model.polygon
-                    scd = trust <| nth (trust <| listPenultimate model.stack) model.polygon
-                    next = trust <| nth model.next_point model.polygon
-                in
-                if ccw scd top next < 1
-                then
+            case model.next_point of
+                0 ->
                     { model
-                      | stack = Tuple.second <| stackPop model.stack
-                      , progress_log = model.progress_log
-                          ++ [ul [] [li [] [text <| writePointAction "Popped point" top] ] ]
+                      | progress_state = Done
+                      , stack = stackPush model.stack model.next_point
                     }
-                else
-                    { model
-                      | stack = stackPush model.stack model.next_point
-                      , next_point = remainderBy (List.length model.polygon) (model.next_point+1)  
-                      , progress_log = model.progress_log
-                          ++ [ul [] [li [] [text <| writePointAction "Pushed point" next] ] ]
-                    }
+                _ ->
+                    let
+                        top = trust <| nth (trust <| last model.stack) model.polygon
+                        scd = trust <| nth (trust <| listPenultimate model.stack) model.polygon
+                        next = trust <| nth model.next_point model.polygon
+                    in
+                    if ccw scd top next < 1
+                    then { model
+                           | stack = Tuple.second <| stackPop model.stack
+                           , progress_log = model.progress_log
+                               ++ [ul [] [li [] [text <| writePointAction "Popped point" top]]]
+                         }
+                    else { model
+                           | stack = stackPush model.stack model.next_point
+                           , next_point = remainderBy (List.length model.polygon) (model.next_point+1)
+                           , progress_log = model.progress_log
+                              ++ [ul [] [li [] [text <| writePointAction "Pushed point" next]]]
+                        }
         Done ->
             model
 

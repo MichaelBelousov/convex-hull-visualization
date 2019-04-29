@@ -6714,10 +6714,14 @@ var author$project$Main$progressConvexHull = function (model) {
 		case 'NotStartedYet':
 			return author$project$Main$startAlgorithmState(model);
 		case 'InProgress':
-			if (model.next_point === 1) {
+			var _n1 = model.next_point;
+			if (!_n1) {
 				return _Utils_update(
 					model,
-					{progress_state: author$project$Main$Done});
+					{
+						progress_state: author$project$Main$Done,
+						stack: A2(author$project$Main$stackPush, model.stack, model.next_point)
+					});
 			} else {
 				var top = author$project$Main$trust(
 					A2(
@@ -7205,6 +7209,14 @@ var elm$svg$Svg$text_ = elm$svg$Svg$trustedNode('text');
 var elm$svg$Svg$Attributes$class = _VirtualDom_attribute('class');
 var elm$svg$Svg$Attributes$d = _VirtualDom_attribute('d');
 var author$project$Main$drawStack = function (model) {
+	var stack = function () {
+		var _n0 = model.progress_state;
+		if (_n0.$ === 'Done') {
+			return author$project$Main$stackPop(model.stack).b;
+		} else {
+			return model.stack;
+		}
+	}();
 	return A2(
 		elm$svg$Svg$g,
 		_List_Nil,
@@ -7240,7 +7252,7 @@ var author$project$Main$drawStack = function (model) {
 									elm$core$String$fromInt(n))
 								]));
 					}),
-				model.stack)));
+				stack)));
 };
 var elm$svg$Svg$svg = elm$svg$Svg$trustedNode('svg');
 var elm$svg$Svg$Attributes$viewBox = _VirtualDom_attribute('viewBox');
