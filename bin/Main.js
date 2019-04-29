@@ -5587,8 +5587,8 @@ var author$project$Main$trust = function (x) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 292, column: 20},
-				end: {line: 292, column: 30}
+				start: {line: 291, column: 20},
+				end: {line: 291, column: 30}
 			})('trust got Nothing');
 	}
 };
@@ -5863,8 +5863,8 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 259, column: 22},
-							end: {line: 259, column: 32}
+							start: {line: 258, column: 22},
+							end: {line: 258, column: 32}
 						})('bad polygon');
 				}
 			}
@@ -6702,7 +6702,6 @@ var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
 	}
 };
 var author$project$Main$progress_log_id = 'progress-log';
-var elm$core$Debug$log = _Debug_log;
 var elm$html$Html$a = _VirtualDom_node('a');
 var elm$html$Html$button = _VirtualDom_node('button');
 var elm$html$Html$table = _VirtualDom_node('table');
@@ -6725,8 +6724,8 @@ var elm$html$Html$Events$onClick = function (msg) {
 var elm$svg$Svg$Attributes$id = _VirtualDom_attribute('id');
 var author$project$Main$view = function (model) {
 	var btn_label = function () {
-		var _n1 = model.progress_state;
-		switch (_n1.$) {
+		var _n0 = model.progress_state;
+		switch (_n0.$) {
 			case 'NotStartedYet':
 				return 'start!';
 			case 'InProgress':
@@ -6735,10 +6734,6 @@ var author$project$Main$view = function (model) {
 				return 'restart';
 		}
 	}();
-	var _n0 = A2(
-		elm$core$Debug$log,
-		'scroll',
-		author$project$ScrollPorts$scrollToBottom('progress-log'));
 	return {
 		body: _List_fromArray(
 			[

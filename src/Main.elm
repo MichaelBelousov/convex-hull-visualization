@@ -89,7 +89,6 @@ subscriptions _ =
 view : Model -> Browser.Document Msg
 view model =
     let
-        _ = Debug.log "scroll" <| scrollToBottom "progress-log"
         btn_label = case model.progress_state of
             NotStartedYet ->
                 "start!"
