@@ -5187,6 +5187,7 @@ var author$project$Main$before_start_state = function () {
 		{
 			grabbed: elm$core$Maybe$Nothing,
 			interactive: subModel,
+			mouse_in_svg: _Utils_Tuple2(0, 0),
 			next_point: -1,
 			polygon: author$project$Main$init_polygon,
 			progress_log: _List_fromArray(
@@ -5196,508 +5197,25 @@ var author$project$Main$before_start_state = function () {
 		},
 		A2(elm$core$Platform$Cmd$map, author$project$Main$InteractiveMsg, subCmd));
 }();
-var elm$core$Platform$Sub$map = _Platform_map;
-var elm$browser$Browser$Events$Document = {$: 'Document'};
-var elm$browser$Browser$Events$MySub = F3(
-	function (a, b, c) {
-		return {$: 'MySub', a: a, b: b, c: c};
-	});
-var elm$browser$Browser$Events$State = F2(
-	function (subs, pids) {
-		return {pids: pids, subs: subs};
-	});
-var elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
-var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
-var elm$browser$Browser$Events$init = elm$core$Task$succeed(
-	A2(elm$browser$Browser$Events$State, _List_Nil, elm$core$Dict$empty));
-var elm$browser$Browser$Events$nodeToKey = function (node) {
-	if (node.$ === 'Document') {
-		return 'd_';
-	} else {
-		return 'w_';
-	}
+var author$project$Main$MouseMoved = function (a) {
+	return {$: 'MouseMoved', a: a};
 };
-var elm$browser$Browser$Events$addKey = function (sub) {
-	var node = sub.a;
-	var name = sub.b;
-	return _Utils_Tuple2(
-		_Utils_ap(
-			elm$browser$Browser$Events$nodeToKey(node),
-			name),
-		sub);
+var elm$json$Json$Decode$value = _Json_decodeValue;
+var author$project$SvgPorts$mouseToSvgCoords = _Platform_incomingPort('mouseToSvgCoords', elm$json$Json$Decode$value);
+var author$project$Main$subscriptions = function (_n0) {
+	return author$project$SvgPorts$mouseToSvgCoords(author$project$Main$MouseMoved);
 };
-var elm$browser$Browser$Events$Event = F2(
-	function (key, event) {
-		return {event: event, key: key};
-	});
-var elm$core$Platform$sendToSelf = _Platform_sendToSelf;
-var elm$browser$Browser$Events$spawn = F3(
-	function (router, key, _n0) {
-		var node = _n0.a;
-		var name = _n0.b;
-		var actualNode = function () {
-			if (node.$ === 'Document') {
-				return _Browser_doc;
-			} else {
-				return _Browser_window;
-			}
-		}();
-		return A2(
-			elm$core$Task$map,
-			function (value) {
-				return _Utils_Tuple2(key, value);
-			},
-			A3(
-				_Browser_on,
-				actualNode,
-				name,
-				function (event) {
-					return A2(
-						elm$core$Platform$sendToSelf,
-						router,
-						A2(elm$browser$Browser$Events$Event, key, event));
-				}));
-	});
-var elm$core$Dict$Black = {$: 'Black'};
-var elm$core$Dict$RBNode_elm_builtin = F5(
-	function (a, b, c, d, e) {
-		return {$: 'RBNode_elm_builtin', a: a, b: b, c: c, d: d, e: e};
-	});
-var elm$core$Basics$compare = _Utils_compare;
-var elm$core$Dict$Red = {$: 'Red'};
-var elm$core$Dict$balance = F5(
-	function (color, key, value, left, right) {
-		if ((right.$ === 'RBNode_elm_builtin') && (right.a.$ === 'Red')) {
-			var _n1 = right.a;
-			var rK = right.b;
-			var rV = right.c;
-			var rLeft = right.d;
-			var rRight = right.e;
-			if ((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) {
-				var _n3 = left.a;
-				var lK = left.b;
-				var lV = left.c;
-				var lLeft = left.d;
-				var lRight = left.e;
-				return A5(
-					elm$core$Dict$RBNode_elm_builtin,
-					elm$core$Dict$Red,
-					key,
-					value,
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, lK, lV, lLeft, lRight),
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, rK, rV, rLeft, rRight));
-			} else {
-				return A5(
-					elm$core$Dict$RBNode_elm_builtin,
-					color,
-					rK,
-					rV,
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Red, key, value, left, rLeft),
-					rRight);
-			}
-		} else {
-			if ((((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) && (left.d.$ === 'RBNode_elm_builtin')) && (left.d.a.$ === 'Red')) {
-				var _n5 = left.a;
-				var lK = left.b;
-				var lV = left.c;
-				var _n6 = left.d;
-				var _n7 = _n6.a;
-				var llK = _n6.b;
-				var llV = _n6.c;
-				var llLeft = _n6.d;
-				var llRight = _n6.e;
-				var lRight = left.e;
-				return A5(
-					elm$core$Dict$RBNode_elm_builtin,
-					elm$core$Dict$Red,
-					lK,
-					lV,
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, llK, llV, llLeft, llRight),
-					A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, key, value, lRight, right));
-			} else {
-				return A5(elm$core$Dict$RBNode_elm_builtin, color, key, value, left, right);
-			}
-		}
-	});
-var elm$core$Dict$insertHelp = F3(
-	function (key, value, dict) {
-		if (dict.$ === 'RBEmpty_elm_builtin') {
-			return A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Red, key, value, elm$core$Dict$RBEmpty_elm_builtin, elm$core$Dict$RBEmpty_elm_builtin);
-		} else {
-			var nColor = dict.a;
-			var nKey = dict.b;
-			var nValue = dict.c;
-			var nLeft = dict.d;
-			var nRight = dict.e;
-			var _n1 = A2(elm$core$Basics$compare, key, nKey);
-			switch (_n1.$) {
-				case 'LT':
-					return A5(
-						elm$core$Dict$balance,
-						nColor,
-						nKey,
-						nValue,
-						A3(elm$core$Dict$insertHelp, key, value, nLeft),
-						nRight);
-				case 'EQ':
-					return A5(elm$core$Dict$RBNode_elm_builtin, nColor, nKey, value, nLeft, nRight);
-				default:
-					return A5(
-						elm$core$Dict$balance,
-						nColor,
-						nKey,
-						nValue,
-						nLeft,
-						A3(elm$core$Dict$insertHelp, key, value, nRight));
-			}
-		}
-	});
-var elm$core$Dict$insert = F3(
-	function (key, value, dict) {
-		var _n0 = A3(elm$core$Dict$insertHelp, key, value, dict);
-		if ((_n0.$ === 'RBNode_elm_builtin') && (_n0.a.$ === 'Red')) {
-			var _n1 = _n0.a;
-			var k = _n0.b;
-			var v = _n0.c;
-			var l = _n0.d;
-			var r = _n0.e;
-			return A5(elm$core$Dict$RBNode_elm_builtin, elm$core$Dict$Black, k, v, l, r);
-		} else {
-			var x = _n0;
-			return x;
-		}
-	});
-var elm$core$Dict$fromList = function (assocs) {
-	return A3(
-		elm$core$List$foldl,
-		F2(
-			function (_n0, dict) {
-				var key = _n0.a;
-				var value = _n0.b;
-				return A3(elm$core$Dict$insert, key, value, dict);
-			}),
-		elm$core$Dict$empty,
-		assocs);
-};
-var elm$core$Dict$foldl = F3(
-	function (func, acc, dict) {
-		foldl:
-		while (true) {
-			if (dict.$ === 'RBEmpty_elm_builtin') {
-				return acc;
-			} else {
-				var key = dict.b;
-				var value = dict.c;
-				var left = dict.d;
-				var right = dict.e;
-				var $temp$func = func,
-					$temp$acc = A3(
-					func,
-					key,
-					value,
-					A3(elm$core$Dict$foldl, func, acc, left)),
-					$temp$dict = right;
-				func = $temp$func;
-				acc = $temp$acc;
-				dict = $temp$dict;
-				continue foldl;
-			}
-		}
-	});
-var elm$core$Dict$merge = F6(
-	function (leftStep, bothStep, rightStep, leftDict, rightDict, initialResult) {
-		var stepState = F3(
-			function (rKey, rValue, _n0) {
-				stepState:
-				while (true) {
-					var list = _n0.a;
-					var result = _n0.b;
-					if (!list.b) {
-						return _Utils_Tuple2(
-							list,
-							A3(rightStep, rKey, rValue, result));
-					} else {
-						var _n2 = list.a;
-						var lKey = _n2.a;
-						var lValue = _n2.b;
-						var rest = list.b;
-						if (_Utils_cmp(lKey, rKey) < 0) {
-							var $temp$rKey = rKey,
-								$temp$rValue = rValue,
-								$temp$_n0 = _Utils_Tuple2(
-								rest,
-								A3(leftStep, lKey, lValue, result));
-							rKey = $temp$rKey;
-							rValue = $temp$rValue;
-							_n0 = $temp$_n0;
-							continue stepState;
-						} else {
-							if (_Utils_cmp(lKey, rKey) > 0) {
-								return _Utils_Tuple2(
-									list,
-									A3(rightStep, rKey, rValue, result));
-							} else {
-								return _Utils_Tuple2(
-									rest,
-									A4(bothStep, lKey, lValue, rValue, result));
-							}
-						}
-					}
-				}
-			});
-		var _n3 = A3(
-			elm$core$Dict$foldl,
-			stepState,
-			_Utils_Tuple2(
-				elm$core$Dict$toList(leftDict),
-				initialResult),
-			rightDict);
-		var leftovers = _n3.a;
-		var intermediateResult = _n3.b;
-		return A3(
-			elm$core$List$foldl,
-			F2(
-				function (_n4, result) {
-					var k = _n4.a;
-					var v = _n4.b;
-					return A3(leftStep, k, v, result);
-				}),
-			intermediateResult,
-			leftovers);
-	});
-var elm$core$Dict$union = F2(
-	function (t1, t2) {
-		return A3(elm$core$Dict$foldl, elm$core$Dict$insert, t2, t1);
-	});
-var elm$core$Process$kill = _Scheduler_kill;
-var elm$browser$Browser$Events$onEffects = F3(
-	function (router, subs, state) {
-		var stepRight = F3(
-			function (key, sub, _n6) {
-				var deads = _n6.a;
-				var lives = _n6.b;
-				var news = _n6.c;
-				return _Utils_Tuple3(
-					deads,
-					lives,
-					A2(
-						elm$core$List$cons,
-						A3(elm$browser$Browser$Events$spawn, router, key, sub),
-						news));
-			});
-		var stepLeft = F3(
-			function (_n4, pid, _n5) {
-				var deads = _n5.a;
-				var lives = _n5.b;
-				var news = _n5.c;
-				return _Utils_Tuple3(
-					A2(elm$core$List$cons, pid, deads),
-					lives,
-					news);
-			});
-		var stepBoth = F4(
-			function (key, pid, _n2, _n3) {
-				var deads = _n3.a;
-				var lives = _n3.b;
-				var news = _n3.c;
-				return _Utils_Tuple3(
-					deads,
-					A3(elm$core$Dict$insert, key, pid, lives),
-					news);
-			});
-		var newSubs = A2(elm$core$List$map, elm$browser$Browser$Events$addKey, subs);
-		var _n0 = A6(
-			elm$core$Dict$merge,
-			stepLeft,
-			stepBoth,
-			stepRight,
-			state.pids,
-			elm$core$Dict$fromList(newSubs),
-			_Utils_Tuple3(_List_Nil, elm$core$Dict$empty, _List_Nil));
-		var deadPids = _n0.a;
-		var livePids = _n0.b;
-		var makeNewPids = _n0.c;
-		return A2(
-			elm$core$Task$andThen,
-			function (pids) {
-				return elm$core$Task$succeed(
-					A2(
-						elm$browser$Browser$Events$State,
-						newSubs,
-						A2(
-							elm$core$Dict$union,
-							livePids,
-							elm$core$Dict$fromList(pids))));
-			},
-			A2(
-				elm$core$Task$andThen,
-				function (_n1) {
-					return elm$core$Task$sequence(makeNewPids);
-				},
-				elm$core$Task$sequence(
-					A2(elm$core$List$map, elm$core$Process$kill, deadPids))));
-	});
-var elm$core$List$maybeCons = F3(
-	function (f, mx, xs) {
-		var _n0 = f(mx);
-		if (_n0.$ === 'Just') {
-			var x = _n0.a;
-			return A2(elm$core$List$cons, x, xs);
-		} else {
-			return xs;
-		}
-	});
-var elm$core$List$filterMap = F2(
-	function (f, xs) {
-		return A3(
-			elm$core$List$foldr,
-			elm$core$List$maybeCons(f),
-			_List_Nil,
-			xs);
-	});
-var elm$browser$Browser$Events$onSelfMsg = F3(
-	function (router, _n0, state) {
-		var key = _n0.key;
-		var event = _n0.event;
-		var toMessage = function (_n2) {
-			var subKey = _n2.a;
-			var _n3 = _n2.b;
-			var node = _n3.a;
-			var name = _n3.b;
-			var decoder = _n3.c;
-			return _Utils_eq(subKey, key) ? A2(_Browser_decodeEvent, decoder, event) : elm$core$Maybe$Nothing;
-		};
-		var messages = A2(elm$core$List$filterMap, toMessage, state.subs);
-		return A2(
-			elm$core$Task$andThen,
-			function (_n1) {
-				return elm$core$Task$succeed(state);
-			},
-			elm$core$Task$sequence(
-				A2(
-					elm$core$List$map,
-					elm$core$Platform$sendToApp(router),
-					messages)));
-	});
-var elm$browser$Browser$Events$subMap = F2(
-	function (func, _n0) {
-		var node = _n0.a;
-		var name = _n0.b;
-		var decoder = _n0.c;
-		return A3(
-			elm$browser$Browser$Events$MySub,
-			node,
-			name,
-			A2(elm$json$Json$Decode$map, func, decoder));
-	});
-_Platform_effectManagers['Browser.Events'] = _Platform_createManager(elm$browser$Browser$Events$init, elm$browser$Browser$Events$onEffects, elm$browser$Browser$Events$onSelfMsg, 0, elm$browser$Browser$Events$subMap);
-var elm$browser$Browser$Events$subscription = _Platform_leaf('Browser.Events');
-var elm$browser$Browser$Events$on = F3(
-	function (node, name, decoder) {
-		return elm$browser$Browser$Events$subscription(
-			A3(elm$browser$Browser$Events$MySub, node, name, decoder));
-	});
-var elm$browser$Browser$Events$onMouseMove = A2(elm$browser$Browser$Events$on, elm$browser$Browser$Events$Document, 'mousemove');
-var elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
-	});
-var elm$json$Json$Decode$map6 = _Json_map6;
-var mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$Event = F6(
-	function (keys, button, clientPos, offsetPos, pagePos, screenPos) {
-		return {button: button, clientPos: clientPos, keys: keys, offsetPos: offsetPos, pagePos: pagePos, screenPos: screenPos};
+var author$project$Main$SvgPoint = F2(
+	function (x, y) {
+		return {x: x, y: y};
 	});
 var elm$json$Json$Decode$field = _Json_decodeField;
-var elm$json$Json$Decode$int = _Json_decodeInt;
-var mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$BackButton = {$: 'BackButton'};
-var mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$ErrorButton = {$: 'ErrorButton'};
-var mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$ForwardButton = {$: 'ForwardButton'};
-var mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$MainButton = {$: 'MainButton'};
-var mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$MiddleButton = {$: 'MiddleButton'};
-var mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$SecondButton = {$: 'SecondButton'};
-var mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$buttonFromId = function (id) {
-	switch (id) {
-		case 0:
-			return mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$MainButton;
-		case 1:
-			return mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$MiddleButton;
-		case 2:
-			return mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$SecondButton;
-		case 3:
-			return mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$BackButton;
-		case 4:
-			return mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$ForwardButton;
-		default:
-			return mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$ErrorButton;
-	}
-};
-var mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$buttonDecoder = A2(
-	elm$json$Json$Decode$map,
-	mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$buttonFromId,
-	A2(elm$json$Json$Decode$field, 'button', elm$json$Json$Decode$int));
 var elm$json$Json$Decode$float = _Json_decodeFloat;
-var mpizenberg$elm_pointer_events$Internal$Decode$clientPos = A3(
+var author$project$Main$decodeSvgPoint = A3(
 	elm$json$Json$Decode$map2,
-	F2(
-		function (a, b) {
-			return _Utils_Tuple2(a, b);
-		}),
-	A2(elm$json$Json$Decode$field, 'clientX', elm$json$Json$Decode$float),
-	A2(elm$json$Json$Decode$field, 'clientY', elm$json$Json$Decode$float));
-var elm$json$Json$Decode$bool = _Json_decodeBool;
-var elm$json$Json$Decode$map3 = _Json_map3;
-var mpizenberg$elm_pointer_events$Internal$Decode$Keys = F3(
-	function (alt, ctrl, shift) {
-		return {alt: alt, ctrl: ctrl, shift: shift};
-	});
-var mpizenberg$elm_pointer_events$Internal$Decode$keys = A4(
-	elm$json$Json$Decode$map3,
-	mpizenberg$elm_pointer_events$Internal$Decode$Keys,
-	A2(elm$json$Json$Decode$field, 'altKey', elm$json$Json$Decode$bool),
-	A2(elm$json$Json$Decode$field, 'ctrlKey', elm$json$Json$Decode$bool),
-	A2(elm$json$Json$Decode$field, 'shiftKey', elm$json$Json$Decode$bool));
-var mpizenberg$elm_pointer_events$Internal$Decode$offsetPos = A3(
-	elm$json$Json$Decode$map2,
-	F2(
-		function (a, b) {
-			return _Utils_Tuple2(a, b);
-		}),
-	A2(elm$json$Json$Decode$field, 'offsetX', elm$json$Json$Decode$float),
-	A2(elm$json$Json$Decode$field, 'offsetY', elm$json$Json$Decode$float));
-var mpizenberg$elm_pointer_events$Internal$Decode$pagePos = A3(
-	elm$json$Json$Decode$map2,
-	F2(
-		function (a, b) {
-			return _Utils_Tuple2(a, b);
-		}),
-	A2(elm$json$Json$Decode$field, 'pageX', elm$json$Json$Decode$float),
-	A2(elm$json$Json$Decode$field, 'pageY', elm$json$Json$Decode$float));
-var mpizenberg$elm_pointer_events$Internal$Decode$screenPos = A3(
-	elm$json$Json$Decode$map2,
-	F2(
-		function (a, b) {
-			return _Utils_Tuple2(a, b);
-		}),
-	A2(elm$json$Json$Decode$field, 'screenX', elm$json$Json$Decode$float),
-	A2(elm$json$Json$Decode$field, 'screenY', elm$json$Json$Decode$float));
-var mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$eventDecoder = A7(elm$json$Json$Decode$map6, mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$Event, mpizenberg$elm_pointer_events$Internal$Decode$keys, mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$buttonDecoder, mpizenberg$elm_pointer_events$Internal$Decode$clientPos, mpizenberg$elm_pointer_events$Internal$Decode$offsetPos, mpizenberg$elm_pointer_events$Internal$Decode$pagePos, mpizenberg$elm_pointer_events$Internal$Decode$screenPos);
-var thought2$elm_interactive$Interactive$Mouse = function (a) {
-	return {$: 'Mouse', a: a};
-};
-var thought2$elm_interactive$Interactive$subMouse = elm$browser$Browser$Events$onMouseMove(
-	A2(
-		elm$json$Json$Decode$map,
-		A2(
-			elm$core$Basics$composeL,
-			thought2$elm_interactive$Interactive$Mouse,
-			function ($) {
-				return $.clientPos;
-			}),
-		mpizenberg$elm_pointer_events$Html$Events$Extra$Mouse$eventDecoder));
-var author$project$Main$subscriptions = function (_n0) {
-	return A2(elm$core$Platform$Sub$map, author$project$Main$InteractiveMsg, thought2$elm_interactive$Interactive$subMouse);
-};
+	author$project$Main$SvgPoint,
+	A2(elm$json$Json$Decode$field, 'x', elm$json$Json$Decode$float),
+	A2(elm$json$Json$Decode$field, 'y', elm$json$Json$Decode$float));
 var author$project$Main$nth = F2(
 	function (n, list) {
 		nth:
@@ -5728,8 +5246,8 @@ var author$project$Main$trust = function (x) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 329, column: 20},
-				end: {line: 329, column: 30}
+				start: {line: 356, column: 20},
+				end: {line: 356, column: 30}
 			})('trust got Nothing');
 	}
 };
@@ -5999,8 +5517,8 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 281, column: 22},
-							end: {line: 281, column: 32}
+							start: {line: 307, column: 22},
+							end: {line: 307, column: 32}
 						})('bad polygon');
 				}
 			}
@@ -6665,14 +6183,14 @@ var author$project$Main$started_desc = A2(
 						[
 							elm$html$Html$text('simple polygon')
 						])),
-					elm$html$Html$text(' our points are ordered by the edges they connect to, and by simplicity ' + ('they don\'t overlap each other. ' + ('Our simple polygon is already sorted in counter-clockwise order ' + ('(if it weren\'t we\'d just reverse it), so we\'ll just find the ' + 'bottom-leftmost point and shift the polygon list to start at that point.'))))
+					elm$html$Html$text(' our points are ordered by the edges they connect to, and by simplicity ' + ('they don\'t overlap each other. ' + ('Our simple polygon is already sorted in counter-clockwise (CCW) order ' + ('(if it weren\'t we\'d just reverse it), so we\'ll just find the ' + 'bottom-leftmost point and shift the polygon list to start at that point.'))))
 				])),
 			A2(
 			elm$html$Html$p,
 			_List_Nil,
 			_List_fromArray(
 				[
-					elm$html$Html$text('To start, we put the first two points of our polygon in a stack, ' + ('and we start considering the remaining points in order. The point ' + ('we\'re considering is in green, and the triangle of CCW comparison is ' + 'the dashed red one')))
+					elm$html$Html$text('To start, we put the first two points of our polygon in a stack, ' + ('and we start considering the remaining points in order. The point ' + ('we\'re considering is in yellow, and the dashed yellow triangle ' + ('is a CCW test between the top two members of the stack, and that ' + ('point of consideration. Note the black spinny arrow that should ' + 'helpfully illustrate whether the triangle\'s points are in CCW order.')))))
 				]))
 		]));
 var author$project$Main$startAlgorithmState = function (model) {
@@ -6797,33 +6315,16 @@ var author$project$Main$progressConvexHull = function (model) {
 	}
 };
 var elm$core$Debug$log = _Debug_log;
-var author$project$Main$windowToSvgSpace = F2(
-	function (model, _n0) {
-		var x = _n0.a;
-		var y = _n0.b;
-		var _n1 = A2(
-			elm$core$Debug$log,
-			'window',
-			_Utils_Tuple2(x, y));
-		var _n2 = A2(
-			elm$core$Debug$log,
-			'polygon',
-			author$project$Main$trust(
-				A2(
-					author$project$Main$nth,
-					author$project$Main$trust(model.grabbed),
-					model.polygon)));
-		return _Utils_Tuple2((x / 10) - 40, (y / (-10)) + 30);
-	});
+var elm$json$Json$Decode$decodeValue = _Json_run;
 var author$project$Main$update = F2(
 	function (msg, model) {
 		var nocmd = function (model_) {
 			return _Utils_Tuple2(model_, elm$core$Platform$Cmd$none);
 		};
 		var grabbed_moved = function () {
-			var _n2 = model.grabbed;
-			if (_n2.$ === 'Just') {
-				var grabbed = _n2.a;
+			var _n3 = model.grabbed;
+			if (_n3.$ === 'Just') {
+				var grabbed = _n3.a;
 				return _Utils_update(
 					model,
 					{
@@ -6831,7 +6332,7 @@ var author$project$Main$update = F2(
 							elm$core$List$indexedMap,
 							F2(
 								function (i, p) {
-									return _Utils_eq(i, grabbed) ? A2(author$project$Main$windowToSvgSpace, model, model.interactive.mouse) : p;
+									return _Utils_eq(i, grabbed) ? model.mouse_in_svg : p;
 								}),
 							model.polygon)
 					});
@@ -6872,10 +6373,25 @@ var author$project$Main$update = F2(
 					_Utils_update(
 						grabbed_moved,
 						{grabbed: elm$core$Maybe$Nothing}));
+			case 'MouseMoved':
+				var received = msg.a;
+				var _n1 = A2(elm$json$Json$Decode$decodeValue, author$project$Main$decodeSvgPoint, received);
+				if (_n1.$ === 'Ok') {
+					var x = _n1.a.x;
+					var y = _n1.a.y;
+					return nocmd(
+						_Utils_update(
+							grabbed_moved,
+							{
+								mouse_in_svg: _Utils_Tuple2(x, y)
+							}));
+				} else {
+					return A3(elm$core$Debug$log, 'bad value', nocmd, grabbed_moved);
+				}
 			default:
-				var _n1 = author$project$Main$before_start_state;
-				var before_start_model = _n1.a;
-				var before_start_cmd = _n1.b;
+				var _n2 = author$project$Main$before_start_state;
+				var before_start_model = _n2.a;
+				var before_start_cmd = _n2.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						before_start_model,
@@ -7011,29 +6527,6 @@ var author$project$Main$LeftClickEdge = function (a) {
 	return {$: 'LeftClickEdge', a: a};
 };
 var author$project$Main$ReleasePoint = {$: 'ReleasePoint'};
-var elm$virtual_dom$VirtualDom$Normal = function (a) {
-	return {$: 'Normal', a: a};
-};
-var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
-var elm$html$Html$Events$on = F2(
-	function (event, decoder) {
-		return A2(
-			elm$virtual_dom$VirtualDom$on,
-			event,
-			elm$virtual_dom$VirtualDom$Normal(decoder));
-	});
-var author$project$Main$onMouseDown = function (message) {
-	return A2(
-		elm$html$Html$Events$on,
-		'mousedown',
-		elm$json$Json$Decode$succeed(message));
-};
-var author$project$Main$onMouseUp = function (message) {
-	return A2(
-		elm$html$Html$Events$on,
-		'mouseup',
-		elm$json$Json$Decode$succeed(message));
-};
 var author$project$Main$point_color = 'blue';
 var elm$core$List$tail = function (list) {
 	if (list.b) {
@@ -7070,10 +6563,33 @@ var author$project$Main$polygonToEdges = function (polygon) {
 var author$project$Main$polygon_fill = 'none';
 var author$project$Main$polygon_stroke = 'blue';
 var author$project$Main$polygon_stroke_width = elm$core$String$fromFloat(1.5);
+var elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
+};
+var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			elm$virtual_dom$VirtualDom$on,
+			event,
+			elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
 var elm$html$Html$Events$onDoubleClick = function (msg) {
 	return A2(
 		elm$html$Html$Events$on,
 		'dblclick',
+		elm$json$Json$Decode$succeed(msg));
+};
+var elm$html$Html$Events$onMouseDown = function (msg) {
+	return A2(
+		elm$html$Html$Events$on,
+		'mousedown',
+		elm$json$Json$Decode$succeed(msg));
+};
+var elm$html$Html$Events$onMouseUp = function (msg) {
+	return A2(
+		elm$html$Html$Events$on,
+		'mouseup',
 		elm$json$Json$Decode$succeed(msg));
 };
 var elm$svg$Svg$line = elm$svg$Svg$trustedNode('line');
@@ -7099,9 +6615,9 @@ var author$project$Main$drawPolygon = function (model) {
 		if (_n5.$ === 'NotStartedYet') {
 			return _List_fromArray(
 				[
-					author$project$Main$onMouseDown(
+					elm$html$Html$Events$onMouseDown(
 					author$project$Main$GrabPoint(i)),
-					author$project$Main$onMouseUp(author$project$Main$ReleasePoint)
+					elm$html$Html$Events$onMouseUp(author$project$Main$ReleasePoint)
 				]);
 		} else {
 			return _List_Nil;
@@ -7112,9 +6628,9 @@ var author$project$Main$drawPolygon = function (model) {
 		if (_n4.$ === 'NotStartedYet') {
 			return _List_fromArray(
 				[
-					author$project$Main$onMouseDown(
+					elm$html$Html$Events$onMouseDown(
 					author$project$Main$LeftClickEdge(i)),
-					author$project$Main$onMouseUp(author$project$Main$ReleasePoint)
+					elm$html$Html$Events$onMouseUp(author$project$Main$ReleasePoint)
 				]);
 		} else {
 			return _List_Nil;
@@ -7302,18 +6818,7 @@ var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
 	}
 };
 var author$project$Main$flipCartesian = function (model) {
-	return _Utils_update(
-		model,
-		{
-			polygon: A2(
-				elm$core$List$map,
-				function (_n0) {
-					var x = _n0.a;
-					var y = _n0.b;
-					return _Utils_Tuple2(x, -y);
-				},
-				model.polygon)
-		});
+	return model;
 };
 var elm$html$Html$a = _VirtualDom_node('a');
 var elm$html$Html$button = _VirtualDom_node('button');

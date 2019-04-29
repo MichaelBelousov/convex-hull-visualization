@@ -3,14 +3,15 @@ module Main exposing (main)
 import Browser
 import Html exposing (Html, Attribute, div, button, text, a,
                       table, tr, td, p, i, b, ul, ol, li)
-import Html.Events exposing (onClick, onDoubleClick, on)
+import Html.Events exposing (onClick, onDoubleClick, onMouseUp, onMouseDown)
 import Html.Attributes exposing (..)
 import Interactive
 import List
 import List.Extra exposing (last, splitAt)
 import Tuple
 import Debug
-import Json.Decode as Decode
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode
 import String exposing (..)
 import Svg exposing (Svg, svg, circle, polyline, polygon,
                      line, g, path, image, text_)
@@ -18,10 +19,7 @@ import Svg.Attributes exposing (height, width, viewBox, xlinkHref, id,
                                 fill, stroke, strokeWidth, strokeLinecap,
                                 strokeDasharray, cx, cy, r, points, d, x, y,
                                 x1, y1, x2, y2)
-onMouseDown message =
-    on "mousedown" (Decode.succeed message)
-onMouseUp message =
-    on "mouseup" (Decode.succeed message)
+import SvgPorts exposing (mouseToSvgCoords)
 
 -- Browser Model
 
@@ -32,6 +30,7 @@ type Msg
     | GrabPoint Int
     | ReleasePoint
     | Restart
+    | MouseMoved Encode.Value
     | InteractiveMsg Interactive.Msg
 
 type alias InteractiveModel = (Model, Cmd Msg)
@@ -45,7 +44,8 @@ update msg model =
                      { model
                        | polygon = List.indexedMap
                                        (\i p -> if i == grabbed
-                                                then windowToSvgSpace model model.interactive.mouse
+                                --then windowToSvgSpace model model.interactive.mouse
+                                                then model.mouse_in_svg
                                                 else p)
                                        model.polygon
                      }
@@ -69,6 +69,12 @@ update msg model =
             nocmd <| { grabbed_moved | grabbed = Just point_idx }
         ReleasePoint ->
             nocmd <| { grabbed_moved | grabbed = Nothing }
+        MouseMoved received ->
+            case Decode.decodeValue decodeSvgPoint received of
+                Ok {x, y} ->
+                    nocmd <| { grabbed_moved | mouse_in_svg = (x,y) }
+                Err _ ->
+                    Debug.log "bad value" nocmd <| grabbed_moved
         Restart ->
             let
                 (before_start_model , before_start_cmd) = before_start_state
@@ -77,6 +83,16 @@ update msg model =
             , before_start_cmd
             )
 
+type alias SvgPoint =
+    { x : Float
+    , y : Float
+    }
+
+decodeSvgPoint : Decoder SvgPoint
+decodeSvgPoint =
+    Decode.map2 SvgPoint
+        (Decode.field "x" Decode.float)
+        (Decode.field "y" Decode.float)
 
 interactiveUpdate : Model -> Interactive.Msg -> InteractiveModel
 interactiveUpdate model subMsg =
@@ -91,7 +107,10 @@ interactiveUpdate model subMsg =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.map InteractiveMsg Interactive.subMouse
+    mouseToSvgCoords MouseMoved
+    --Sub.batch [ Sub.map InteractiveMsg Interactive.subMouse
+              --, 
+              --]
 
 view : Model -> Browser.Document Msg
 view model =
@@ -141,12 +160,15 @@ type alias Model =
     , next_point : Int
     , grabbed : Maybe Int
     , progress_log : List (Html Msg)
+    , mouse_in_svg : Point
     , interactive : Interactive.Model
     }
 
 
 windowToSvgSpace : Model -> Point -> Point
 windowToSvgSpace model (x,y) =
+    (x,y)
+    {-
     let
         _ = Debug.log "window" (x,y)
         _ = Debug.log "polygon" <| trust <| nth (trust model.grabbed) model.polygon
@@ -157,6 +179,7 @@ windowToSvgSpace model (x,y) =
     ( x / 10 - 40
     , y / -10 + 30
     )
+    -}
 
 
 -- Domain Types
@@ -243,14 +266,6 @@ makeCube half_sz =
     , (half_sz, half_sz)
     , (-half_sz, half_sz) ]
 
-    -- flip the cartesian points in the model to SVG
-flipCartesian : Model -> Model
-flipCartesian model =
-    { model
-      | polygon = List.map (\(x,y) -> (x,-y))
-                           model.polygon
-    }
-
 -- Interactions
 
 deletePoint : Model -> Int -> Model
@@ -296,6 +311,7 @@ before_start_state =
       , next_point = -1
       , grabbed = Nothing
       , progress_log = [intro]
+      , mouse_in_svg = (0,0)
       , interactive = subModel
       }
     , Cmd.map InteractiveMsg subCmd
