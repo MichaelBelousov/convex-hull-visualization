@@ -95,6 +95,10 @@ view model =
                          [ tr []
                               [ td [ class "visualization" ]
                                    [ div [] [ drawConvexHullAlgorithmsState model ]
+                                   , div [ class "next-btn-container" ]
+                                         [ button [ onClick btn_action ]
+                                                  [ text btn_label ]
+                                         ]
                                    ]
                               , td [ class "description" ]
                                    [ div [ class "progress-log" ] model.progress_log
@@ -272,8 +276,12 @@ trust x =
 drawConvexHullAlgorithmsState : Model -> Html Msg
 drawConvexHullAlgorithmsState model =
     let
-        -- svg_model = model
-        svg_model = { model
+        model_ = 
+            case model.progress_state of
+                NotStartedYet ->
+                    model
+                _ ->
+                    { model
                       | polygon = List.map (\(x,y) -> (x,-y)) model.polygon
                     }
         svgBase extra =
@@ -284,17 +292,17 @@ drawConvexHullAlgorithmsState model =
                       , Svg.Attributes.class "resizable-svg"
                       ]
                       (
-                      [ drawPolygon svg_model
-                      , drawPolyline svg_model
-                      , drawStack svg_model
+                      [ drawPolygon model_
+                      , drawPolyline model_
+                      , drawStack model_
                       ] ++ extra
                       )
                  ]
     in
-    case svg_model.progress_state of
+    case model.progress_state of
         InProgress ->
-            svgBase [ drawNextPoint <| trust <| getAt svg_model.next_point svg_model.polygon
-                    , drawCurrentCCW svg_model
+            svgBase [ drawNextPoint <| trust <| getAt model_.next_point model_.polygon
+                    , drawCurrentCCW model_
                     ]
         _ ->
             svgBase []

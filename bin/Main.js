@@ -4883,8 +4883,8 @@ var author$project$Main$trust = function (x) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 269, column: 20},
-				end: {line: 269, column: 30}
+				start: {line: 273, column: 20},
+				end: {line: 273, column: 30}
 			})('trust got Nothing');
 	}
 };
@@ -5228,8 +5228,8 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 236, column: 22},
-							end: {line: 236, column: 32}
+							start: {line: 240, column: 22},
+							end: {line: 240, column: 32}
 						})('bad polygon');
 				}
 			}
@@ -5952,18 +5952,25 @@ var elm$html$Html$Attributes$class = elm$html$Html$Attributes$stringProperty('cl
 var elm$svg$Svg$svg = elm$svg$Svg$trustedNode('svg');
 var elm$svg$Svg$Attributes$viewBox = _VirtualDom_attribute('viewBox');
 var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
-	var svg_model = _Utils_update(
-		model,
-		{
-			polygon: A2(
-				elm$core$List$map,
-				function (_n1) {
-					var x = _n1.a;
-					var y = _n1.b;
-					return _Utils_Tuple2(x, -y);
-				},
-				model.polygon)
-		});
+	var model_ = function () {
+		var _n1 = model.progress_state;
+		if (_n1.$ === 'NotStartedYet') {
+			return model;
+		} else {
+			return _Utils_update(
+				model,
+				{
+					polygon: A2(
+						elm$core$List$map,
+						function (_n2) {
+							var x = _n2.a;
+							var y = _n2.b;
+							return _Utils_Tuple2(x, -y);
+						},
+						model.polygon)
+				});
+		}
+	}();
 	var svgBase = function (extra) {
 		return A2(
 			elm$html$Html$div,
@@ -5985,28 +5992,29 @@ var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
 					_Utils_ap(
 						_List_fromArray(
 							[
-								author$project$Main$drawPolygon(svg_model),
-								author$project$Main$drawPolyline(svg_model),
-								author$project$Main$drawStack(svg_model)
+								author$project$Main$drawPolygon(model_),
+								author$project$Main$drawPolyline(model_),
+								author$project$Main$drawStack(model_)
 							]),
 						extra))
 				]));
 	};
-	var _n0 = svg_model.progress_state;
+	var _n0 = model.progress_state;
 	if (_n0.$ === 'InProgress') {
 		return svgBase(
 			_List_fromArray(
 				[
 					author$project$Main$drawNextPoint(
 					author$project$Main$trust(
-						A2(elm_community$list_extra$List$Extra$getAt, svg_model.next_point, svg_model.polygon))),
-					author$project$Main$drawCurrentCCW(svg_model)
+						A2(elm_community$list_extra$List$Extra$getAt, model_.next_point, model_.polygon))),
+					author$project$Main$drawCurrentCCW(model_)
 				]));
 	} else {
 		return svgBase(_List_Nil);
 	}
 };
 var elm$html$Html$a = _VirtualDom_node('a');
+var elm$html$Html$button = _VirtualDom_node('button');
 var elm$html$Html$table = _VirtualDom_node('table');
 var elm$html$Html$td = _VirtualDom_node('td');
 var elm$html$Html$tr = _VirtualDom_node('tr');
@@ -6018,6 +6026,12 @@ var elm$html$Html$Attributes$href = function (url) {
 };
 var elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var elm$html$Html$Attributes$style = elm$virtual_dom$VirtualDom$style;
+var elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		elm$html$Html$Events$on,
+		'click',
+		elm$json$Json$Decode$succeed(msg));
+};
 var author$project$Main$view = function (model) {
 	var _n0 = function () {
 		var _n1 = model.progress_state;
@@ -6073,6 +6087,25 @@ var author$project$Main$view = function (model) {
 														_List_fromArray(
 															[
 																author$project$Main$drawConvexHullAlgorithmsState(model)
+															])),
+														A2(
+														elm$html$Html$div,
+														_List_fromArray(
+															[
+																elm$html$Html$Attributes$class('next-btn-container')
+															]),
+														_List_fromArray(
+															[
+																A2(
+																elm$html$Html$button,
+																_List_fromArray(
+																	[
+																		elm$html$Html$Events$onClick(btn_action)
+																	]),
+																_List_fromArray(
+																	[
+																		elm$html$Html$text(btn_label)
+																	]))
 															]))
 													])),
 												A2(
