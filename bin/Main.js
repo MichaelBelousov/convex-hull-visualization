@@ -5728,8 +5728,8 @@ var author$project$Main$trust = function (x) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 324, column: 20},
-				end: {line: 324, column: 30}
+				start: {line: 329, column: 20},
+				end: {line: 329, column: 30}
 			})('trust got Nothing');
 	}
 };
@@ -5999,8 +5999,8 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 276, column: 22},
-							end: {line: 276, column: 32}
+							start: {line: 281, column: 22},
+							end: {line: 281, column: 32}
 						})('bad polygon');
 				}
 			}
@@ -6811,9 +6811,9 @@ var author$project$Main$update = F2(
 			return _Utils_Tuple2(model_, elm$core$Platform$Cmd$none);
 		};
 		var grabbed_moved = function () {
-			var _n1 = model.grabbed;
-			if (_n1.$ === 'Just') {
-				var grabbed = _n1.a;
+			var _n2 = model.grabbed;
+			if (_n2.$ === 'Just') {
+				var grabbed = _n2.a;
 				return _Utils_update(
 					model,
 					{
@@ -6863,7 +6863,14 @@ var author$project$Main$update = F2(
 						grabbed_moved,
 						{grabbed: elm$core$Maybe$Nothing}));
 			default:
-				return author$project$Main$before_start_state;
+				var _n1 = author$project$Main$before_start_state;
+				var before_start_model = _n1.a;
+				var before_start_cmd = _n1.b;
+				return _Utils_Tuple2(
+					_Utils_update(
+						before_start_model,
+						{polygon: model.polygon}),
+					before_start_cmd);
 		}
 	});
 var author$project$Main$Restart = {$: 'Restart'};

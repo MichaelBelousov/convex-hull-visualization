@@ -72,8 +72,12 @@ update msg model =
         ReleasePoint ->
             nocmd <| { grabbed_moved | grabbed = Nothing }
         Restart ->
-            { before_start_state
-              | polygon = model.polygon }
+            let
+                (before_start_model , before_start_cmd) = before_start_state
+            in
+            ( { before_start_model | polygon = model.polygon }
+            , before_start_cmd
+            )
 
 
 interactiveUpdate : Model -> Interactive.Msg -> InteractiveModel
