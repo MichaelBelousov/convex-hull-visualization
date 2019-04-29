@@ -51,6 +51,7 @@ button:hover {
 
 .progress-log {
     max-height: 100vh;
+    vertical-align: middle;
 }
 
 .progress-log > *:last-child ::first-line {
@@ -74,10 +75,12 @@ button:hover {
 .visualization {
     vertical-align: top;
     width: 50%;
+    height: 100vh;
     position: fixed;
 }
 
 .description {
     vertical-align: middle;
     width: 50%;
+    height: 100vh;
 }

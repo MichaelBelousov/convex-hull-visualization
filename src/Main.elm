@@ -296,9 +296,7 @@ drawConvexHullAlgorithmsState model =
     let
         svgBase extra =
             div [ class "resizable-svg-container" ]
-                [ svg [ width "800"
-                      , height "600"
-                      , viewBox "-40 -12 80 60"
+                [ svg [ viewBox "-40 -12 80 30"
                       , Svg.Attributes.class "resizable-svg"
                       , cartesian_area
                       ]

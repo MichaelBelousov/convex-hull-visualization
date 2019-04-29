@@ -6671,9 +6671,7 @@ var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
 					elm$svg$Svg$svg,
 					_List_fromArray(
 						[
-							elm$svg$Svg$Attributes$width('800'),
-							elm$svg$Svg$Attributes$height('600'),
-							elm$svg$Svg$Attributes$viewBox('-40 -12 80 60'),
+							elm$svg$Svg$Attributes$viewBox('-40 -12 80 30'),
 							elm$svg$Svg$Attributes$class('resizable-svg'),
 							author$project$Main$cartesian_area
 						]),
