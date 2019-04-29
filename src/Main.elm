@@ -1,6 +1,7 @@
 module Main exposing (main)
 
 import Browser
+import Browser.Events exposing (onKeyDown)
 import Html exposing (Html, Attribute, div, button, text, a,
                       table, tr, td, p, i, b, ul, ol, li)
 import Html.Events exposing (onClick, onDoubleClick, onMouseUp, onMouseDown)
@@ -20,6 +21,7 @@ import Svg.Attributes exposing (height, width, viewBox, xlinkHref, id,
                                 x1, y1, x2, y2, transform, attributeName,
                                 type_, dur, repeatCount, from, to, additive)
 import SvgPorts exposing (mouseToSvgCoords, decodeSvgPoint)
+import ScrollPorts exposing (scrollToBottom)
 
 -- Browser Model
 
@@ -29,10 +31,9 @@ type Msg
     | LeftClickEdge Int
     | GrabPoint Int
     | ReleasePoint
-    | Restart
     | MouseMoved Encode.Value
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     let
         grabbed_moved =
@@ -47,44 +48,55 @@ update msg model =
                      }
                 Nothing ->
                     model
+        andScroll model_ = ( model_, scrollToBottom "progress-log" )
+        nocmd model_ = ( model_, Cmd.none )
     in
     case msg of
         StepAlgorithm ->
-            progressConvexHull grabbed_moved
+            andScroll <| case model.progress_state of
+                Done ->
+                    { before_start_state | polygon = model.polygon }
+                _ ->
+                    progressConvexHull grabbed_moved
         DoubleClickPoint point_idx ->
             deletePoint model point_idx
+            |> nocmd
         LeftClickEdge edge_idx ->
             let
                 insert_done = insertPoint grabbed_moved edge_idx
             in
                 { insert_done | grabbed = Just (edge_idx+1) }
+                |> nocmd
         GrabPoint point_idx ->
-            { grabbed_moved | grabbed = Just point_idx }
+            nocmd <| { grabbed_moved | grabbed = Just point_idx }
         ReleasePoint ->
-            { grabbed_moved | grabbed = Nothing }
+            nocmd <| { grabbed_moved | grabbed = Nothing }
         MouseMoved received ->
+            nocmd <|
             case Decode.decodeValue decodeSvgPoint received of
                 Ok {x, y} ->
                     { grabbed_moved | mouse_in_svg = (x,y) }
                 Err _ ->
                     Debug.todo "bad value sent over svgCoords port sub"
-        Restart ->
-            { before_start_state | polygon = model.polygon }
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    mouseToSvgCoords MouseMoved
+    Sub.batch
+        [ mouseToSvgCoords MouseMoved
+        , onKeyDown (Decode.succeed StepAlgorithm)
+        ]
 
 view : Model -> Browser.Document Msg
 view model =
     let
-        (btn_action, btn_label) = case model.progress_state of
+        _ = Debug.log "scroll" <| scrollToBottom "progress-log"
+        btn_label = case model.progress_state of
             NotStartedYet ->
-                (StepAlgorithm, "start!")
+                "start!"
             InProgress ->
-                (StepAlgorithm, "next step")
+                "next step"
             Done ->
-                (Restart, "restart")
+                "restart"
     in
     { title = app_title
     , body = [
@@ -96,12 +108,15 @@ view model =
                               [ td [ class "visualization" ]
                                    [ div [] [ drawConvexHullAlgorithmsState model ]
                                    , div [ class "next-btn-container" ]
-                                         [ button [ onClick btn_action ]
+                                         [ button [ onClick StepAlgorithm ]
                                                   [ text btn_label ]
                                          ]
                                    ]
                               , td [ class "description" ]
-                                   [ div [ class "progress-log" ] model.progress_log
+                                   [ div [ class "progress-log"
+                                         , id progress_log_id
+                                         ]
+                                         model.progress_log
                                    ]
                               ]
                          ]
@@ -161,6 +176,8 @@ ccw_triangle_stroke_width = fromFloat 0.7
 ccw_triangle_stroke_dash = "3,2"
 ccw_wheel_radius = 5
 ccw_wheel_id = "ccw_wheel"
+
+progress_log_id = "progress-log"
 
 -- NOTE: generate z-order constants from a priority list?
 
@@ -282,7 +299,7 @@ drawConvexHullAlgorithmsState model =
             div [ class "resizable-svg-container" ]
                 [ svg [ width "800"
                       , height "600"
-                      , viewBox "-40 -30 80 60"
+                      , viewBox "-40 -12 80 60"
                       , Svg.Attributes.class "resizable-svg"
                       , cartesian_area
                       ]
@@ -356,7 +373,7 @@ drawPolygon model =
                                                        , onMouseUp     (ReleasePoint)
                                                        ])
               )
-        _ -> 
+        _ ->
             g []
               (  drawPolygonEdges model.polygon (\i->[])
               ++ drawPolygonVerts model.polygon (\i->[])
@@ -601,8 +618,8 @@ progressConvexHull model =
 main : Program () Model Msg
 main =
     Browser.document
-        { init = (\f -> (before_start_state, Cmd.none))
+        { init = (\f -> ( before_start_state, Cmd.none))
         , view = view
-        , update = (\msg model -> (update msg model, Cmd.none))
+        , update = (\msg model -> update msg model)
         , subscriptions = subscriptions
         }

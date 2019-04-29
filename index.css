@@ -45,8 +45,12 @@ button:hover {
     100% { transform: rotate(0deg); }
 }
 
+::-webkit-scrollbar {
+    display: none;
+}
+
 .progress-log {
-    overflow-y: auto;
+    max-height: 100vh;
 }
 
 .progress-log > *:last-child ::first-line {
@@ -70,6 +74,7 @@ button:hover {
 .visualization {
     vertical-align: top;
     width: 50%;
+    position: fixed;
 }
 
 .description {
