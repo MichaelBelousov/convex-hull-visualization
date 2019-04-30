@@ -19,7 +19,8 @@ import Svg.Attributes exposing (height, width, viewBox, xlinkHref, id,
                                 fill, stroke, strokeWidth, strokeLinecap,
                                 strokeDasharray, cx, cy, r, points, d, x, y,
                                 x1, y1, x2, y2, transform, attributeName,
-                                type_, dur, repeatCount, from, to, additive)
+                                type_, dur, repeatCount, from, to, additive,
+                                dx, dy)
 import SvgPorts exposing (mouseToSvgCoords, decodeSvgPoint)
 import ScrollPorts exposing (scrollToBottom)
 
@@ -178,6 +179,8 @@ init_polygon = makeCube 15
     -- Style
 cartesian_area = transform "scale(1, -1)"
 cartesian_flip= transform "scale(1, -1)"
+label_x_shift = dx "2.5"
+label_y_shift = dy "2.5"
 point_color = "blue"
 point_radius = fromFloat 2
 next_point_color = "yellow"
@@ -324,6 +327,7 @@ drawConvexHullAlgorithmsState model =
                       [ drawPolygon model
                       , drawPolyline model
                       , drawStack model
+                      , drawVertsIndex model
                       ] ++ extra
                       )
                  ]
@@ -332,6 +336,7 @@ drawConvexHullAlgorithmsState model =
         InProgress ->
             svgBase [ drawNextPoint <| trust <| getAt model.next_point model.polygon
                     , drawCurrentCCW model
+                    , drawVertsIndex model
                     ]
         _ ->
             svgBase []
@@ -504,6 +509,31 @@ drawCurrentCCW model =
                                  ] []
               ]
       ]
+
+
+-- Draw index of each point
+addVertsIndex : Polygon -> (Int -> List (Attribute m)) -> List (Svg m)
+addVertsIndex polygon interactions =
+    List.indexedMap
+        (\i (cx,cy) ->
+                text_ (
+                      [ x <| fromFloat cx
+                      , y <| fromFloat cy
+                      , label_x_shift
+                      , label_y_shift
+                      , Svg.Attributes.class "point-label"
+                      , cartesian_flip
+                      ] ++ interactions i
+                      )
+                      [ text <| fromInt((List.length polygon) - i - 1)]
+                      )
+        polygon
+
+drawVertsIndex : Model -> Svg Msg
+drawVertsIndex model =
+    g []
+    (drawVertsIndex model.polygon (\i->[]))
+
 
 -- Mapping the list of points into svg attributes value
 svgPointsFromList : List Point-> String
