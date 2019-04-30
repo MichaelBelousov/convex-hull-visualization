@@ -106,17 +106,19 @@ view model =
                          [ tr []
                               [ td [ class "visualization" ]
                                    [ div [] [ drawConvexHullAlgorithmsState model ]
-                                   , div [ class "next-btn-container" ]
-                                         [ button [ onClick StepAlgorithm ]
-                                                  [ text btn_label ]
-                                         ]
+
                                    ]
                               , td [ class "description" ]
                                    [ div [ class "progress-log"
                                          , id progress_log_id
                                          ]
                                          model.progress_log
+                                    , div [ class "next-btn-container" ]
+                                         [ button [ onClick StepAlgorithm ]
+                                                  [ text btn_label ]
+                                         ]
                                    ]
+
                               ]
                          ]
                  ]

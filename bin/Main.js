@@ -5587,8 +5587,8 @@ var author$project$Main$trust = function (x) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 291, column: 20},
-				end: {line: 291, column: 30}
+				start: {line: 293, column: 20},
+				end: {line: 293, column: 30}
 			})('trust got Nothing');
 	}
 };
@@ -5863,8 +5863,8 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 258, column: 22},
-							end: {line: 258, column: 32}
+							start: {line: 260, column: 22},
+							end: {line: 260, column: 32}
 						})('bad polygon');
 				}
 			}
@@ -6773,7 +6773,24 @@ var author$project$Main$view = function (model) {
 														_List_fromArray(
 															[
 																author$project$Main$drawConvexHullAlgorithmsState(model)
-															])),
+															]))
+													])),
+												A2(
+												elm$html$Html$td,
+												_List_fromArray(
+													[
+														elm$html$Html$Attributes$class('description')
+													]),
+												_List_fromArray(
+													[
+														A2(
+														elm$html$Html$div,
+														_List_fromArray(
+															[
+																elm$html$Html$Attributes$class('progress-log'),
+																elm$svg$Svg$Attributes$id(author$project$Main$progress_log_id)
+															]),
+														model.progress_log),
 														A2(
 														elm$html$Html$div,
 														_List_fromArray(
@@ -6793,23 +6810,6 @@ var author$project$Main$view = function (model) {
 																		elm$html$Html$text(btn_label)
 																	]))
 															]))
-													])),
-												A2(
-												elm$html$Html$td,
-												_List_fromArray(
-													[
-														elm$html$Html$Attributes$class('description')
-													]),
-												_List_fromArray(
-													[
-														A2(
-														elm$html$Html$div,
-														_List_fromArray(
-															[
-																elm$html$Html$Attributes$class('progress-log'),
-																elm$svg$Svg$Attributes$id(author$project$Main$progress_log_id)
-															]),
-														model.progress_log)
 													]))
 											]))
 									]))
