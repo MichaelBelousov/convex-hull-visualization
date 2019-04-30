@@ -1,7 +1,6 @@
 module Main exposing (main)
 
 import Browser
-import Browser.Events exposing (onKeyDown)
 import Html exposing (Html, Attribute, div, button, text, a,
                       table, tr, td, p, i, b, ul, ol, li)
 import Html.Events exposing (onClick, onDoubleClick, onMouseUp, onMouseDown)
@@ -12,6 +11,7 @@ import Tuple
 import Debug
 import Json.Decode as Decode
 import Json.Encode as Encode
+import KeyUpPorts exposing(keyUp)
 import String exposing (..)
 import Svg exposing (Svg, svg, circle, polyline, polygon,
                      line, g, path, image, text_, animateTransform)
@@ -32,6 +32,7 @@ type Msg
     | GrabPoint Int
     | ReleasePoint
     | MouseMoved Encode.Value
+    | KeyUp Encode.Value
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -78,12 +79,20 @@ update msg model =
                     { grabbed_moved | mouse_in_svg = (x,y) }
                 Err _ ->
                     Debug.todo "bad value sent over svgCoords port sub"
+        KeyUp received ->
+            -- Does the same thing as StepAlgorithm
+            andScroll <| case model.progress_state of
+                Done ->
+                    { before_start_state | polygon = model.polygon }
+                _ ->
+                    progressConvexHull grabbed_moved
+
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
         [ mouseToSvgCoords MouseMoved
-        , onKeyDown (Decode.succeed StepAlgorithm)
+       , keyUp KeyUp
         ]
 
 view : Model -> Browser.Document Msg
@@ -114,7 +123,7 @@ view model =
                                          ]
                                          model.progress_log
                                     , div [ class "next-btn-container" ]
-                                         [ button [ onClick StepAlgorithm ]
+                                         [ button [ onClick StepAlgorithm]
                                                   [ text btn_label ]
                                          ]
                                    ]
@@ -187,7 +196,7 @@ progress_log_id = "progress-log"
 intro : Html Msg
 intro = p
         []
-        [ text ("Welcome. Together, we're going to find the convex hull of this simple polygon "
+        [ text ("Hello. Together, we're going to find the convex hull of this simple polygon "
              ++ "on the left. If you don't know what that is, Wikipedia and Google probably "
              ++ "still exist.")
         , ul []
