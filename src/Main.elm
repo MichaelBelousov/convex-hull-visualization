@@ -196,7 +196,7 @@ progress_log_id = "progress-log"
 intro : Html Msg
 intro = p
         []
-        [ text ("Hello. Together, we're going to find the convex hull of this simple polygon "
+        [ text ("Welcome. Together, we're going to find the convex hull of this simple polygon "
              ++ "on the left. If you don't know what that is, Wikipedia and Google probably "
              ++ "still exist.")
         , ul []

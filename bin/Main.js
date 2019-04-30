@@ -4827,7 +4827,7 @@ var author$project$Main$intro = A2(
 	_List_Nil,
 	_List_fromArray(
 		[
-			elm$html$Html$text('Hello. Together, we\'re going to find the convex hull of this simple polygon ' + ('on the left. If you don\'t know what that is, Wikipedia and Google probably ' + 'still exist.')),
+			elm$html$Html$text('Welcome. Together, we\'re going to find the convex hull of this simple polygon ' + ('on the left. If you don\'t know what that is, Wikipedia and Google probably ' + 'still exist.')),
 			A2(
 			elm$html$Html$ul,
 			_List_Nil,
@@ -4893,8 +4893,8 @@ var author$project$Main$trust = function (x) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 301, column: 20},
-				end: {line: 301, column: 30}
+				start: {line: 302, column: 20},
+				end: {line: 302, column: 30}
 			})('trust got Nothing');
 	}
 };
@@ -5238,8 +5238,8 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 268, column: 22},
-							end: {line: 268, column: 32}
+							start: {line: 269, column: 22},
+							end: {line: 269, column: 32}
 						})('bad polygon');
 				}
 			}
