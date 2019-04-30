@@ -532,7 +532,7 @@ addVertsIndex polygon interactions =
 drawVertsIndex : Model -> Svg Msg
 drawVertsIndex model =
     g []
-    (drawVertsIndex model.polygon (\i->[]))
+    (addVertsIndex model.polygon (\i->[]))
 
 
 -- Mapping the list of points into svg attributes value
