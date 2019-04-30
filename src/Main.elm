@@ -1,6 +1,7 @@
 module Main exposing (main)
 
 import Browser
+import Browser.Events exposing (onKeyDown)
 import Html exposing (Html, Attribute, div, button, text, a,
                       table, tr, td, p, i, b, ul, ol, li)
 import Html.Events exposing (onClick, onDoubleClick, onMouseUp, onMouseDown)
@@ -11,7 +12,6 @@ import Tuple
 import Debug
 import Json.Decode as Decode
 import Json.Encode as Encode
-import KeyUpPorts exposing(keyUp)
 import String exposing (..)
 import Svg exposing (Svg, svg, circle, polyline, polygon,
                      line, g, path, image, text_, animateTransform)
@@ -32,7 +32,7 @@ type Msg
     | GrabPoint Int
     | ReleasePoint
     | MouseMoved Encode.Value
-    | KeyUp Encode.Value
+    | DoNothing
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -79,20 +79,29 @@ update msg model =
                     { grabbed_moved | mouse_in_svg = (x,y) }
                 Err _ ->
                     Debug.todo "bad value sent over svgCoords port sub"
-        KeyUp received ->
-            -- Does the same thing as StepAlgorithm
-            andScroll <| case model.progress_state of
-                Done ->
-                    { before_start_state | polygon = model.polygon }
-                _ ->
-                    progressConvexHull grabbed_moved
+        DoNothing ->
+            nocmd <| model
+
+keyDecoder : Decode.Decoder Msg
+keyDecoder = 
+    Decode.map whichKey (Decode.field "key" Decode.string)
+
+whichKey : String -> Msg
+whichKey string =
+    case string of
+        "Enter" ->
+            StepAlgorithm
+        " " ->
+            StepAlgorithm
+        _ -> 
+            DoNothing
 
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
         [ mouseToSvgCoords MouseMoved
-       , keyUp KeyUp
+        , onKeyDown keyDecoder
         ]
 
 view : Model -> Browser.Document Msg
