@@ -84,3 +84,8 @@ button:hover {
     width: 50%;
     height: 100vh;
 }
+.point-label {
+    font-size: 1.5pt;
+    font-weight: bold; 
+    text-anchor:middle;
+}
