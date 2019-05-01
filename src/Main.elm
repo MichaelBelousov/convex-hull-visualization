@@ -29,6 +29,7 @@ import Geometry exposing (Point, ccwTest)
 import Polygon exposing (Polygon)
 import Polyline exposing (Polyline)
 import Utils exposing (trust, makeCube)
+import Styles
 
 -- Browser Model
 
@@ -89,9 +90,11 @@ update msg model =
         DoNothing ->
             nocmd <| model
 
+
 keyDecoder : Decode.Decoder Msg
 keyDecoder =
     Decode.map whichKey (Decode.field "key" Decode.string)
+
 
 whichKey : String -> Msg
 whichKey string =
@@ -132,10 +135,12 @@ view model =
         ]
     }
 
+
 viewVisualization : Model -> Html Msg
 viewVisualization model =
     td [ class "visualization" ]
        [ div [] [ drawConvexHullAlgorithmsState model ] ]
+
 
 viewNarration : Model -> Html Msg
 viewNarration model =
@@ -159,6 +164,7 @@ viewNarration model =
                   ]
            ]
 
+
 type alias Model =
     { polygon : Polygon
     , stack : Stack Int
@@ -168,6 +174,7 @@ type alias Model =
     , progress_log : List (Html Msg)
     , mouse_in_svg : Point
     }
+
 
 type ModelState
     = NotStartedYet
@@ -192,14 +199,6 @@ label_offset = 0.2
 point_color = "blue"
 point_radius = fromFloat 2
 next_point_color = "yellow"
-polygon_fill = "none"
-polygon_stroke = "blue"
-polygon_stroke_width = fromFloat 1.5
-polygon_stroke_cap = "round"
-polyline_fill = "none"
-polyline_stroke = "red"
-polyline_stroke_width = fromFloat 2
-polyline_stroke_cap = "round"
 ccw_triangle_fill = "none"
 ccw_triangle_stroke = "yellow"
 ccw_triangle_stroke_width = fromFloat 0.7
@@ -433,13 +432,12 @@ drawPolygonEdges : Polygon -> (Int -> List (Attribute m)) -> List (Svg m)
 drawPolygonEdges polygon interactions =
     List.indexedMap
         (\i ((x1_,y1_),(x2_,y2_)) ->
-                line ([ fill polygon_fill
-                     , stroke polygon_stroke
-                     , strokeWidth polygon_stroke_width
-                     , strokeLinecap polygon_stroke_cap
-                     , x1 <| fromFloat x1_, y1 <| fromFloat y1_
-                     , x2 <| fromFloat x2_, y2 <| fromFloat y2_
-                     ] ++ interactions i) [])
+                line (Styles.polygon 
+                     ([ x1 <| fromFloat x1_, y1 <| fromFloat y1_
+                      , x2 <| fromFloat x2_, y2 <| fromFloat y2_
+                      ] ++ interactions i)
+                     )
+                     [])
         (Polygon.getEdges polygon)
 
 drawPolygonVerts : Polygon -> (Int -> List (Attribute m)) -> List (Svg m)
@@ -466,12 +464,10 @@ calcHullProgressPolyline model =
 -- Draw every polyline, return svg message
 drawPolyline : Model -> Svg Msg
 drawPolyline model =
-    polyline [ fill polyline_fill
-             , stroke polyline_stroke
-             , strokeWidth polyline_stroke_width
-             , strokeLinecap polyline_stroke_cap
-             , points <| svgPointsFromList <| calcHullProgressPolyline model
+    polyline (Styles.hull
+             [ points <| svgPointsFromList <| calcHullProgressPolyline model
              ]
+             )
              []
 
 
@@ -499,7 +495,7 @@ drawCurrentCCW model =
       [ polygon [ fill ccw_triangle_fill
                 , stroke ccw_triangle_stroke
                 , strokeWidth ccw_triangle_stroke_width
-                , strokeLinecap polygon_stroke_cap
+                , strokeLinecap "round"
                 , strokeDasharray ccw_triangle_stroke_dash
                 , points <| svgPointsFromList ccw_triangle
                 ] []

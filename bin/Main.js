@@ -6663,8 +6663,8 @@ var author$project$Main$trust = function (x) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 345, column: 20},
-				end: {line: 345, column: 30}
+				start: {line: 344, column: 20},
+				end: {line: 344, column: 30}
 			})('trust got Nothing');
 	}
 };
@@ -6939,8 +6939,8 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 319, column: 22},
-							end: {line: 319, column: 32}
+							start: {line: 318, column: 22},
+							end: {line: 318, column: 32}
 						})('bad polygon');
 				}
 			}
@@ -7352,8 +7352,8 @@ var author$project$Main$update = F2(
 							return _Debug_todo(
 								'Main',
 								{
-									start: {line: 88, column: 21},
-									end: {line: 88, column: 31}
+									start: {line: 89, column: 21},
+									end: {line: 89, column: 31}
 								})('bad value sent over svgCoords port sub');
 						}
 					}());
@@ -7447,7 +7447,6 @@ var author$project$Main$ccw_triangle_stroke = 'yellow';
 var author$project$Main$ccw_triangle_stroke_dash = '3,2';
 var author$project$Main$ccw_triangle_stroke_width = elm$core$String$fromFloat(0.7);
 var author$project$Main$ccw_wheel_radius = 5;
-var author$project$Main$polygon_stroke_cap = 'round';
 var author$project$Main$svgPointsFromList = function (listPoint) {
 	return A2(
 		elm$core$String$join,
@@ -7525,7 +7524,7 @@ var author$project$Main$drawCurrentCCW = function (model) {
 						elm$svg$Svg$Attributes$fill(author$project$Main$ccw_triangle_fill),
 						elm$svg$Svg$Attributes$stroke(author$project$Main$ccw_triangle_stroke),
 						elm$svg$Svg$Attributes$strokeWidth(author$project$Main$ccw_triangle_stroke_width),
-						elm$svg$Svg$Attributes$strokeLinecap(author$project$Main$polygon_stroke_cap),
+						elm$svg$Svg$Attributes$strokeLinecap('round'),
 						elm$svg$Svg$Attributes$strokeDasharray(author$project$Main$ccw_triangle_stroke_dash),
 						elm$svg$Svg$Attributes$points(
 						author$project$Main$svgPointsFromList(ccw_triangle))
@@ -7614,9 +7613,18 @@ var author$project$Main$LeftClickEdge = function (a) {
 	return {$: 'LeftClickEdge', a: a};
 };
 var author$project$Main$ReleasePoint = {$: 'ReleasePoint'};
-var author$project$Main$polygon_fill = 'none';
-var author$project$Main$polygon_stroke = 'blue';
-var author$project$Main$polygon_stroke_width = elm$core$String$fromFloat(1.5);
+var author$project$Styles$polygon = function (other_attrs) {
+	return _Utils_ap(
+		_List_fromArray(
+			[
+				elm$svg$Svg$Attributes$fill('none'),
+				elm$svg$Svg$Attributes$stroke('blue'),
+				elm$svg$Svg$Attributes$strokeWidth(
+				elm$core$String$fromFloat(1.5)),
+				elm$svg$Svg$Attributes$strokeLinecap('round')
+			]),
+		other_attrs);
+};
 var elm$svg$Svg$line = elm$svg$Svg$trustedNode('line');
 var elm$svg$Svg$Attributes$x1 = _VirtualDom_attribute('x1');
 var elm$svg$Svg$Attributes$x2 = _VirtualDom_attribute('x2');
@@ -7636,23 +7644,20 @@ var author$project$Main$drawPolygonEdges = F2(
 					var y2_ = _n2.b;
 					return A2(
 						elm$svg$Svg$line,
-						_Utils_ap(
-							_List_fromArray(
-								[
-									elm$svg$Svg$Attributes$fill(author$project$Main$polygon_fill),
-									elm$svg$Svg$Attributes$stroke(author$project$Main$polygon_stroke),
-									elm$svg$Svg$Attributes$strokeWidth(author$project$Main$polygon_stroke_width),
-									elm$svg$Svg$Attributes$strokeLinecap(author$project$Main$polygon_stroke_cap),
-									elm$svg$Svg$Attributes$x1(
-									elm$core$String$fromFloat(x1_)),
-									elm$svg$Svg$Attributes$y1(
-									elm$core$String$fromFloat(y1_)),
-									elm$svg$Svg$Attributes$x2(
-									elm$core$String$fromFloat(x2_)),
-									elm$svg$Svg$Attributes$y2(
-									elm$core$String$fromFloat(y2_))
-								]),
-							interactions(i)),
+						author$project$Styles$polygon(
+							_Utils_ap(
+								_List_fromArray(
+									[
+										elm$svg$Svg$Attributes$x1(
+										elm$core$String$fromFloat(x1_)),
+										elm$svg$Svg$Attributes$y1(
+										elm$core$String$fromFloat(y1_)),
+										elm$svg$Svg$Attributes$x2(
+										elm$core$String$fromFloat(x2_)),
+										elm$svg$Svg$Attributes$y2(
+										elm$core$String$fromFloat(y2_))
+									]),
+								interactions(i))),
 						_List_Nil);
 				}),
 			author$project$Polygon$getEdges(polygon));
@@ -7773,24 +7778,29 @@ var author$project$Main$calcHullProgressPolyline = function (model) {
 		},
 		model.stack);
 };
-var author$project$Main$polyline_fill = 'none';
-var author$project$Main$polyline_stroke = 'red';
-var author$project$Main$polyline_stroke_cap = 'round';
-var author$project$Main$polyline_stroke_width = elm$core$String$fromFloat(2);
+var author$project$Styles$hull = function (other_attrs) {
+	return _Utils_ap(
+		_List_fromArray(
+			[
+				elm$svg$Svg$Attributes$fill('none'),
+				elm$svg$Svg$Attributes$stroke('red'),
+				elm$svg$Svg$Attributes$strokeWidth(
+				elm$core$String$fromFloat(2)),
+				elm$svg$Svg$Attributes$strokeLinecap('round')
+			]),
+		other_attrs);
+};
 var elm$svg$Svg$polyline = elm$svg$Svg$trustedNode('polyline');
 var author$project$Main$drawPolyline = function (model) {
 	return A2(
 		elm$svg$Svg$polyline,
-		_List_fromArray(
-			[
-				elm$svg$Svg$Attributes$fill(author$project$Main$polyline_fill),
-				elm$svg$Svg$Attributes$stroke(author$project$Main$polyline_stroke),
-				elm$svg$Svg$Attributes$strokeWidth(author$project$Main$polyline_stroke_width),
-				elm$svg$Svg$Attributes$strokeLinecap(author$project$Main$polyline_stroke_cap),
-				elm$svg$Svg$Attributes$points(
-				author$project$Main$svgPointsFromList(
-					author$project$Main$calcHullProgressPolyline(model)))
-			]),
+		author$project$Styles$hull(
+			_List_fromArray(
+				[
+					elm$svg$Svg$Attributes$points(
+					author$project$Main$svgPointsFromList(
+						author$project$Main$calcHullProgressPolyline(model)))
+				])),
 		_List_Nil);
 };
 var author$project$Main$cartesian_flip = elm$svg$Svg$Attributes$transform('scale(1, -1)');
