@@ -6644,14 +6644,14 @@ var elm$browser$Browser$Events$on = F3(
 		return elm$browser$Browser$Events$subscription(
 			A3(elm$browser$Browser$Events$MySub, node, name, decoder));
 	});
-var elm$browser$Browser$Events$onKeyDown = A2(elm$browser$Browser$Events$on, elm$browser$Browser$Events$Document, 'keydown');
+var elm$browser$Browser$Events$onKeyUp = A2(elm$browser$Browser$Events$on, elm$browser$Browser$Events$Document, 'keyup');
 var elm$core$Platform$Sub$batch = _Platform_batch;
 var author$project$Main$subscriptions = function (_n0) {
 	return elm$core$Platform$Sub$batch(
 		_List_fromArray(
 			[
 				author$project$SvgPorts$mouseToSvgCoords(author$project$Main$MouseMoved),
-				elm$browser$Browser$Events$onKeyDown(author$project$Main$keyDecoder)
+				elm$browser$Browser$Events$onKeyUp(author$project$Main$keyDecoder)
 			]));
 };
 var elm$core$Debug$todo = _Debug_todo;

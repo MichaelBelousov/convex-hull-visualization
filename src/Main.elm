@@ -1,7 +1,7 @@
 module Main exposing (main)
 
 import Browser
-import Browser.Events exposing (onKeyDown)
+import Browser.Events exposing (onKeyUp)
 import Html exposing (Html, Attribute, div, button, text, a,
                       table, tr, td, p, i, b, ul, ol, li)
 import Html.Events exposing (onClick, onDoubleClick, onMouseUp, onMouseDown)
@@ -111,7 +111,7 @@ subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
         [ mouseToSvgCoords MouseMoved
-        , onKeyDown keyDecoder
+        , onKeyUp keyDecoder
         ]
 
 view : Model -> Browser.Document Msg
