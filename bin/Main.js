@@ -5879,7 +5879,7 @@ var author$project$Main$intro = A2(
 						[
 							elm$html$Html$text('stack ')
 						])),
-					elm$html$Html$text('on the left, we\'ll use it soon, and that plus sign ' + ('is just the origin for your reference. ' + ('For now, feel free to build your own polygon by ' + ('interacting with the available tools. ' + 'When you\'re done, hit the \"Start!\" button.'))))
+					elm$html$Html$text('on the left, we\'ll use it soon, and that plus sign ' + ('is just the origin for your reference. ' + ('For now, feel free to build your own polygon by ' + ('interacting with the available tools. ' + 'When you\'re done, hit the \'Start!\' button.'))))
 				])),
 			A2(
 			elm$html$Html$ul,
@@ -6656,8 +6656,8 @@ var author$project$Main$trust = function (x) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 337, column: 20},
-				end: {line: 337, column: 30}
+				start: {line: 353, column: 20},
+				end: {line: 353, column: 30}
 			})('trust got Nothing');
 	}
 };
@@ -6932,8 +6932,8 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 304, column: 22},
-							end: {line: 304, column: 32}
+							start: {line: 306, column: 22},
+							end: {line: 306, column: 32}
 						})('bad polygon');
 				}
 			}
@@ -6993,6 +6993,55 @@ var author$project$Main$stackPush = F2(
 				[item]));
 	});
 var author$project$Main$InProgress = {$: 'InProgress'};
+var elm$core$List$tail = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return elm$core$Maybe$Just(xs);
+	} else {
+		return elm$core$Maybe$Nothing;
+	}
+};
+var author$project$Main$polylineToEdges = function (polyline) {
+	return A3(
+		elm$core$List$map2,
+		F2(
+			function (p, q) {
+				return _Utils_Tuple2(p, q);
+			}),
+		polyline,
+		author$project$Main$trust(
+			elm$core$List$tail(polyline)));
+};
+var author$project$Main$polygonToEdges = function (polygon) {
+	return _Utils_ap(
+		author$project$Main$polylineToEdges(polygon),
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				author$project$Main$trust(
+					elm_community$list_extra$List$Extra$last(polygon)),
+				author$project$Main$trust(
+					elm$core$List$head(polygon)))
+			]));
+};
+var author$project$Main$isCcw = function (polygon) {
+	var edges = author$project$Main$polygonToEdges(polygon);
+	var result = elm$core$List$sum(
+		A2(
+			elm$core$List$map,
+			function (_n0) {
+				var _n1 = _n0.a;
+				var x1 = _n1.a;
+				var y1 = _n1.b;
+				var _n2 = _n0.b;
+				var x2 = _n2.a;
+				var y2 = _n2.b;
+				return (x2 - x1) * (y2 + y1);
+			},
+			edges));
+	return (result < 0) ? true : false;
+};
 var elm$core$Basics$min = F2(
 	function (x, y) {
 		return (_Utils_cmp(x, y) < 0) ? x : y;
@@ -7049,9 +7098,9 @@ var author$project$Main$started_desc = A2(
 					_List_Nil,
 					_List_fromArray(
 						[
-							elm$html$Html$text('simple polygon')
+							elm$html$Html$text('simple polygon ')
 						])),
-					elm$html$Html$text(' our points are ordered by the edges they connect to, and by simplicity ' + ('they don\'t overlap each other. ' + ('Our simple polygon is already sorted in counter-clockwise (CCW) order ' + ('(if it weren\'t we\'d just reverse it), so we\'ll just find the ' + 'bottom-leftmost point and shift the polygon list to start at that point.'))))
+					elm$html$Html$text('our edges don\'t overlap, and we\'ll just assume we were given our polygon ' + ('in counter-clockwise (CCW) order. If it isn\'t, we\'ll just reverse the point ' + ('order. Before we begin, we\'ll identify the bottom-left-most point, we\'ll ' + ('start there and call it \'0\'. We\'ll even name the rest of the points ' + ('in CCW order going up from 0, to 1, then 2, etc. You can see we\'ve ' + 'relabeled them. ')))))
 				])),
 			A2(
 			elm$html$Html$p,
@@ -7061,8 +7110,17 @@ var author$project$Main$started_desc = A2(
 					elm$html$Html$text('To start, we put the first two points of our polygon in a stack, ' + ('and we start considering the remaining points in order. The point ' + ('we\'re considering is in yellow, and the dashed yellow triangle ' + ('is a CCW test between the top two members of the stack, and that ' + ('point of consideration. Note the black spinny arrow that should ' + 'helpfully illustrate whether the triangle\'s points are in CCW order.')))))
 				]))
 		]));
+var elm$core$Debug$log = _Debug_log;
 var author$project$Main$startAlgorithmState = function (model) {
-	var shifted_polygon = author$project$Main$restartAtBottomLeftMost(model.polygon);
+	var oriented_polygon = author$project$Main$isCcw(model.polygon) ? model.polygon : elm$core$List$reverse(model.polygon);
+	var shifted_polygon = author$project$Main$restartAtBottomLeftMost(oriented_polygon);
+	var _n0 = A2(elm$core$Debug$log, 'raw', model.polygon);
+	var _n1 = A2(
+		elm$core$Debug$log,
+		'poly was ccw',
+		author$project$Main$isCcw(model.polygon));
+	var _n2 = A2(elm$core$Debug$log, 'oriented', oriented_polygon);
+	var _n3 = A2(elm$core$Debug$log, 'shifted', shifted_polygon);
 	return _Utils_update(
 		model,
 		{
@@ -7467,38 +7525,6 @@ var author$project$Main$LeftClickEdge = function (a) {
 	return {$: 'LeftClickEdge', a: a};
 };
 var author$project$Main$ReleasePoint = {$: 'ReleasePoint'};
-var elm$core$List$tail = function (list) {
-	if (list.b) {
-		var x = list.a;
-		var xs = list.b;
-		return elm$core$Maybe$Just(xs);
-	} else {
-		return elm$core$Maybe$Nothing;
-	}
-};
-var author$project$Main$polylineToEdges = function (polyline) {
-	return A3(
-		elm$core$List$map2,
-		F2(
-			function (p, q) {
-				return _Utils_Tuple2(p, q);
-			}),
-		polyline,
-		author$project$Main$trust(
-			elm$core$List$tail(polyline)));
-};
-var author$project$Main$polygonToEdges = function (polygon) {
-	return _Utils_ap(
-		author$project$Main$polylineToEdges(polygon),
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				author$project$Main$trust(
-					elm_community$list_extra$List$Extra$last(polygon)),
-				author$project$Main$trust(
-					elm$core$List$head(polygon)))
-			]));
-};
 var author$project$Main$polygon_fill = 'none';
 var author$project$Main$polygon_stroke = 'blue';
 var author$project$Main$polygon_stroke_width = elm$core$String$fromFloat(1.5);

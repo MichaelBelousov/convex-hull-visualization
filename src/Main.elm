@@ -164,7 +164,8 @@ type ModelState
 
 -- Domain Types
 
-type alias Point = (Float, Float)
+type alias Point = ( Float, Float )
+type alias Edge = ( Point, Point )
 type alias Polygon = List Point
 type alias Polyline = List Point
 type alias Stack z = List z
@@ -232,7 +233,7 @@ intro = div
                  ++ "is just the origin for your reference. "
                  ++ "For now, feel free to build your own polygon by "
                  ++ "interacting with the available tools. "
-                 ++ "When you're done, hit the \"Start!\" button.")
+                 ++ "When you're done, hit the 'Start!' button.")
             ]
         , ul []
              [ li [] [ text "Click and drag on points to move them around"]
@@ -248,12 +249,13 @@ started_desc =
         []
         [ p []
             [ text "Since we're given a "
-            , i [] [ text "simple polygon" ]
-            , text (" our points are ordered by the edges they connect to, and by simplicity "
-                 ++ "they don't overlap each other. "
-                 ++ "Our simple polygon is already sorted in counter-clockwise (CCW) order "
-                 ++ "(if it weren't we'd just reverse it), so we'll just find the "
-                 ++ "bottom-leftmost point and shift the polygon list to start at that point.")
+            , i [] [ text "simple polygon " ]
+            , text ("our edges don't overlap, and we'll just assume we were given our polygon "
+                 ++ "in counter-clockwise (CCW) order. If it isn't, we'll just reverse the point "
+                 ++ "order. Before we begin, we'll identify the bottom-left-most point, we'll "
+                 ++ "start there and call it '0'. We'll even name the rest of the points "
+                 ++ "in CCW order going up from 0, to 1, then 2, etc. You can see we've "
+                 ++ "relabeled them. ")
             ]
         , p []
             [ text ("To start, we put the first two points of our polygon in a stack, "
@@ -318,6 +320,20 @@ before_start_state =
     , progress_log = [intro]
     , mouse_in_svg = (0,0)
     }
+
+-- XXX: assuming general position!
+isCcw : Polygon -> Bool
+isCcw polygon =
+    let
+        edges = polygonToEdges polygon
+        result =
+            edges
+            |> List.map (\((x1,y1),(x2,y2)) -> (x2-x1)*(y2+y1))
+            |> List.sum
+    in
+        if result < 0 then True
+                      else False
+
 
 -- CCW formula
 ccw : Point -> Point -> Point -> Int
@@ -637,15 +653,17 @@ restartAtBottomLeftMost polygon =
             else restartAtBottomLeftMost (rest ++ [first])
 
 
-svgToCartesian : Polygon -> Polygon
-svgToCartesian pts =
-    List.map (\(x,y)->(x,-y)) pts
-
-
 startAlgorithmState : Model -> Model
 startAlgorithmState model =
     let
-        shifted_polygon = restartAtBottomLeftMost model.polygon
+        _ = Debug.log "raw" model.polygon
+        _ = Debug.log "poly was ccw" <| isCcw model.polygon
+        oriented_polygon = if isCcw model.polygon
+                           then model.polygon
+                           else List.reverse model.polygon
+        _ = Debug.log "oriented" oriented_polygon
+        shifted_polygon = restartAtBottomLeftMost oriented_polygon
+        _ = Debug.log "shifted" shifted_polygon
     in
     { model | polygon = shifted_polygon
             , next_point = 2
