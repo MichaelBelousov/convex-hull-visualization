@@ -108,6 +108,32 @@ subscriptions _ =
 
 view : Model -> Browser.Document Msg
 view model =
+    { title = app_title
+    , body =
+        [ div []
+              [ div []
+                    [ table [ style  "width" "100%"
+                            , style "table-layout" "fixed"
+                            ]
+                            [ tr []
+                                 [ viewVisualization model
+                                 , viewNarration model
+                                 ]
+                            ]
+                     ]
+              , div [ class "footer" ]
+                    [ a [ href "about.html" ] [ text "about" ] ]
+              ]
+        ]
+    }
+
+viewVisualization : Model -> Html Msg
+viewVisualization model =
+    td [ class "visualization" ]
+       [ div [] [ drawConvexHullAlgorithmsState model ] ]
+
+viewNarration : Model -> Html Msg
+viewNarration model =
     let
         btn_label = case model.progress_state of
             NotStartedYet ->
@@ -117,35 +143,16 @@ view model =
             Done ->
                 "restart"
     in
-    { title = app_title
-    , body = [
-    div []
-        [ div [] [ table [ style  "width" "100%"
-                         , style "table-layout" "fixed"
-                         ]
-                         [ tr []
-                              [ td [ class "visualization" ]
-                                   [ div [] [ drawConvexHullAlgorithmsState model ]
-
-                                   ]
-                              , td [ class "description" ]
-                                   [ div [ class "progress-log"
-                                         , id progress_log_id
-                                         ]
-                                         model.progress_log
-                                    , div [ class "next-btn-container" ]
-                                         [ button [ onClick StepAlgorithm]
-                                                  [ text btn_label ]
-                                         ]
-                                   ]
-
-                              ]
-                         ]
+        td [ class "narration" ]
+           [ div [ class "progress-log"
+                 , id progress_log_id
                  ]
-        , div [ class "footer" ]
-              [ a [ href "about.html" ] [ text "about" ] ]
-        ]
-    ]}
+                 model.progress_log
+            , div [ class "next-btn-container" ]
+                 [ button [ onClick StepAlgorithm]
+                          [ text btn_label ]
+                 ]
+           ]
 
 type alias Model =
     { polygon : Polygon
@@ -710,7 +717,6 @@ progressConvexHull model =
                 scd = trust <| getAt (trust <| listPenultimate model.stack) model.polygon
                 next = trust <| getAt model.next_point model.polygon
                 is_not_ccw = ccw scd top next < 1
-                _ = Debug.log "polygon" model.polygon
             in
                 case (is_not_ccw, model.next_point) of
                     (True, 1) ->

@@ -6663,8 +6663,8 @@ var author$project$Main$trust = function (x) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 361, column: 20},
-				end: {line: 361, column: 30}
+				start: {line: 368, column: 20},
+				end: {line: 368, column: 30}
 			})('trust got Nothing');
 	}
 };
@@ -6939,8 +6939,8 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 314, column: 22},
-							end: {line: 314, column: 32}
+							start: {line: 321, column: 22},
+							end: {line: 321, column: 32}
 						})('bad polygon');
 				}
 			}
@@ -7072,8 +7072,8 @@ var author$project$Main$restartAtCcw = function (polygon) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 683, column: 13},
-				end: {line: 683, column: 23}
+				start: {line: 690, column: 13},
+				end: {line: 690, column: 23}
 			})('bad polygon?');
 	}
 };
@@ -7351,6 +7351,84 @@ var author$project$Main$update = F2(
 		}
 	});
 var author$project$Main$app_title = 'Polygon Convex Hull';
+var author$project$Main$progress_log_id = 'progress-log';
+var elm$html$Html$button = _VirtualDom_node('button');
+var elm$html$Html$td = _VirtualDom_node('td');
+var elm$html$Html$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			elm$json$Json$Encode$string(string));
+	});
+var elm$html$Html$Attributes$class = elm$html$Html$Attributes$stringProperty('className');
+var elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
+};
+var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			elm$virtual_dom$VirtualDom$on,
+			event,
+			elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		elm$html$Html$Events$on,
+		'click',
+		elm$json$Json$Decode$succeed(msg));
+};
+var elm$svg$Svg$Attributes$id = _VirtualDom_attribute('id');
+var author$project$Main$viewNarration = function (model) {
+	var btn_label = function () {
+		var _n0 = model.progress_state;
+		switch (_n0.$) {
+			case 'NotStartedYet':
+				return 'start!';
+			case 'InProgress':
+				return 'next step';
+			default:
+				return 'restart';
+		}
+	}();
+	return A2(
+		elm$html$Html$td,
+		_List_fromArray(
+			[
+				elm$html$Html$Attributes$class('narration')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				elm$html$Html$div,
+				_List_fromArray(
+					[
+						elm$html$Html$Attributes$class('progress-log'),
+						elm$svg$Svg$Attributes$id(author$project$Main$progress_log_id)
+					]),
+				model.progress_log),
+				A2(
+				elm$html$Html$div,
+				_List_fromArray(
+					[
+						elm$html$Html$Attributes$class('next-btn-container')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						elm$html$Html$button,
+						_List_fromArray(
+							[
+								elm$html$Html$Events$onClick(author$project$Main$StepAlgorithm)
+							]),
+						_List_fromArray(
+							[
+								elm$html$Html$text(btn_label)
+							]))
+					]))
+			]));
+};
 var elm$svg$Svg$Attributes$transform = _VirtualDom_attribute('transform');
 var author$project$Main$cartesian_area = elm$svg$Svg$Attributes$transform('scale(1, -1)');
 var author$project$Main$ccw_triangle_fill = 'none';
@@ -7594,17 +7672,6 @@ var author$project$Main$drawPolygonVerts = F2(
 				}),
 			polygon);
 	});
-var elm$virtual_dom$VirtualDom$Normal = function (a) {
-	return {$: 'Normal', a: a};
-};
-var elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
-var elm$html$Html$Events$on = F2(
-	function (event, decoder) {
-		return A2(
-			elm$virtual_dom$VirtualDom$on,
-			event,
-			elm$virtual_dom$VirtualDom$Normal(decoder));
-	});
 var elm$html$Html$Events$onDoubleClick = function (msg) {
 	return A2(
 		elm$html$Html$Events$on,
@@ -7820,14 +7887,6 @@ var author$project$Main$drawVertsIndex = function (model) {
 				}),
 			model.polygon));
 };
-var elm$html$Html$Attributes$stringProperty = F2(
-	function (key, string) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			elm$json$Json$Encode$string(string));
-	});
-var elm$html$Html$Attributes$class = elm$html$Html$Attributes$stringProperty('className');
 var elm$svg$Svg$svg = elm$svg$Svg$trustedNode('svg');
 var elm$svg$Svg$Attributes$viewBox = _VirtualDom_attribute('viewBox');
 var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
@@ -7878,11 +7937,26 @@ var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
 		return svgBase(_List_Nil);
 	}
 };
-var author$project$Main$progress_log_id = 'progress-log';
+var author$project$Main$viewVisualization = function (model) {
+	return A2(
+		elm$html$Html$td,
+		_List_fromArray(
+			[
+				elm$html$Html$Attributes$class('visualization')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				elm$html$Html$div,
+				_List_Nil,
+				_List_fromArray(
+					[
+						author$project$Main$drawConvexHullAlgorithmsState(model)
+					]))
+			]));
+};
 var elm$html$Html$a = _VirtualDom_node('a');
-var elm$html$Html$button = _VirtualDom_node('button');
 var elm$html$Html$table = _VirtualDom_node('table');
-var elm$html$Html$td = _VirtualDom_node('td');
 var elm$html$Html$tr = _VirtualDom_node('tr');
 var elm$html$Html$Attributes$href = function (url) {
 	return A2(
@@ -7892,25 +7966,7 @@ var elm$html$Html$Attributes$href = function (url) {
 };
 var elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var elm$html$Html$Attributes$style = elm$virtual_dom$VirtualDom$style;
-var elm$html$Html$Events$onClick = function (msg) {
-	return A2(
-		elm$html$Html$Events$on,
-		'click',
-		elm$json$Json$Decode$succeed(msg));
-};
-var elm$svg$Svg$Attributes$id = _VirtualDom_attribute('id');
 var author$project$Main$view = function (model) {
-	var btn_label = function () {
-		var _n0 = model.progress_state;
-		switch (_n0.$) {
-			case 'NotStartedYet':
-				return 'start!';
-			case 'InProgress':
-				return 'next step';
-			default:
-				return 'restart';
-		}
-	}();
 	return {
 		body: _List_fromArray(
 			[
@@ -7938,58 +7994,8 @@ var author$project$Main$view = function (model) {
 										_List_Nil,
 										_List_fromArray(
 											[
-												A2(
-												elm$html$Html$td,
-												_List_fromArray(
-													[
-														elm$html$Html$Attributes$class('visualization')
-													]),
-												_List_fromArray(
-													[
-														A2(
-														elm$html$Html$div,
-														_List_Nil,
-														_List_fromArray(
-															[
-																author$project$Main$drawConvexHullAlgorithmsState(model)
-															]))
-													])),
-												A2(
-												elm$html$Html$td,
-												_List_fromArray(
-													[
-														elm$html$Html$Attributes$class('description')
-													]),
-												_List_fromArray(
-													[
-														A2(
-														elm$html$Html$div,
-														_List_fromArray(
-															[
-																elm$html$Html$Attributes$class('progress-log'),
-																elm$svg$Svg$Attributes$id(author$project$Main$progress_log_id)
-															]),
-														model.progress_log),
-														A2(
-														elm$html$Html$div,
-														_List_fromArray(
-															[
-																elm$html$Html$Attributes$class('next-btn-container')
-															]),
-														_List_fromArray(
-															[
-																A2(
-																elm$html$Html$button,
-																_List_fromArray(
-																	[
-																		elm$html$Html$Events$onClick(author$project$Main$StepAlgorithm)
-																	]),
-																_List_fromArray(
-																	[
-																		elm$html$Html$text(btn_label)
-																	]))
-															]))
-													]))
+												author$project$Main$viewVisualization(model),
+												author$project$Main$viewNarration(model)
 											]))
 									]))
 							])),
