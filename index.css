@@ -70,6 +70,7 @@ button:hover {
 .stack-entry {
     font-size: 3pt;
     font-weight: bold;
+    text-anchor: middle;
 }
 
 .visualization {
@@ -85,7 +86,9 @@ button:hover {
     height: 100vh;
 }
 .point-label {
-    font-size: 1.5pt;
+    font-size: 2pt;
     font-weight: bold; 
-    text-anchor:middle;
+    text-anchor: middle;
+    text-shadow: 1px 1px 2px white;
+    pointer-events: none;
 }

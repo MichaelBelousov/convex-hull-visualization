@@ -23,6 +23,7 @@ import Svg.Attributes exposing (height, width, viewBox, xlinkHref, id,
                                 dx, dy)
 import SvgPorts exposing (mouseToSvgCoords, decodeSvgPoint)
 import ScrollPorts exposing (scrollToBottom)
+import Math.Vector2 as Vec2D exposing (Vec2, vec2)
 
 -- Browser Model
 
@@ -181,6 +182,7 @@ cartesian_area = transform "scale(1, -1)"
 cartesian_flip= transform "scale(1, -1)"
 label_x_shift = dx "2.5"
 label_y_shift = dy "2.5"
+label_offset = 0.2
 point_color = "blue"
 point_radius = fromFloat 2
 next_point_color = "yellow"
@@ -198,6 +200,9 @@ ccw_triangle_stroke_width = fromFloat 0.7
 ccw_triangle_stroke_dash = "3,2"
 ccw_wheel_radius = 5
 ccw_wheel_id = "ccw_wheel"
+origin_fill = "none"
+origin_stroke = "black"
+origin_stroke_width = fromFloat 0.3
 
 progress_log_id = "progress-log"
 
@@ -325,6 +330,7 @@ drawConvexHullAlgorithmsState model =
                       ]
                       (
                       [ drawPolygon model
+                      , drawOrigin
                       , drawPolyline model
                       , drawStack model
                       , drawVertsIndex model
@@ -336,10 +342,18 @@ drawConvexHullAlgorithmsState model =
         InProgress ->
             svgBase [ drawNextPoint <| trust <| getAt model.next_point model.polygon
                     , drawCurrentCCW model
-                    , drawVertsIndex model
                     ]
         _ ->
             svgBase []
+
+drawOrigin : Svg Msg
+drawOrigin =
+    path [ d "M 0 0 h 5 h -10 h 5 v 5 v -10"
+         , fill origin_fill
+         , stroke origin_stroke
+         , strokeWidth origin_stroke_width
+         ]
+         []
 
 
 drawStack : Model -> Svg Msg
@@ -352,7 +366,7 @@ drawStack model =
              , stroke "grey" ]
              []
       ] ++ List.indexedMap
-             (\i n -> text_ [ x "-34.5"
+             (\i n -> text_ [ x "-33.5"
                             , y <| fromInt (18 - 4*i)
                             , Svg.Attributes.class "stack-entry"
                             , cartesian_flip
@@ -451,12 +465,12 @@ drawPolyline model =
              []
 
 
--- Draw next point in each step, return svg message
+-- Draw the next consideration point in the naive algorithm
 drawNextPoint : Point -> Svg Msg
 drawNextPoint (x,y) =
     circle [ fill next_point_color
-           , cx (fromFloat x)
-           , cy (fromFloat y)
+           , cx <| fromFloat x
+           , cy <| fromFloat y
            , r point_radius
            ]
            []
@@ -510,29 +524,43 @@ drawCurrentCCW model =
               ]
       ]
 
-
--- Draw index of each point
-addVertsIndex : Polygon -> (Int -> List (Attribute m)) -> List (Svg m)
-addVertsIndex polygon interactions =
-    List.indexedMap
-        (\i (cx,cy) ->
-                text_ (
-                      [ x <| fromFloat cx
-                      , y <| fromFloat cy
-                      , label_x_shift
-                      , label_y_shift
-                      , Svg.Attributes.class "point-label"
-                      , cartesian_flip
-                      ] ++ interactions i
-                      )
-                      [ text <| fromInt((List.length polygon) - i - 1)]
-                      )
-        polygon
+polygonGetRelative : Int -> Polygon -> Point
+polygonGetRelative n polygon =
+    let
+        len = List.length polygon
+        rel_idx = if n < 0 then len - (abs n)
+                           else n
+        idx = remainderBy len rel_idx
+    in
+    trust <| getAt idx polygon
 
 drawVertsIndex : Model -> Svg Msg
 drawVertsIndex model =
-    g []
-    (addVertsIndex model.polygon (\i->[]))
+    g [] <| List.indexedMap
+            (\i (vx,vy) ->
+                let
+                    (prev_x, prev_y) = polygonGetRelative (i-1) model.polygon
+                    prev = Vec2D.vec2 prev_x prev_y
+                    (curr_x, curr_y) = polygonGetRelative i model.polygon
+                    curr = Vec2D.vec2 curr_x curr_y
+                    (next_x, next_y) = polygonGetRelative (i+1) model.polygon
+                    next = Vec2D.vec2 next_x next_y
+                    -- centered around origin
+                    cprev = Vec2D.sub prev curr
+                    cnext = Vec2D.sub next curr
+                    clabel = Vec2D.scale (-label_offset)
+                            <| Vec2D.scale 0.5 <| Vec2D.add cprev cnext
+                    label = Vec2D.add clabel curr
+                    (label_x, label_y) = (Vec2D.getX label, Vec2D.getY label)
+                in
+                    text_ [ x <| fromFloat label_x
+                          , y <| fromFloat (-label_y)
+                          , Svg.Attributes.class "point-label"
+                          , cartesian_flip
+                          ]
+                          [ text <| fromInt i ]
+            )
+            model.polygon
 
 
 -- Mapping the list of points into svg attributes value
