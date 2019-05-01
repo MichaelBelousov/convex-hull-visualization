@@ -240,6 +240,12 @@ intro = div
              , li [] [ text "Double click on a point to delete it"]
              , li [] [ text "Click and drag on edges to add points"]
              ]
+        , p []
+            [ text ("If you haven't looked it up already, a simple polygon "
+                 ++ "doesn't have any of its edges intersecting or overlapping. "
+                 ++ "If you decide to do that, you will break the algorithms, "
+                 ++ "but it's worth experimenting with anyway.")
+            ]
         ]
 
 -- TODO: push these guys into some managed list of content that expands as the algorithm goes, with good scrolling
@@ -250,12 +256,14 @@ started_desc =
         [ p []
             [ text "Since we're given a "
             , i [] [ text "simple polygon " ]
-            , text ("our edges don't overlap, and we'll just assume we were given our polygon "
+            , text ("our edges shouldn't overlap, and we'll just assume we were given our polygon "
                  ++ "in counter-clockwise (CCW) order. If it isn't, we'll just reverse the point "
-                 ++ "order. Before we begin, we'll identify the bottom-left-most point, we'll "
-                 ++ "start there and call it '0'. We'll even name the rest of the points "
+                 ++ "in counter-clockwise (CCW) order. If it isn't, we'll just reverse the point "
+                 ++ "order. After we know it's in CCW order, we'll identify the bottom-left-most "
+                 ++ "point, we'll "
+                 ++ "start there and call it '0'. We'll even number the rest of the points "
                  ++ "in CCW order going up from 0, to 1, then 2, etc. You can see we've "
-                 ++ "relabeled them. ")
+                 ++ "already relabeled them. ")
             ]
         , p []
             [ text ("To start, we put the first two points of our polygon in a stack, "
@@ -480,12 +488,8 @@ drawPolygonVerts polygon interactions =
 
 calcHullProgressPolyline : Model -> Polyline
 calcHullProgressPolyline model =
-    (case model.progress_state of
-        Done ->
-            stackPush model.stack 0
-        _ ->
-            model.stack)
-    |> List.map (\n -> trust <| getAt n model.polygon)
+    model.stack
+    |> List.map (\n -> polygonGetAt n model.polygon)
 
 
 -- Draw every polyline, return svg message
@@ -559,8 +563,8 @@ drawCurrentCCW model =
               ]
       ]
 
-polygonGetRelative : Int -> Polygon -> Point
-polygonGetRelative n polygon =
+polygonGetAt : Int -> Polygon -> Point
+polygonGetAt n polygon =
     let
         len = List.length polygon
         rel_idx = if n < 0 then len - (abs n)
@@ -574,11 +578,11 @@ drawVertsIndex model =
     g [] <| List.indexedMap
             (\i (vx,vy) ->
                 let
-                    (prev_x, prev_y) = polygonGetRelative (i-1) model.polygon
+                    (prev_x, prev_y) = polygonGetAt (i-1) model.polygon
                     prev = Vec2D.vec2 prev_x prev_y
-                    (curr_x, curr_y) = polygonGetRelative i model.polygon
+                    (curr_x, curr_y) = polygonGetAt i model.polygon
                     curr = Vec2D.vec2 curr_x curr_y
-                    (next_x, next_y) = polygonGetRelative (i+1) model.polygon
+                    (next_x, next_y) = polygonGetAt (i+1) model.polygon
                     next = Vec2D.vec2 next_x next_y
                     -- centered around origin
                     cprev = Vec2D.sub prev curr
@@ -634,23 +638,17 @@ stackPush : Stack a -> a -> Stack a
 stackPush stack item =
     stack ++ [item]
 
-getBottomLeftMostPoint : Polygon -> Point
-getBottomLeftMostPoint polygon =
-    trust <| List.minimum polygon
 
-    -- shift a polygon until it starts with its bottom-leftmost point
-restartAtBottomLeftMost : Polygon -> Polygon
-restartAtBottomLeftMost polygon =
-    let
-        min = getBottomLeftMostPoint polygon
-    in
+    -- shift a polygon until it starts with three CCW points
+restartAtCcw : Polygon -> Polygon
+restartAtCcw polygon =
     case polygon of
-        [] ->
-            []
-        first::rest ->
-            if first == min
+        a::b::c::rest ->
+            if ccw a b c == 1
             then polygon
-            else restartAtBottomLeftMost (rest ++ [first])
+            else restartAtCcw <| b::c::rest ++ [a]
+        _ ->
+            Debug.todo "bad polygon?"
 
 
 startAlgorithmState : Model -> Model
@@ -662,7 +660,7 @@ startAlgorithmState model =
                            then model.polygon
                            else List.reverse model.polygon
         _ = Debug.log "oriented" oriented_polygon
-        shifted_polygon = restartAtBottomLeftMost oriented_polygon
+        shifted_polygon = restartAtCcw oriented_polygon
         _ = Debug.log "shifted" shifted_polygon
     in
     { model | polygon = shifted_polygon
@@ -685,10 +683,12 @@ progressConvexHull model =
                 next = trust <| getAt model.next_point model.polygon
                 is_not_ccw = ccw scd top next < 1
                 next_stack = case (is_not_ccw, model.next_point) of
+                    (True, 1) ->
+                        stackPush (Tuple.second <| stackPop <| trust <| List.tail model.stack) 1
                     (True, _) ->
                         Tuple.second <| stackPop model.stack
-                    (False, 0) ->
-                        model.stack -- don't push the first point again
+                    (False, 1) ->
+                        model.stack
                     (False, _) ->
                         stackPush model.stack model.next_point
                 next_log = model.progress_log
@@ -701,26 +701,25 @@ progressConvexHull model =
                                                             "Pushed"
                                                             next
                                                             model.next_point]]])
-            in
-            case model.next_point of
-                0 ->
+                next_state = if model.next_point == 1
+                             then Done
+                             else InProgress
+                next_model =
                     { model
-                      | progress_state = Done
-                      , stack = next_stack
+                      | stack = next_stack
                       , progress_log = next_log
+                      , progress_state = next_state
                     }
-                _ ->
-                    if is_not_ccw
-                    then { model
-                           | stack = next_stack
-                           , progress_log = next_log
-                         }
-                    else { model
-                           | stack = next_stack
-                           , next_point = remainderBy (List.length model.polygon)
-                                                      (model.next_point+1)
-                           , progress_log = next_log
-                         }
+                _ = Debug.log "considered point" model.next_point
+                _ = Debug.log "stack" next_stack
+            in
+                if is_not_ccw then
+                    next_model
+                else
+                    { next_model
+                      | next_point = remainderBy (List.length model.polygon)
+                                                  (model.next_point+1)
+                    }
         Done ->
             model
 

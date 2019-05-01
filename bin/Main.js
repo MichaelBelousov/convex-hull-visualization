@@ -5907,6 +5907,13 @@ var author$project$Main$intro = A2(
 						[
 							elm$html$Html$text('Click and drag on edges to add points')
 						]))
+				])),
+			A2(
+			elm$html$Html$p,
+			_List_Nil,
+			_List_fromArray(
+				[
+					elm$html$Html$text('If you haven\'t looked it up already, a simple polygon ' + ('doesn\'t have any of its edges intersecting or overlapping. ' + ('If you decide to do that, you will break the algorithms, ' + 'but it\'s worth experimenting with anyway.')))
 				]))
 		]));
 var author$project$Main$before_start_state = {
@@ -6656,8 +6663,8 @@ var author$project$Main$trust = function (x) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 353, column: 20},
-				end: {line: 353, column: 30}
+				start: {line: 361, column: 20},
+				end: {line: 361, column: 30}
 			})('trust got Nothing');
 	}
 };
@@ -6932,8 +6939,8 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 306, column: 22},
-							end: {line: 306, column: 32}
+							start: {line: 314, column: 22},
+							end: {line: 314, column: 32}
 						})('bad polygon');
 				}
 			}
@@ -6950,6 +6957,7 @@ var author$project$Main$insertPoint = F2(
 			});
 	});
 var author$project$Main$Done = {$: 'Done'};
+var author$project$Main$InProgress = {$: 'InProgress'};
 var author$project$Main$ccw = F3(
 	function (_n0, _n1, _n2) {
 		var ax = _n0.a;
@@ -6992,7 +7000,6 @@ var author$project$Main$stackPush = F2(
 			_List_fromArray(
 				[item]));
 	});
-var author$project$Main$InProgress = {$: 'InProgress'};
 var elm$core$List$tail = function (list) {
 	if (list.b) {
 		var x = list.a;
@@ -7042,44 +7049,32 @@ var author$project$Main$isCcw = function (polygon) {
 			edges));
 	return (result < 0) ? true : false;
 };
-var elm$core$Basics$min = F2(
-	function (x, y) {
-		return (_Utils_cmp(x, y) < 0) ? x : y;
-	});
-var elm$core$List$minimum = function (list) {
-	if (list.b) {
-		var x = list.a;
-		var xs = list.b;
-		return elm$core$Maybe$Just(
-			A3(elm$core$List$foldl, elm$core$Basics$min, x, xs));
+var author$project$Main$restartAtCcw = function (polygon) {
+	if ((polygon.b && polygon.b.b) && polygon.b.b.b) {
+		var a = polygon.a;
+		var _n1 = polygon.b;
+		var b = _n1.a;
+		var _n2 = _n1.b;
+		var c = _n2.a;
+		var rest = _n2.b;
+		return (A3(author$project$Main$ccw, a, b, c) === 1) ? polygon : author$project$Main$restartAtCcw(
+			A2(
+				elm$core$List$cons,
+				b,
+				A2(
+					elm$core$List$cons,
+					c,
+					_Utils_ap(
+						rest,
+						_List_fromArray(
+							[a])))));
 	} else {
-		return elm$core$Maybe$Nothing;
-	}
-};
-var author$project$Main$getBottomLeftMostPoint = function (polygon) {
-	return author$project$Main$trust(
-		elm$core$List$minimum(polygon));
-};
-var author$project$Main$restartAtBottomLeftMost = function (polygon) {
-	restartAtBottomLeftMost:
-	while (true) {
-		var min = author$project$Main$getBottomLeftMostPoint(polygon);
-		if (!polygon.b) {
-			return _List_Nil;
-		} else {
-			var first = polygon.a;
-			var rest = polygon.b;
-			if (_Utils_eq(first, min)) {
-				return polygon;
-			} else {
-				var $temp$polygon = _Utils_ap(
-					rest,
-					_List_fromArray(
-						[first]));
-				polygon = $temp$polygon;
-				continue restartAtBottomLeftMost;
-			}
-		}
+		return _Debug_todo(
+			'Main',
+			{
+				start: {line: 651, column: 13},
+				end: {line: 651, column: 23}
+			})('bad polygon?');
 	}
 };
 var author$project$Main$started_desc = A2(
@@ -7100,7 +7095,7 @@ var author$project$Main$started_desc = A2(
 						[
 							elm$html$Html$text('simple polygon ')
 						])),
-					elm$html$Html$text('our edges don\'t overlap, and we\'ll just assume we were given our polygon ' + ('in counter-clockwise (CCW) order. If it isn\'t, we\'ll just reverse the point ' + ('order. Before we begin, we\'ll identify the bottom-left-most point, we\'ll ' + ('start there and call it \'0\'. We\'ll even name the rest of the points ' + ('in CCW order going up from 0, to 1, then 2, etc. You can see we\'ve ' + 'relabeled them. ')))))
+					elm$html$Html$text('our edges shouldn\'t overlap, and we\'ll just assume we were given our polygon ' + ('in counter-clockwise (CCW) order. If it isn\'t, we\'ll just reverse the point ' + ('in counter-clockwise (CCW) order. If it isn\'t, we\'ll just reverse the point ' + ('order. After we know it\'s in CCW order, we\'ll identify the bottom-left-most ' + ('point, we\'ll ' + ('start there and call it \'0\'. We\'ll even number the rest of the points ' + ('in CCW order going up from 0, to 1, then 2, etc. You can see we\'ve ' + 'already relabeled them. ')))))))
 				])),
 			A2(
 			elm$html$Html$p,
@@ -7113,7 +7108,7 @@ var author$project$Main$started_desc = A2(
 var elm$core$Debug$log = _Debug_log;
 var author$project$Main$startAlgorithmState = function (model) {
 	var oriented_polygon = author$project$Main$isCcw(model.polygon) ? model.polygon : elm$core$List$reverse(model.polygon);
-	var shifted_polygon = author$project$Main$restartAtBottomLeftMost(oriented_polygon);
+	var shifted_polygon = author$project$Main$restartAtCcw(oriented_polygon);
 	var _n0 = A2(elm$core$Debug$log, 'raw', model.polygon);
 	var _n1 = A2(
 		elm$core$Debug$log,
@@ -7167,6 +7162,7 @@ var author$project$Main$progressConvexHull = function (model) {
 					author$project$Main$trust(
 						author$project$Main$listPenultimate(model.stack)),
 					model.polygon));
+			var next_state = (model.next_point === 1) ? author$project$Main$Done : author$project$Main$InProgress;
 			var next = author$project$Main$trust(
 				A2(elm_community$list_extra$List$Extra$getAt, model.next_point, model.polygon));
 			var is_not_ccw = A3(author$project$Main$ccw, scd, top, next) < 1;
@@ -7206,33 +7202,36 @@ var author$project$Main$progressConvexHull = function (model) {
 							]))
 					]));
 			var next_stack = function () {
-				var _n2 = _Utils_Tuple2(is_not_ccw, model.next_point);
-				if (_n2.a) {
-					return author$project$Main$stackPop(model.stack).b;
+				var _n3 = _Utils_Tuple2(is_not_ccw, model.next_point);
+				if (_n3.a) {
+					if (_n3.b === 1) {
+						return A2(
+							author$project$Main$stackPush,
+							author$project$Main$stackPop(
+								author$project$Main$trust(
+									elm$core$List$tail(model.stack))).b,
+							1);
+					} else {
+						return author$project$Main$stackPop(model.stack).b;
+					}
 				} else {
-					if (!_n2.b) {
+					if (_n3.b === 1) {
 						return model.stack;
 					} else {
 						return A2(author$project$Main$stackPush, model.stack, model.next_point);
 					}
 				}
 			}();
-			var _n1 = model.next_point;
-			if (!_n1) {
-				return _Utils_update(
-					model,
-					{progress_log: next_log, progress_state: author$project$Main$Done, stack: next_stack});
-			} else {
-				return is_not_ccw ? _Utils_update(
-					model,
-					{progress_log: next_log, stack: next_stack}) : _Utils_update(
-					model,
-					{
-						next_point: (model.next_point + 1) % elm$core$List$length(model.polygon),
-						progress_log: next_log,
-						stack: next_stack
-					});
-			}
+			var next_model = _Utils_update(
+				model,
+				{progress_log: next_log, progress_state: next_state, stack: next_stack});
+			var _n1 = A2(elm$core$Debug$log, 'considered point', model.next_point);
+			var _n2 = A2(elm$core$Debug$log, 'stack', next_stack);
+			return is_not_ccw ? next_model : _Utils_update(
+				next_model,
+				{
+					next_point: (model.next_point + 1) % elm$core$List$length(model.polygon)
+				});
 		default:
 			return model;
 	}
@@ -7676,21 +7675,24 @@ var author$project$Main$drawPolygon = function (model) {
 					})));
 	}
 };
+var elm$core$Basics$abs = function (n) {
+	return (n < 0) ? (-n) : n;
+};
+var author$project$Main$polygonGetAt = F2(
+	function (n, polygon) {
+		var len = elm$core$List$length(polygon);
+		var rel_idx = (n < 0) ? (len - elm$core$Basics$abs(n)) : n;
+		var idx = rel_idx % len;
+		return author$project$Main$trust(
+			A2(elm_community$list_extra$List$Extra$getAt, idx, polygon));
+	});
 var author$project$Main$calcHullProgressPolyline = function (model) {
 	return A2(
 		elm$core$List$map,
 		function (n) {
-			return author$project$Main$trust(
-				A2(elm_community$list_extra$List$Extra$getAt, n, model.polygon));
+			return A2(author$project$Main$polygonGetAt, n, model.polygon);
 		},
-		function () {
-			var _n0 = model.progress_state;
-			if (_n0.$ === 'Done') {
-				return A2(author$project$Main$stackPush, model.stack, 0);
-			} else {
-				return model.stack;
-			}
-		}());
+		model.stack);
 };
 var author$project$Main$polyline_fill = 'none';
 var author$project$Main$polyline_stroke = 'red';
@@ -7755,17 +7757,6 @@ var author$project$Main$drawStack = function (model) {
 				model.stack)));
 };
 var author$project$Main$label_offset = 0.2;
-var elm$core$Basics$abs = function (n) {
-	return (n < 0) ? (-n) : n;
-};
-var author$project$Main$polygonGetRelative = F2(
-	function (n, polygon) {
-		var len = elm$core$List$length(polygon);
-		var rel_idx = (n < 0) ? (len - elm$core$Basics$abs(n)) : n;
-		var idx = rel_idx % len;
-		return author$project$Main$trust(
-			A2(elm_community$list_extra$List$Extra$getAt, idx, polygon));
-	});
 var elm_explorations$linear_algebra$Math$Vector2$add = _MJS_v2add;
 var elm_explorations$linear_algebra$Math$Vector2$getX = _MJS_v2getX;
 var elm_explorations$linear_algebra$Math$Vector2$getY = _MJS_v2getY;
@@ -7782,15 +7773,15 @@ var author$project$Main$drawVertsIndex = function (model) {
 				function (i, _n0) {
 					var vx = _n0.a;
 					var vy = _n0.b;
-					var _n1 = A2(author$project$Main$polygonGetRelative, i - 1, model.polygon);
+					var _n1 = A2(author$project$Main$polygonGetAt, i - 1, model.polygon);
 					var prev_x = _n1.a;
 					var prev_y = _n1.b;
 					var prev = A2(elm_explorations$linear_algebra$Math$Vector2$vec2, prev_x, prev_y);
-					var _n2 = A2(author$project$Main$polygonGetRelative, i + 1, model.polygon);
+					var _n2 = A2(author$project$Main$polygonGetAt, i + 1, model.polygon);
 					var next_x = _n2.a;
 					var next_y = _n2.b;
 					var next = A2(elm_explorations$linear_algebra$Math$Vector2$vec2, next_x, next_y);
-					var _n3 = A2(author$project$Main$polygonGetRelative, i, model.polygon);
+					var _n3 = A2(author$project$Main$polygonGetAt, i, model.polygon);
 					var curr_x = _n3.a;
 					var curr_y = _n3.b;
 					var curr = A2(elm_explorations$linear_algebra$Math$Vector2$vec2, curr_x, curr_y);
