@@ -5831,17 +5831,56 @@ var elm$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
 			return 3;
 	}
 };
+var elm$html$Html$div = _VirtualDom_node('div');
+var elm$html$Html$i = _VirtualDom_node('i');
 var elm$html$Html$li = _VirtualDom_node('li');
 var elm$html$Html$p = _VirtualDom_node('p');
 var elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var elm$html$Html$text = elm$virtual_dom$VirtualDom$text;
 var elm$html$Html$ul = _VirtualDom_node('ul');
 var author$project$Main$intro = A2(
-	elm$html$Html$p,
+	elm$html$Html$div,
 	_List_Nil,
 	_List_fromArray(
 		[
-			elm$html$Html$text('Welcome. Together, we\'re going to find the convex hull of this simple polygon ' + ('on the left. If you don\'t know what that is, Wikipedia and Google probably ' + 'still exist.')),
+			A2(
+			elm$html$Html$p,
+			_List_Nil,
+			_List_fromArray(
+				[
+					elm$html$Html$text('Welcome. Together, we\'re going to find the '),
+					A2(
+					elm$html$Html$i,
+					_List_Nil,
+					_List_fromArray(
+						[
+							elm$html$Html$text('convex hull ')
+						])),
+					elm$html$Html$text('of this '),
+					A2(
+					elm$html$Html$i,
+					_List_Nil,
+					_List_fromArray(
+						[
+							elm$html$Html$text('simple polygon ')
+						])),
+					elm$html$Html$text('on the left. A polygon is just a sequence of points, ' + ('with straight edges between each sequential pair, such ' + ('as a square, or arrow shape. You\'ve probably heard of ' + ('polygons before. A convex hull is what you get when you ' + ('put a rubber band around one.  it\'s like the same polygon ' + 'but you\'ve removed all the dents.')))))
+				])),
+			A2(
+			elm$html$Html$p,
+			_List_Nil,
+			_List_fromArray(
+				[
+					elm$html$Html$text('You can ignore the grey '),
+					A2(
+					elm$html$Html$i,
+					_List_Nil,
+					_List_fromArray(
+						[
+							elm$html$Html$text('stack ')
+						])),
+					elm$html$Html$text('on the left, we\'ll use it soon, and that plus sign ' + ('is just the origin for your reference. ' + ('For now, feel free to build your own polygon by ' + ('interacting with the available tools. ' + 'When you\'re done, hit the \"Start!\" button.'))))
+				])),
 			A2(
 			elm$html$Html$ul,
 			_List_Nil,
@@ -6617,8 +6656,8 @@ var author$project$Main$trust = function (x) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 319, column: 20},
-				end: {line: 319, column: 30}
+				start: {line: 337, column: 20},
+				end: {line: 337, column: 30}
 			})('trust got Nothing');
 	}
 };
@@ -6893,8 +6932,8 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 286, column: 22},
-							end: {line: 286, column: 32}
+							start: {line: 304, column: 22},
+							end: {line: 304, column: 32}
 						})('bad polygon');
 				}
 			}
@@ -6994,8 +7033,6 @@ var author$project$Main$restartAtBottomLeftMost = function (polygon) {
 		}
 	}
 };
-var elm$html$Html$div = _VirtualDom_node('div');
-var elm$html$Html$i = _VirtualDom_node('i');
 var author$project$Main$started_desc = A2(
 	elm$html$Html$div,
 	_List_Nil,

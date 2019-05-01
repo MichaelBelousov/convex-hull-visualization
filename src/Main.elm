@@ -211,11 +211,29 @@ progress_log_id = "progress-log"
 -- UI Strings
 
 intro : Html Msg
-intro = p
+intro = div
         []
-        [ text ("Welcome. Together, we're going to find the convex hull of this simple polygon "
-             ++ "on the left. If you don't know what that is, Wikipedia and Google probably "
-             ++ "still exist.")
+        [ p []
+            [ text "Welcome. Together, we're going to find the "
+            , i [] [ text "convex hull " ]
+            , text "of this "
+            , i [] [ text "simple polygon " ]
+            , text ("on the left. A polygon is just a sequence of points, "
+                 ++ "with straight edges between each sequential pair, such "
+                 ++ "as a square, or arrow shape. You've probably heard of "
+                 ++ "polygons before. A convex hull is what you get when you "
+                 ++ "put a rubber band around one.  it's like the same polygon "
+                 ++ "but you've removed all the dents.")
+            ]
+        , p []
+            [ text "You can ignore the grey "
+            , i [] [ text "stack " ]
+            , text ("on the left, we'll use it soon, and that plus sign "
+                 ++ "is just the origin for your reference. "
+                 ++ "For now, feel free to build your own polygon by "
+                 ++ "interacting with the available tools. "
+                 ++ "When you're done, hit the \"Start!\" button.")
+            ]
         , ul []
              [ li [] [ text "Click and drag on points to move them around"]
              , li [] [ text "Double click on a point to delete it"]
