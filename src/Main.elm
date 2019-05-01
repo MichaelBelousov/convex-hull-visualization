@@ -24,6 +24,7 @@ import Svg.Attributes exposing (height, width, viewBox, xlinkHref, id,
 import SvgPorts exposing (mouseToSvgCoords, decodeSvgPoint)
 import ScrollPorts exposing (scrollToBottom)
 import Math.Vector2 as Vec2D exposing (Vec2, vec2)
+import Stack exposing (Stack, pop, push)
 
 -- Browser Model
 
@@ -149,9 +150,9 @@ viewNarration model =
                  ]
                  model.progress_log
             , div [ class "next-btn-container" ]
-                 [ button [ onClick StepAlgorithm]
-                          [ text btn_label ]
-                 ]
+                  [ button [ onClick StepAlgorithm ]
+                           [ text btn_label ]
+                  ]
            ]
 
 type alias Model =
@@ -175,7 +176,6 @@ type alias Point = ( Float, Float )
 type alias Edge = ( Point, Point )
 type alias Polygon = List Point
 type alias Polyline = List Point
-type alias Stack z = List z
 
 -- Constants
 
@@ -594,7 +594,7 @@ drawVertsIndex model =
                     -- centered around origin
                     cprev = Vec2D.sub prev curr
                     cnext = Vec2D.sub next curr
-                    clabel = Vec2D.scale (-label_offset)
+                    clabel = Vec2D.scale (-label_offset) -- NOTE: could clamp by normalized + offset
                             <| Vec2D.scale 0.5 <| Vec2D.add cprev cnext
                     label = Vec2D.add clabel curr
                     (label_x, label_y) = (Vec2D.getX label, Vec2D.getY label)
@@ -667,16 +667,6 @@ listPenultimate list =
         a::b::rest -> Just b
         _ -> Nothing
 
-stackPop : Stack a -> (Maybe a, Stack a)
-stackPop stack =
-    case List.reverse stack of
-        last::rest -> (Just last, List.reverse rest)
-        [] -> (Nothing, [])
-
-stackPush : Stack a -> a -> Stack a
-stackPush stack item =
-    stack ++ [item]
-
 
     -- shift a polygon until it starts with three CCW points
 restartAtCcw : Polygon -> Polygon
@@ -722,19 +712,20 @@ progressConvexHull model =
                     (True, 1) ->
                         let
                             removed_zero = trust <| List.tail model.stack
-                            popped_zero = Tuple.second <| stackPop removed_zero
-                            pushed_next = stackPush popped_zero model.next_point
+                            popped_zero = Tuple.second <| pop removed_zero
+                            pushed_next = push popped_zero model.next_point
                         in
                         { model
                          | stack = pushed_next
                          , progress_log =
                              model.progress_log
-                             ++ [writePointAction "Removed and popped point" top top_idx]
+                             ++ [writePointAction ("Removed and popped point 0, "
+                                                ++ "then pushed point") next model.next_point]
                          , progress_state = Done
                         }
                     (True, _) ->
                         { model
-                         | stack = Tuple.second <| stackPop model.stack
+                         | stack = Tuple.second <| pop model.stack
                          , progress_log = model.progress_log
                              ++ [writePointAction "Popped point" top top_idx]
                         }
@@ -747,7 +738,7 @@ progressConvexHull model =
                         }
                     (False, _) ->
                         { model
-                         | stack = stackPush model.stack model.next_point
+                         | stack = push model.stack model.next_point
                          , progress_log = model.progress_log
                              ++ [writePointAction "Pushed point" next model.next_point]
                          , next_point = remainderBy (List.length model.polygon) (model.next_point+1)

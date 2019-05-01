@@ -6980,25 +6980,6 @@ var author$project$Main$listPenultimate = function (list) {
 		return elm$core$Maybe$Nothing;
 	}
 };
-var author$project$Main$stackPop = function (stack) {
-	var _n0 = elm$core$List$reverse(stack);
-	if (_n0.b) {
-		var last = _n0.a;
-		var rest = _n0.b;
-		return _Utils_Tuple2(
-			elm$core$Maybe$Just(last),
-			elm$core$List$reverse(rest));
-	} else {
-		return _Utils_Tuple2(elm$core$Maybe$Nothing, _List_Nil);
-	}
-};
-var author$project$Main$stackPush = F2(
-	function (stack, item) {
-		return _Utils_ap(
-			stack,
-			_List_fromArray(
-				[item]));
-	});
 var author$project$Main$InProgress = {$: 'InProgress'};
 var elm$core$List$tail = function (list) {
 	if (list.b) {
@@ -7072,8 +7053,8 @@ var author$project$Main$restartAtCcw = function (polygon) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 690, column: 13},
-				end: {line: 690, column: 23}
+				start: {line: 680, column: 13},
+				end: {line: 680, column: 23}
 			})('bad polygon?');
 	}
 };
@@ -7151,7 +7132,25 @@ var author$project$Main$writePointAction = F3(
 						]))
 				]));
 	});
-var elm$core$Debug$log = _Debug_log;
+var author$project$Stack$pop = function (stack) {
+	var _n0 = elm$core$List$reverse(stack);
+	if (_n0.b) {
+		var last = _n0.a;
+		var rest = _n0.b;
+		return _Utils_Tuple2(
+			elm$core$Maybe$Just(last),
+			elm$core$List$reverse(rest));
+	} else {
+		return _Utils_Tuple2(elm$core$Maybe$Nothing, _List_Nil);
+	}
+};
+var author$project$Stack$push = F2(
+	function (stack, item) {
+		return _Utils_ap(
+			stack,
+			_List_fromArray(
+				[item]));
+	});
 var author$project$Main$progressConvexHull = function (model) {
 	var _n0 = model.progress_state;
 	switch (_n0.$) {
@@ -7171,14 +7170,13 @@ var author$project$Main$progressConvexHull = function (model) {
 			var next = author$project$Main$trust(
 				A2(elm_community$list_extra$List$Extra$getAt, model.next_point, model.polygon));
 			var is_not_ccw = A3(author$project$Main$ccw, scd, top, next) < 1;
-			var _n1 = A2(elm$core$Debug$log, 'polygon', model.polygon);
-			var _n2 = _Utils_Tuple2(is_not_ccw, model.next_point);
-			if (_n2.a) {
-				if (_n2.b === 1) {
+			var _n1 = _Utils_Tuple2(is_not_ccw, model.next_point);
+			if (_n1.a) {
+				if (_n1.b === 1) {
 					var removed_zero = author$project$Main$trust(
 						elm$core$List$tail(model.stack));
-					var popped_zero = author$project$Main$stackPop(removed_zero).b;
-					var pushed_next = A2(author$project$Main$stackPush, popped_zero, model.next_point);
+					var popped_zero = author$project$Stack$pop(removed_zero).b;
+					var pushed_next = A2(author$project$Stack$push, popped_zero, model.next_point);
 					return _Utils_update(
 						model,
 						{
@@ -7186,7 +7184,7 @@ var author$project$Main$progressConvexHull = function (model) {
 								model.progress_log,
 								_List_fromArray(
 									[
-										A3(author$project$Main$writePointAction, 'Removed and popped point', top, top_idx)
+										A3(author$project$Main$writePointAction, 'Removed and popped point 0, ' + 'then pushed point', next, model.next_point)
 									])),
 							progress_state: author$project$Main$Done,
 							stack: pushed_next
@@ -7201,11 +7199,11 @@ var author$project$Main$progressConvexHull = function (model) {
 									[
 										A3(author$project$Main$writePointAction, 'Popped point', top, top_idx)
 									])),
-							stack: author$project$Main$stackPop(model.stack).b
+							stack: author$project$Stack$pop(model.stack).b
 						});
 				}
 			} else {
-				if (_n2.b === 1) {
+				if (_n1.b === 1) {
 					return _Utils_update(
 						model,
 						{
@@ -7229,7 +7227,7 @@ var author$project$Main$progressConvexHull = function (model) {
 									[
 										A3(author$project$Main$writePointAction, 'Pushed point', next, model.next_point)
 									])),
-							stack: A2(author$project$Main$stackPush, model.stack, model.next_point)
+							stack: A2(author$project$Stack$push, model.stack, model.next_point)
 						});
 				}
 			}
@@ -7341,8 +7339,8 @@ var author$project$Main$update = F2(
 							return _Debug_todo(
 								'Main',
 								{
-									start: {line: 83, column: 21},
-									end: {line: 83, column: 31}
+									start: {line: 84, column: 21},
+									end: {line: 84, column: 31}
 								})('bad value sent over svgCoords port sub');
 						}
 					}());
