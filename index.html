@@ -35,14 +35,6 @@
         app.ports.mouseToSvgCoords.send(newloc);
       }, false);
 
-      // KeyUpPorts
-      document.addEventListener('keyup', evt => {
-        var keynum = event.key || event.keyCode;
-        if(key === 13 || key === 32) {
-          app.ports.keyUp.send(key);
-        }
-      });
-
       // ScrollPorts
       app.ports.scrollToBottom_.subscribe(() => {
         window.setTimeout(() => {
@@ -51,9 +43,6 @@
           last_log_elem.scrollIntoView();
         }, 15);  // FIXME: update on next elm update rather than use delay
       });
-
-
-
 
     </script>
   </body>

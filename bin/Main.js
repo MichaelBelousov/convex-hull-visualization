@@ -5603,8 +5603,8 @@ var author$project$Main$trust = function (x) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 311, column: 20},
-				end: {line: 311, column: 30}
+				start: {line: 314, column: 20},
+				end: {line: 314, column: 30}
 			})('trust got Nothing');
 	}
 };
@@ -5879,8 +5879,8 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 278, column: 22},
-							end: {line: 278, column: 32}
+							start: {line: 281, column: 22},
+							end: {line: 281, column: 32}
 						})('bad polygon');
 				}
 			}
@@ -6232,8 +6232,8 @@ var author$project$Main$update = F2(
 							return _Debug_todo(
 								'Main',
 								{
-									start: {line: 81, column: 21},
-									end: {line: 81, column: 31}
+									start: {line: 82, column: 21},
+									end: {line: 82, column: 31}
 								})('bad value sent over svgCoords port sub');
 						}
 					}());
@@ -6664,6 +6664,53 @@ var author$project$Main$drawStack = function (model) {
 					}),
 				model.stack)));
 };
+var elm$svg$Svg$Attributes$dx = _VirtualDom_attribute('dx');
+var author$project$Main$label_x_shift = elm$svg$Svg$Attributes$dx('2.5');
+var elm$svg$Svg$Attributes$dy = _VirtualDom_attribute('dy');
+var author$project$Main$label_y_shift = elm$svg$Svg$Attributes$dy('2.5');
+var author$project$Main$addVertsIndex = F2(
+	function (polygon, interactions) {
+		return A2(
+			elm$core$List$indexedMap,
+			F2(
+				function (i, _n0) {
+					var cx = _n0.a;
+					var cy = _n0.b;
+					return A2(
+						elm$svg$Svg$text_,
+						_Utils_ap(
+							_List_fromArray(
+								[
+									elm$svg$Svg$Attributes$x(
+									elm$core$String$fromFloat(cx)),
+									elm$svg$Svg$Attributes$y(
+									elm$core$String$fromFloat(cy)),
+									author$project$Main$label_x_shift,
+									author$project$Main$label_y_shift,
+									elm$svg$Svg$Attributes$class('point-label'),
+									author$project$Main$cartesian_flip
+								]),
+							interactions(i)),
+						_List_fromArray(
+							[
+								elm$html$Html$text(
+								elm$core$String$fromInt(
+									(elm$core$List$length(polygon) - i) - 1))
+							]));
+				}),
+			polygon);
+	});
+var author$project$Main$drawVertsIndex = function (model) {
+	return A2(
+		elm$svg$Svg$g,
+		_List_Nil,
+		A2(
+			author$project$Main$addVertsIndex,
+			model.polygon,
+			function (i) {
+				return _List_Nil;
+			}));
+};
 var elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
 		return A2(
@@ -6697,7 +6744,8 @@ var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
 							[
 								author$project$Main$drawPolygon(model),
 								author$project$Main$drawPolyline(model),
-								author$project$Main$drawStack(model)
+								author$project$Main$drawStack(model),
+								author$project$Main$drawVertsIndex(model)
 							]),
 						extra))
 				]));
@@ -6710,7 +6758,8 @@ var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
 					author$project$Main$drawNextPoint(
 					author$project$Main$trust(
 						A2(elm_community$list_extra$List$Extra$getAt, model.next_point, model.polygon))),
-					author$project$Main$drawCurrentCCW(model)
+					author$project$Main$drawCurrentCCW(model),
+					author$project$Main$drawVertsIndex(model)
 				]));
 	} else {
 		return svgBase(_List_Nil);
