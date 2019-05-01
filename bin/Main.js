@@ -6957,7 +6957,6 @@ var author$project$Main$insertPoint = F2(
 			});
 	});
 var author$project$Main$Done = {$: 'Done'};
-var author$project$Main$InProgress = {$: 'InProgress'};
 var author$project$Main$ccw = F3(
 	function (_n0, _n1, _n2) {
 		var ax = _n0.a;
@@ -7000,6 +6999,7 @@ var author$project$Main$stackPush = F2(
 			_List_fromArray(
 				[item]));
 	});
+var author$project$Main$InProgress = {$: 'InProgress'};
 var elm$core$List$tail = function (list) {
 	if (list.b) {
 		var x = list.a;
@@ -7072,8 +7072,8 @@ var author$project$Main$restartAtCcw = function (polygon) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 651, column: 13},
-				end: {line: 651, column: 23}
+				start: {line: 658, column: 13},
+				end: {line: 658, column: 23}
 			})('bad polygon?');
 	}
 };
@@ -7143,8 +7143,21 @@ var author$project$Main$writePointAction = F3(
 	function (action, _n0, index) {
 		var x = _n0.a;
 		var y = _n0.b;
-		return action + (' point: ' + (elm$core$String$fromInt(index) + (' at (' + (author$project$Main$pointToString(
-			_Utils_Tuple2(x, y)) + ')'))));
+		return A2(
+			elm$html$Html$ul,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							elm$html$Html$text(
+							action + (': ' + (elm$core$String$fromInt(index) + (' at (' + (author$project$Main$pointToString(
+								_Utils_Tuple2(x, y)) + ')')))))
+						]))
+				]));
 	});
 var author$project$Main$progressConvexHull = function (model) {
 	var _n0 = model.progress_state;
@@ -7162,76 +7175,70 @@ var author$project$Main$progressConvexHull = function (model) {
 					author$project$Main$trust(
 						author$project$Main$listPenultimate(model.stack)),
 					model.polygon));
-			var next_state = (model.next_point === 1) ? author$project$Main$Done : author$project$Main$InProgress;
 			var next = author$project$Main$trust(
 				A2(elm_community$list_extra$List$Extra$getAt, model.next_point, model.polygon));
 			var is_not_ccw = A3(author$project$Main$ccw, scd, top, next) < 1;
-			var next_log = _Utils_ap(
-				model.progress_log,
-				is_not_ccw ? _List_fromArray(
-					[
-						A2(
-						elm$html$Html$ul,
-						_List_Nil,
-						_List_fromArray(
-							[
-								A2(
-								elm$html$Html$li,
-								_List_Nil,
+			var _n1 = _Utils_Tuple2(is_not_ccw, model.next_point);
+			if (_n1.a) {
+				if (_n1.b === 1) {
+					var removed_zero = author$project$Main$trust(
+						elm$core$List$tail(model.stack));
+					var popped_zero = author$project$Main$stackPop(removed_zero).b;
+					var pushed_next = A2(author$project$Main$stackPush, popped_zero, model.next_point);
+					return _Utils_update(
+						model,
+						{
+							progress_log: _Utils_ap(
+								model.progress_log,
 								_List_fromArray(
 									[
-										elm$html$Html$text(
-										A3(author$project$Main$writePointAction, 'Popped', top, top_idx))
-									]))
-							]))
-					]) : _List_fromArray(
-					[
-						A2(
-						elm$html$Html$ul,
-						_List_Nil,
-						_List_fromArray(
-							[
-								A2(
-								elm$html$Html$li,
-								_List_Nil,
-								_List_fromArray(
-									[
-										elm$html$Html$text(
-										A3(author$project$Main$writePointAction, 'Pushed', next, model.next_point))
-									]))
-							]))
-					]));
-			var next_stack = function () {
-				var _n3 = _Utils_Tuple2(is_not_ccw, model.next_point);
-				if (_n3.a) {
-					if (_n3.b === 1) {
-						return A2(
-							author$project$Main$stackPush,
-							author$project$Main$stackPop(
-								author$project$Main$trust(
-									elm$core$List$tail(model.stack))).b,
-							1);
-					} else {
-						return author$project$Main$stackPop(model.stack).b;
-					}
+										A3(author$project$Main$writePointAction, 'Removed and popped point', top, top_idx)
+									])),
+							progress_state: author$project$Main$Done,
+							stack: pushed_next
+						});
 				} else {
-					if (_n3.b === 1) {
-						return model.stack;
-					} else {
-						return A2(author$project$Main$stackPush, model.stack, model.next_point);
-					}
+					return _Utils_update(
+						model,
+						{
+							progress_log: _Utils_ap(
+								model.progress_log,
+								_List_fromArray(
+									[
+										A3(author$project$Main$writePointAction, 'Popped point', top, top_idx)
+									])),
+							stack: author$project$Main$stackPop(model.stack).b
+						});
 				}
-			}();
-			var next_model = _Utils_update(
-				model,
-				{progress_log: next_log, progress_state: next_state, stack: next_stack});
-			var _n1 = A2(elm$core$Debug$log, 'considered point', model.next_point);
-			var _n2 = A2(elm$core$Debug$log, 'stack', next_stack);
-			return is_not_ccw ? next_model : _Utils_update(
-				next_model,
-				{
-					next_point: (model.next_point + 1) % elm$core$List$length(model.polygon)
-				});
+			} else {
+				if (_n1.b === 1) {
+					return _Utils_update(
+						model,
+						{
+							next_point: (model.next_point + 1) % elm$core$List$length(model.polygon),
+							progress_log: _Utils_ap(
+								model.progress_log,
+								_List_fromArray(
+									[
+										A3(author$project$Main$writePointAction, 'Finished at point', top, top_idx)
+									])),
+							progress_state: author$project$Main$Done
+						});
+				} else {
+					return _Utils_update(
+						model,
+						{
+							next_point: (model.next_point + 1) % elm$core$List$length(model.polygon),
+							progress_log: _Utils_ap(
+								model.progress_log,
+								_List_fromArray(
+									[
+										A3(author$project$Main$writePointAction, 'Pushed point', next, model.next_point)
+									])),
+							stack: A2(author$project$Main$stackPush, model.stack, model.next_point)
+						});
+				}
+			}
 		default:
 			return model;
 	}

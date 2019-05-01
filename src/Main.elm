@@ -85,7 +85,7 @@ update msg model =
             nocmd <| model
 
 keyDecoder : Decode.Decoder Msg
-keyDecoder = 
+keyDecoder =
     Decode.map whichKey (Decode.field "key" Decode.string)
 
 whichKey : String -> Msg
@@ -95,7 +95,7 @@ whichKey string =
             StepAlgorithm
         " " ->
             StepAlgorithm
-        _ -> 
+        _ ->
             DoNothing
 
 
@@ -617,10 +617,17 @@ pointToString (x, y) =
     ++ ", "
     ++ fromFloat (Basics.toFloat(round(y * 100)) / 100.0)
 
-writePointAction : String -> Point -> Int -> String
+writePointAction : String -> Point -> Int -> Html msg
 writePointAction action (x,y) index =
-    action ++ " point: " ++ fromInt index
-    ++ " at (" ++ pointToString (x,y) ++ ")"
+    ul []
+       [ li []
+            [ text
+               (  action ++ ": "
+               ++ fromInt index ++ " at ("
+               ++ pointToString (x,y) ++ ")"
+               )
+            ]
+       ]
 
 listPenultimate : List a -> Maybe a
 listPenultimate list =
@@ -654,14 +661,10 @@ restartAtCcw polygon =
 startAlgorithmState : Model -> Model
 startAlgorithmState model =
     let
-        _ = Debug.log "raw" model.polygon
-        _ = Debug.log "poly was ccw" <| isCcw model.polygon
         oriented_polygon = if isCcw model.polygon
                            then model.polygon
                            else List.reverse model.polygon
-        _ = Debug.log "oriented" oriented_polygon
         shifted_polygon = restartAtCcw oriented_polygon
-        _ = Debug.log "shifted" shifted_polygon
     in
     { model | polygon = shifted_polygon
             , next_point = 2
@@ -682,44 +685,41 @@ progressConvexHull model =
                 scd = trust <| getAt (trust <| listPenultimate model.stack) model.polygon
                 next = trust <| getAt model.next_point model.polygon
                 is_not_ccw = ccw scd top next < 1
-                next_stack = case (is_not_ccw, model.next_point) of
-                    (True, 1) ->
-                        stackPush (Tuple.second <| stackPop <| trust <| List.tail model.stack) 1
-                    (True, _) ->
-                        Tuple.second <| stackPop model.stack
-                    (False, 1) ->
-                        model.stack
-                    (False, _) ->
-                        stackPush model.stack model.next_point
-                next_log = model.progress_log
-                        ++ (if is_not_ccw
-                            then [ul [] [li [] [text <| writePointAction
-                                                            "Popped"
-                                                            top
-                                                            top_idx]]]
-                            else [ul [] [li [] [text <| writePointAction
-                                                            "Pushed"
-                                                            next
-                                                            model.next_point]]])
-                next_state = if model.next_point == 1
-                             then Done
-                             else InProgress
-                next_model =
-                    { model
-                      | stack = next_stack
-                      , progress_log = next_log
-                      , progress_state = next_state
-                    }
-                _ = Debug.log "considered point" model.next_point
-                _ = Debug.log "stack" next_stack
             in
-                if is_not_ccw then
-                    next_model
-                else
-                    { next_model
-                      | next_point = remainderBy (List.length model.polygon)
-                                                  (model.next_point+1)
-                    }
+                case (is_not_ccw, model.next_point) of
+                    (True, 1) ->
+                        let
+                            removed_zero = trust <| List.tail model.stack
+                            popped_zero = Tuple.second <| stackPop removed_zero
+                            pushed_next = stackPush popped_zero model.next_point
+                        in
+                        { model
+                         | stack = pushed_next
+                         , progress_log =
+                             model.progress_log
+                             ++ [writePointAction "Removed and popped point" top top_idx]
+                         , progress_state = Done
+                        }
+                    (True, _) ->
+                        { model
+                         | stack = Tuple.second <| stackPop model.stack
+                         , progress_log = model.progress_log
+                             ++ [writePointAction "Popped point" top top_idx]
+                        }
+                    (False, 1) ->
+                        { model
+                         | progress_log = model.progress_log
+                             ++ [writePointAction "Finished at point" top top_idx]
+                         , next_point = remainderBy (List.length model.polygon) (model.next_point+1)
+                         , progress_state = Done
+                        }
+                    (False, _) ->
+                        { model
+                         | stack = stackPush model.stack model.next_point
+                         , progress_log = model.progress_log
+                             ++ [writePointAction "Pushed point" next model.next_point]
+                         , next_point = remainderBy (List.length model.polygon) (model.next_point+1)
+                        }
         Done ->
             model
 
