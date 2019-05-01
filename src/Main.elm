@@ -347,12 +347,13 @@ drawConvexHullAlgorithmsState model =
                       , cartesian_area
                       ]
                       (
-                      [ drawPolygon model
-                      , drawOrigin
-                      , drawPolyline model
+                      [ drawOrigin
                       , drawStack model
-                      , drawVertsIndex model
-                      ] ++ extra
+                      , drawPolygon model
+                      , drawPolyline model
+                      ] ++ extra ++
+                      [ drawVertsIndex model
+                      ]
                       )
                  ]
     in

@@ -7833,13 +7833,17 @@ var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
 					_Utils_ap(
 						_List_fromArray(
 							[
-								author$project$Main$drawPolygon(model),
 								author$project$Main$drawOrigin,
-								author$project$Main$drawPolyline(model),
 								author$project$Main$drawStack(model),
-								author$project$Main$drawVertsIndex(model)
+								author$project$Main$drawPolygon(model),
+								author$project$Main$drawPolyline(model)
 							]),
-						extra))
+						_Utils_ap(
+							extra,
+							_List_fromArray(
+								[
+									author$project$Main$drawVertsIndex(model)
+								]))))
 				]));
 	};
 	var _n0 = model.progress_state;
