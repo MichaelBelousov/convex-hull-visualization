@@ -629,6 +629,31 @@ writePointAction action (x,y) index =
             ]
        ]
 
+
+counter_example : Polygon
+counter_example =
+    [ (-15,-15)
+    , (15,-15)
+    , (21.70, 3.23)
+    , (11.84, -6.72)
+    , (15.55, 3.55)
+    , (8.24, 6.20)
+    , (27.75, 28.26)
+    , (4.74, 24.23)
+    , (-0.02, 20.20)
+    , (0.92, 11.40)
+    , (3.79, 8.11)
+    , (6.12, -1.00)
+    , (2.20, -3.22)
+    , (2.51, -9.69)
+    , (-4.90, -9.69)
+    , (-7.87, -5.03)
+    , (-4.26, 0.79)
+    , (-9.25, 4.82)
+    , (-6.60, 16.81)
+    , (-15,15)
+    ]
+
 listPenultimate : List a -> Maybe a
 listPenultimate list =
     case List.reverse list of
@@ -685,6 +710,7 @@ progressConvexHull model =
                 scd = trust <| getAt (trust <| listPenultimate model.stack) model.polygon
                 next = trust <| getAt model.next_point model.polygon
                 is_not_ccw = ccw scd top next < 1
+                _ = Debug.log "polygon" model.polygon
             in
                 case (is_not_ccw, model.next_point) of
                     (True, 1) ->

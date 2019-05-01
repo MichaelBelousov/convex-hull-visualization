@@ -7072,8 +7072,8 @@ var author$project$Main$restartAtCcw = function (polygon) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 658, column: 13},
-				end: {line: 658, column: 23}
+				start: {line: 683, column: 13},
+				end: {line: 683, column: 23}
 			})('bad polygon?');
 	}
 };
@@ -7105,17 +7105,9 @@ var author$project$Main$started_desc = A2(
 					elm$html$Html$text('To start, we put the first two points of our polygon in a stack, ' + ('and we start considering the remaining points in order. The point ' + ('we\'re considering is in yellow, and the dashed yellow triangle ' + ('is a CCW test between the top two members of the stack, and that ' + ('point of consideration. Note the black spinny arrow that should ' + 'helpfully illustrate whether the triangle\'s points are in CCW order.')))))
 				]))
 		]));
-var elm$core$Debug$log = _Debug_log;
 var author$project$Main$startAlgorithmState = function (model) {
 	var oriented_polygon = author$project$Main$isCcw(model.polygon) ? model.polygon : elm$core$List$reverse(model.polygon);
 	var shifted_polygon = author$project$Main$restartAtCcw(oriented_polygon);
-	var _n0 = A2(elm$core$Debug$log, 'raw', model.polygon);
-	var _n1 = A2(
-		elm$core$Debug$log,
-		'poly was ccw',
-		author$project$Main$isCcw(model.polygon));
-	var _n2 = A2(elm$core$Debug$log, 'oriented', oriented_polygon);
-	var _n3 = A2(elm$core$Debug$log, 'shifted', shifted_polygon);
 	return _Utils_update(
 		model,
 		{
@@ -7159,6 +7151,7 @@ var author$project$Main$writePointAction = F3(
 						]))
 				]));
 	});
+var elm$core$Debug$log = _Debug_log;
 var author$project$Main$progressConvexHull = function (model) {
 	var _n0 = model.progress_state;
 	switch (_n0.$) {
@@ -7178,9 +7171,10 @@ var author$project$Main$progressConvexHull = function (model) {
 			var next = author$project$Main$trust(
 				A2(elm_community$list_extra$List$Extra$getAt, model.next_point, model.polygon));
 			var is_not_ccw = A3(author$project$Main$ccw, scd, top, next) < 1;
-			var _n1 = _Utils_Tuple2(is_not_ccw, model.next_point);
-			if (_n1.a) {
-				if (_n1.b === 1) {
+			var _n1 = A2(elm$core$Debug$log, 'polygon', model.polygon);
+			var _n2 = _Utils_Tuple2(is_not_ccw, model.next_point);
+			if (_n2.a) {
+				if (_n2.b === 1) {
 					var removed_zero = author$project$Main$trust(
 						elm$core$List$tail(model.stack));
 					var popped_zero = author$project$Main$stackPop(removed_zero).b;
@@ -7211,7 +7205,7 @@ var author$project$Main$progressConvexHull = function (model) {
 						});
 				}
 			} else {
-				if (_n1.b === 1) {
+				if (_n2.b === 1) {
 					return _Utils_update(
 						model,
 						{
