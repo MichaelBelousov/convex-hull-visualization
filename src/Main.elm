@@ -25,6 +25,10 @@ import SvgPorts exposing (mouseToSvgCoords, decodeSvgPoint)
 import ScrollPorts exposing (scrollToBottom)
 import Math.Vector2 as Vec2D exposing (Vec2, vec2)
 import Stack exposing (Stack, pop, push)
+import Geometry exposing (Point, ccwTest)
+import Polygon exposing (Polygon)
+import Polyline exposing (Polyline)
+import Utils exposing (trust, makeCube)
 
 -- Browser Model
 
@@ -170,12 +174,6 @@ type ModelState
     | InProgress
     | Done
 
--- Domain Types
-
-type alias Point = ( Float, Float )
-type alias Edge = ( Point, Point )
-type alias Polygon = List Point
-type alias Polyline = List Point
 
 -- Constants
 
@@ -309,15 +307,15 @@ insertPoint model edge_idx =
         (front, back) = splitAt (edge_idx+1) model.polygon
         mdpt = case (last front, List.head back) of
                 (Just x, Just y) ->
-                    polygonMidPoint [x, y]
+                    Polygon.midpoint [x, y]
                 (Just x, Nothing) ->
-                    polygonMidPoint [ trust <| List.head front
-                                    , trust <| last front
-                                    ]
+                    Polygon.midpoint [ trust <| List.head front
+                                     , trust <| last front
+                                     ]
                 (Nothing, Just y) ->
-                    polygonMidPoint [ trust <| List.head back
-                                    , trust <| last back
-                                    ]
+                    Polygon.midpoint [ trust <| List.head back
+                                     , trust <| last back
+                                     ]
                 _ -> Debug.todo "bad polygon"
     in
     { model | polygon = front ++ [mdpt] ++ back }
@@ -336,29 +334,8 @@ before_start_state =
     , mouse_in_svg = (0,0)
     }
 
--- XXX: assuming general position!
-isCcw : Polygon -> Bool
-isCcw polygon =
-    let
-        edges = polygonToEdges polygon
-        result =
-            edges
-            |> List.map (\((x1,y1),(x2,y2)) -> (x2-x1)*(y2+y1))
-            |> List.sum
-    in
-        if result < 0 then True
-                      else False
 
 
--- CCW formula
-ccw : Point -> Point -> Point -> Int
-ccw (ax,ay) (bx,by) (cx,cy) =
-    let
-        value = (ax * (by - cy)) - (bx * (ay - cy)) + (cx * (ay - by))
-    in
-        if value > 0 then 1
-        else if value < 0 then -1
-        else 0
 
 -- trust that a Maybe is fulfilled
 trust : Maybe a -> a
@@ -426,19 +403,6 @@ drawStack model =
       )
 
 
-polylineToEdges : Polyline -> List (Point, Point)
-polylineToEdges polyline =
-    List.map2 (\p q -> (p,q))
-              polyline
-              (trust <| List.tail polyline)
-
-
-polygonToEdges : Polygon -> List (Point, Point)
-polygonToEdges polygon =
-    (polylineToEdges polygon)
-    ++ [(trust <| last polygon,
-         trust <| List.head polygon)]
-
 
 -- Draw the polygon, return svg message
 drawPolygon : Model -> Svg Msg
@@ -476,7 +440,7 @@ drawPolygonEdges polygon interactions =
                      , x1 <| fromFloat x1_, y1 <| fromFloat y1_
                      , x2 <| fromFloat x2_, y2 <| fromFloat y2_
                      ] ++ interactions i) [])
-        (polygonToEdges polygon)
+        (Polygon.getEdges polygon)
 
 drawPolygonVerts : Polygon -> (Int -> List (Attribute m)) -> List (Svg m)
 drawPolygonVerts polygon interactions =
@@ -496,7 +460,7 @@ drawPolygonVerts polygon interactions =
 calcHullProgressPolyline : Model -> Polyline
 calcHullProgressPolyline model =
     model.stack
-    |> List.map (\n -> polygonGetAt n model.polygon)
+    |> List.map (\n -> Polygon.getAt n model.polygon)
 
 
 -- Draw every polyline, return svg message
@@ -521,16 +485,6 @@ drawNextPoint (x,y) =
            ]
            []
 
-polygonMidPoint : Polygon -> Point
-polygonMidPoint polygon =
-    let
-        xsum = List.sum <| List.map Tuple.first polygon
-        ysum = List.sum <| List.map Tuple.second polygon
-        len = List.length polygon
-    in
-        ( xsum / Basics.toFloat len
-        , ysum / Basics.toFloat len)
-
 
 drawCurrentCCW : Model -> Svg Msg
 drawCurrentCCW model =
@@ -539,7 +493,7 @@ drawCurrentCCW model =
         scd = trust <| getAt (trust <| listPenultimate model.stack) model.polygon
         next = trust <| getAt model.next_point model.polygon
         ccw_triangle = [scd, top, next]
-        (ccw_x, ccw_y) = polygonMidPoint ccw_triangle
+        (ccw_x, ccw_y) = Polygon.midpoint ccw_triangle
     in
     g []
       [ polygon [ fill ccw_triangle_fill
@@ -570,26 +524,17 @@ drawCurrentCCW model =
               ]
       ]
 
-polygonGetAt : Int -> Polygon -> Point
-polygonGetAt n polygon =
-    let
-        len = List.length polygon
-        rel_idx = if n < 0 then len - (abs n)
-                           else n
-        idx = remainderBy len rel_idx
-    in
-    trust <| getAt idx polygon
 
 drawVertsIndex : Model -> Svg Msg
 drawVertsIndex model =
     g [] <| List.indexedMap
             (\i (vx,vy) ->
                 let
-                    (prev_x, prev_y) = polygonGetAt (i-1) model.polygon
+                    (prev_x, prev_y) = Polygon.getAt (i-1) model.polygon
                     prev = Vec2D.vec2 prev_x prev_y
-                    (curr_x, curr_y) = polygonGetAt i model.polygon
+                    (curr_x, curr_y) = Polygon.getAt i model.polygon
                     curr = Vec2D.vec2 curr_x curr_y
-                    (next_x, next_y) = polygonGetAt (i+1) model.polygon
+                    (next_x, next_y) = Polygon.getAt (i+1) model.polygon
                     next = Vec2D.vec2 next_x next_y
                     -- centered around origin
                     cprev = Vec2D.sub prev curr
@@ -668,25 +613,13 @@ listPenultimate list =
         _ -> Nothing
 
 
-    -- shift a polygon until it starts with three CCW points
-restartAtCcw : Polygon -> Polygon
-restartAtCcw polygon =
-    case polygon of
-        a::b::c::rest ->
-            if ccw a b c == 1
-            then polygon
-            else restartAtCcw <| b::c::rest ++ [a]
-        _ ->
-            Debug.todo "bad polygon?"
-
-
 startAlgorithmState : Model -> Model
 startAlgorithmState model =
     let
-        oriented_polygon = if isCcw model.polygon
+        oriented_polygon = if Polygon.isCCW model.polygon
                            then model.polygon
                            else List.reverse model.polygon
-        shifted_polygon = restartAtCcw oriented_polygon
+        shifted_polygon = Polygon.restartAtCCW oriented_polygon
     in
     { model | polygon = shifted_polygon
             , next_point = 2
@@ -706,7 +639,7 @@ progressConvexHull model =
                 top = trust <| getAt top_idx model.polygon
                 scd = trust <| getAt (trust <| listPenultimate model.stack) model.polygon
                 next = trust <| getAt model.next_point model.polygon
-                is_not_ccw = ccw scd top next < 1
+                is_not_ccw = ccwTest scd top next < 1
             in
                 case (is_not_ccw, model.next_point) of
                     (True, 1) ->

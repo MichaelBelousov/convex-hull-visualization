@@ -6663,8 +6663,8 @@ var author$project$Main$trust = function (x) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 368, column: 20},
-				end: {line: 368, column: 30}
+				start: {line: 345, column: 20},
+				end: {line: 345, column: 30}
 			})('trust got Nothing');
 	}
 };
@@ -6737,7 +6737,7 @@ var elm$core$Tuple$second = function (_n0) {
 	var y = _n0.b;
 	return y;
 };
-var author$project$Main$polygonMidPoint = function (polygon) {
+var author$project$Polygon$midpoint = function (polygon) {
 	var ysum = elm$core$List$sum(
 		A2(elm$core$List$map, elm$core$Tuple$second, polygon));
 	var xsum = elm$core$List$sum(
@@ -6908,13 +6908,13 @@ var author$project$Main$insertPoint = F2(
 				if (_n1.b.$ === 'Just') {
 					var x = _n1.a.a;
 					var y = _n1.b.a;
-					return author$project$Main$polygonMidPoint(
+					return author$project$Polygon$midpoint(
 						_List_fromArray(
 							[x, y]));
 				} else {
 					var x = _n1.a.a;
 					var _n2 = _n1.b;
-					return author$project$Main$polygonMidPoint(
+					return author$project$Polygon$midpoint(
 						_List_fromArray(
 							[
 								author$project$Main$trust(
@@ -6927,7 +6927,7 @@ var author$project$Main$insertPoint = F2(
 				if (_n1.b.$ === 'Just') {
 					var _n3 = _n1.a;
 					var y = _n1.b.a;
-					return author$project$Main$polygonMidPoint(
+					return author$project$Polygon$midpoint(
 						_List_fromArray(
 							[
 								author$project$Main$trust(
@@ -6939,8 +6939,8 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 321, column: 22},
-							end: {line: 321, column: 32}
+							start: {line: 319, column: 22},
+							end: {line: 319, column: 32}
 						})('bad polygon');
 				}
 			}
@@ -6956,8 +6956,7 @@ var author$project$Main$insertPoint = F2(
 						back))
 			});
 	});
-var author$project$Main$Done = {$: 'Done'};
-var author$project$Main$ccw = F3(
+var author$project$Geometry$ccwTest = F3(
 	function (_n0, _n1, _n2) {
 		var ax = _n0.a;
 		var ay = _n0.b;
@@ -6968,6 +6967,7 @@ var author$project$Main$ccw = F3(
 		var value = ((ax * (by - cy)) - (bx * (ay - cy))) + (cx * (ay - by));
 		return (value > 0) ? 1 : ((value < 0) ? (-1) : 0);
 	});
+var author$project$Main$Done = {$: 'Done'};
 var author$project$Main$listPenultimate = function (list) {
 	var _n0 = elm$core$List$reverse(list);
 	if (_n0.b && _n0.b.b) {
@@ -6981,83 +6981,6 @@ var author$project$Main$listPenultimate = function (list) {
 	}
 };
 var author$project$Main$InProgress = {$: 'InProgress'};
-var elm$core$List$tail = function (list) {
-	if (list.b) {
-		var x = list.a;
-		var xs = list.b;
-		return elm$core$Maybe$Just(xs);
-	} else {
-		return elm$core$Maybe$Nothing;
-	}
-};
-var author$project$Main$polylineToEdges = function (polyline) {
-	return A3(
-		elm$core$List$map2,
-		F2(
-			function (p, q) {
-				return _Utils_Tuple2(p, q);
-			}),
-		polyline,
-		author$project$Main$trust(
-			elm$core$List$tail(polyline)));
-};
-var author$project$Main$polygonToEdges = function (polygon) {
-	return _Utils_ap(
-		author$project$Main$polylineToEdges(polygon),
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				author$project$Main$trust(
-					elm_community$list_extra$List$Extra$last(polygon)),
-				author$project$Main$trust(
-					elm$core$List$head(polygon)))
-			]));
-};
-var author$project$Main$isCcw = function (polygon) {
-	var edges = author$project$Main$polygonToEdges(polygon);
-	var result = elm$core$List$sum(
-		A2(
-			elm$core$List$map,
-			function (_n0) {
-				var _n1 = _n0.a;
-				var x1 = _n1.a;
-				var y1 = _n1.b;
-				var _n2 = _n0.b;
-				var x2 = _n2.a;
-				var y2 = _n2.b;
-				return (x2 - x1) * (y2 + y1);
-			},
-			edges));
-	return (result < 0) ? true : false;
-};
-var author$project$Main$restartAtCcw = function (polygon) {
-	if ((polygon.b && polygon.b.b) && polygon.b.b.b) {
-		var a = polygon.a;
-		var _n1 = polygon.b;
-		var b = _n1.a;
-		var _n2 = _n1.b;
-		var c = _n2.a;
-		var rest = _n2.b;
-		return (A3(author$project$Main$ccw, a, b, c) === 1) ? polygon : author$project$Main$restartAtCcw(
-			A2(
-				elm$core$List$cons,
-				b,
-				A2(
-					elm$core$List$cons,
-					c,
-					_Utils_ap(
-						rest,
-						_List_fromArray(
-							[a])))));
-	} else {
-		return _Debug_todo(
-			'Main',
-			{
-				start: {line: 680, column: 13},
-				end: {line: 680, column: 23}
-			})('bad polygon?');
-	}
-};
 var author$project$Main$started_desc = A2(
 	elm$html$Html$div,
 	_List_Nil,
@@ -7086,9 +7009,99 @@ var author$project$Main$started_desc = A2(
 					elm$html$Html$text('To start, we put the first two points of our polygon in a stack, ' + ('and we start considering the remaining points in order. The point ' + ('we\'re considering is in yellow, and the dashed yellow triangle ' + ('is a CCW test between the top two members of the stack, and that ' + ('point of consideration. Note the black spinny arrow that should ' + 'helpfully illustrate whether the triangle\'s points are in CCW order.')))))
 				]))
 		]));
+var author$project$Utils$trust = function (x) {
+	if (x.$ === 'Just') {
+		var y = x.a;
+		return y;
+	} else {
+		return _Debug_todo(
+			'Utils',
+			{
+				start: {line: 15, column: 20},
+				end: {line: 15, column: 30}
+			})('trust got Nothing');
+	}
+};
+var elm$core$List$tail = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return elm$core$Maybe$Just(xs);
+	} else {
+		return elm$core$Maybe$Nothing;
+	}
+};
+var author$project$Polyline$getEdges = function (polyline) {
+	return A3(
+		elm$core$List$map2,
+		F2(
+			function (p, q) {
+				return _Utils_Tuple2(p, q);
+			}),
+		polyline,
+		author$project$Utils$trust(
+			elm$core$List$tail(polyline)));
+};
+var author$project$Polygon$getEdges = function (polygon) {
+	return _Utils_ap(
+		author$project$Polyline$getEdges(polygon),
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				author$project$Utils$trust(
+					elm_community$list_extra$List$Extra$last(polygon)),
+				author$project$Utils$trust(
+					elm$core$List$head(polygon)))
+			]));
+};
+var author$project$Polygon$isCCW = function (polygon) {
+	var edges = author$project$Polygon$getEdges(polygon);
+	var result = elm$core$List$sum(
+		A2(
+			elm$core$List$map,
+			function (_n0) {
+				var _n1 = _n0.a;
+				var x1 = _n1.a;
+				var y1 = _n1.b;
+				var _n2 = _n0.b;
+				var x2 = _n2.a;
+				var y2 = _n2.b;
+				return (x2 - x1) * (y2 + y1);
+			},
+			edges));
+	return (result < 0) ? true : false;
+};
+var author$project$Polygon$restartAtCCW = function (polygon) {
+	if ((polygon.b && polygon.b.b) && polygon.b.b.b) {
+		var a = polygon.a;
+		var _n1 = polygon.b;
+		var b = _n1.a;
+		var _n2 = _n1.b;
+		var c = _n2.a;
+		var rest = _n2.b;
+		return (A3(author$project$Geometry$ccwTest, a, b, c) === 1) ? polygon : author$project$Polygon$restartAtCCW(
+			A2(
+				elm$core$List$cons,
+				b,
+				A2(
+					elm$core$List$cons,
+					c,
+					_Utils_ap(
+						rest,
+						_List_fromArray(
+							[a])))));
+	} else {
+		return _Debug_todo(
+			'Polygon',
+			{
+				start: {line: 69, column: 13},
+				end: {line: 69, column: 23}
+			})('bad polygon?');
+	}
+};
 var author$project$Main$startAlgorithmState = function (model) {
-	var oriented_polygon = author$project$Main$isCcw(model.polygon) ? model.polygon : elm$core$List$reverse(model.polygon);
-	var shifted_polygon = author$project$Main$restartAtCcw(oriented_polygon);
+	var oriented_polygon = author$project$Polygon$isCCW(model.polygon) ? model.polygon : elm$core$List$reverse(model.polygon);
+	var shifted_polygon = author$project$Polygon$restartAtCCW(oriented_polygon);
 	return _Utils_update(
 		model,
 		{
@@ -7169,7 +7182,7 @@ var author$project$Main$progressConvexHull = function (model) {
 					model.polygon));
 			var next = author$project$Main$trust(
 				A2(elm_community$list_extra$List$Extra$getAt, model.next_point, model.polygon));
-			var is_not_ccw = A3(author$project$Main$ccw, scd, top, next) < 1;
+			var is_not_ccw = A3(author$project$Geometry$ccwTest, scd, top, next) < 1;
 			var _n1 = _Utils_Tuple2(is_not_ccw, model.next_point);
 			if (_n1.a) {
 				if (_n1.b === 1) {
@@ -7339,8 +7352,8 @@ var author$project$Main$update = F2(
 							return _Debug_todo(
 								'Main',
 								{
-									start: {line: 84, column: 21},
-									end: {line: 84, column: 31}
+									start: {line: 88, column: 21},
+									end: {line: 88, column: 31}
 								})('bad value sent over svgCoords port sub');
 						}
 					}());
@@ -7497,7 +7510,7 @@ var author$project$Main$drawCurrentCCW = function (model) {
 		A2(elm_community$list_extra$List$Extra$getAt, model.next_point, model.polygon));
 	var ccw_triangle = _List_fromArray(
 		[scd, top, next]);
-	var _n0 = author$project$Main$polygonMidPoint(ccw_triangle);
+	var _n0 = author$project$Polygon$midpoint(ccw_triangle);
 	var ccw_x = _n0.a;
 	var ccw_y = _n0.b;
 	return A2(
@@ -7642,7 +7655,7 @@ var author$project$Main$drawPolygonEdges = F2(
 							interactions(i)),
 						_List_Nil);
 				}),
-			author$project$Main$polygonToEdges(polygon));
+			author$project$Polygon$getEdges(polygon));
 	});
 var author$project$Main$point_color = 'blue';
 var author$project$Main$drawPolygonVerts = F2(
@@ -7744,19 +7757,19 @@ var author$project$Main$drawPolygon = function (model) {
 var elm$core$Basics$abs = function (n) {
 	return (n < 0) ? (-n) : n;
 };
-var author$project$Main$polygonGetAt = F2(
+var author$project$Polygon$getAt = F2(
 	function (n, polygon) {
 		var len = elm$core$List$length(polygon);
 		var rel_idx = (n < 0) ? (len - elm$core$Basics$abs(n)) : n;
 		var idx = rel_idx % len;
-		return author$project$Main$trust(
+		return author$project$Utils$trust(
 			A2(elm_community$list_extra$List$Extra$getAt, idx, polygon));
 	});
 var author$project$Main$calcHullProgressPolyline = function (model) {
 	return A2(
 		elm$core$List$map,
 		function (n) {
-			return A2(author$project$Main$polygonGetAt, n, model.polygon);
+			return A2(author$project$Polygon$getAt, n, model.polygon);
 		},
 		model.stack);
 };
@@ -7839,15 +7852,15 @@ var author$project$Main$drawVertsIndex = function (model) {
 				function (i, _n0) {
 					var vx = _n0.a;
 					var vy = _n0.b;
-					var _n1 = A2(author$project$Main$polygonGetAt, i - 1, model.polygon);
+					var _n1 = A2(author$project$Polygon$getAt, i - 1, model.polygon);
 					var prev_x = _n1.a;
 					var prev_y = _n1.b;
 					var prev = A2(elm_explorations$linear_algebra$Math$Vector2$vec2, prev_x, prev_y);
-					var _n2 = A2(author$project$Main$polygonGetAt, i + 1, model.polygon);
+					var _n2 = A2(author$project$Polygon$getAt, i + 1, model.polygon);
 					var next_x = _n2.a;
 					var next_y = _n2.b;
 					var next = A2(elm_explorations$linear_algebra$Math$Vector2$vec2, next_x, next_y);
-					var _n3 = A2(author$project$Main$polygonGetAt, i, model.polygon);
+					var _n3 = A2(author$project$Polygon$getAt, i, model.polygon);
 					var curr_x = _n3.a;
 					var curr_y = _n3.b;
 					var curr = A2(elm_explorations$linear_algebra$Math$Vector2$vec2, curr_x, curr_y);
