@@ -7056,7 +7056,7 @@ var author$project$MelkmanAlgorithm$started_desc = function () {
 				_List_Nil,
 				_List_fromArray(
 					[
-						elm$html$Html$text('t')
+						elm$html$Html$text('top')
 					]))
 			]));
 	var d_bp1 = A2(
@@ -7084,7 +7084,7 @@ var author$project$MelkmanAlgorithm$started_desc = function () {
 				_List_Nil,
 				_List_fromArray(
 					[
-						elm$html$Html$text('b')
+						elm$html$Html$text('bott')
 					]))
 			]));
 	var c = elm$html$Html$text(', ');
@@ -7204,10 +7204,10 @@ var author$project$MelkmanAlgorithm$started_desc = function () {
 										d_t,
 										c,
 										v_i,
-										elm$html$Html$text(') pop'),
+										elm$html$Html$text(') pop '),
 										d_t,
 										A2(elm$html$Html$br, _List_Nil, _List_Nil),
-										elm$html$Html$text('push'),
+										elm$html$Html$text('push '),
 										v_i
 									])),
 								A2(
@@ -7221,10 +7221,10 @@ var author$project$MelkmanAlgorithm$started_desc = function () {
 										d_b,
 										c,
 										d_bp1,
-										elm$html$Html$text(') remove'),
+										elm$html$Html$text(') remove '),
 										d_t,
 										A2(elm$html$Html$br, _List_Nil, _List_Nil),
-										elm$html$Html$text('insert'),
+										elm$html$Html$text('insert '),
 										v_i
 									])),
 								A2(

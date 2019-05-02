@@ -133,10 +133,10 @@ started_desc : Html msg
 started_desc =
     let
         d_t = i [] [ text "D"
-                   , sub [] [ text "t" ]
+                   , sub [] [ text "top" ]
                    ]
         d_b = i [] [ text "D"
-                   , sub [] [ text "b" ]
+                   , sub [] [ text "bott" ]
                    ]
         v_i = i [] [ text "v"
                    , sub [] [ text "i" ]
@@ -203,16 +203,16 @@ started_desc =
                  , li []
                       [ text "until CCW("
                       , d_tm1, c, d_t, c, v_i
-                      , text ") pop", d_t
+                      , text ") pop ", d_t
                       , br [] []
-                      , text "push", v_i
+                      , text "push ", v_i
                       ]
                  , li []
                       [ text "until CCW("
                       , v_i, c, d_b, c, d_bp1
-                      , text ") remove", d_t
+                      , text ") remove ", d_t
                       , br [] []
-                      , text "insert", v_i
+                      , text "insert ", v_i
                       ]
                  , li []
                       [ text ("i "++larr++" i + 1")

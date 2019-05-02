@@ -86,7 +86,7 @@ button::last-child {
 .visualization-wrap {
     width: 60%;
     position: relative;
-    vertical-align: top;
+    vertical-align: bottom;
 }
 
 .visualization {
