@@ -5870,15 +5870,7 @@ var author$project$Main$intro = A2(
 			_List_Nil,
 			_List_fromArray(
 				[
-					elm$html$Html$text('You can ignore the grey '),
-					A2(
-					elm$html$Html$i,
-					_List_Nil,
-					_List_fromArray(
-						[
-							elm$html$Html$text('stack ')
-						])),
-					elm$html$Html$text('on the left, we\'ll use it soon, and that plus sign ' + ('is just the origin for your reference. ' + ('For now, feel free to build your own polygon by ' + ('interacting with the available tools. ' + 'When you\'re done, hit the \'Start!\' button.'))))
+					elm$html$Html$text('You can ignore the grey container ' + ('on the left, we\'ll use it soon, and that plus sign ' + ('is just the origin for your reference. ' + ('For now, feel free to build your own polygon by ' + ('interacting with the available tools. ' + 'When you\'re done, hit the \'Start!\' button.')))))
 				])),
 			A2(
 			elm$html$Html$ul,
@@ -5916,8 +5908,9 @@ var author$project$Main$intro = A2(
 				]))
 		]));
 var author$project$Algorithm$NotStartedYet = {$: 'NotStartedYet'};
+var author$project$MelkmanAlgorithm$ConsiderNew = {$: 'ConsiderNew'};
 var author$project$MelkmanAlgorithm$initEmptyState = function (polygon) {
-	return {deque: _List_Nil, next_point: 0, phase: author$project$Algorithm$NotStartedYet, polygon: polygon};
+	return {deque: _List_Nil, next_point: 0, part: author$project$MelkmanAlgorithm$ConsiderNew, phase: author$project$Algorithm$NotStartedYet, polygon: polygon};
 };
 var author$project$Main$before_start_state = {
 	algo_state: author$project$MelkmanAlgorithm$initEmptyState(author$project$Main$init_polygon),
@@ -6946,8 +6939,8 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 255, column: 22},
-							end: {line: 255, column: 32}
+							start: {line: 254, column: 22},
+							end: {line: 254, column: 32}
 						})('bad polygon');
 				}
 			}
@@ -6988,29 +6981,6 @@ var author$project$Main$updateGrab = function (model) {
 		return model;
 	}
 };
-var author$project$Deque$pop = function (deque) {
-	var _n0 = elm$core$List$reverse(deque);
-	if (_n0.b) {
-		var last = _n0.a;
-		var rest = _n0.b;
-		return _Utils_Tuple2(
-			elm$core$Maybe$Just(last),
-			elm$core$List$reverse(rest));
-	} else {
-		return _Utils_Tuple2(elm$core$Maybe$Nothing, _List_Nil);
-	}
-};
-var author$project$Deque$remove = function (deque) {
-	if (deque.b) {
-		var first = deque.a;
-		var rest = deque.b;
-		return _Utils_Tuple2(
-			elm$core$Maybe$Just(first),
-			rest);
-	} else {
-		return _Utils_Tuple2(elm$core$Maybe$Nothing, _List_Nil);
-	}
-};
 var author$project$Geometry$ccwTest = F3(
 	function (_n0, _n1, _n2) {
 		var ax = _n0.a;
@@ -7022,55 +6992,6 @@ var author$project$Geometry$ccwTest = F3(
 		var value = ((ax * (by - cy)) - (bx * (ay - cy))) + (cx * (ay - by));
 		return (value > 0) ? 1 : ((value < 0) ? (-1) : 0);
 	});
-var elm$core$Basics$abs = function (n) {
-	return (n < 0) ? (-n) : n;
-};
-var author$project$Utils$listCyclicGet = F2(
-	function (n, list) {
-		if (!list.b) {
-			return elm$core$Maybe$Nothing;
-		} else {
-			var len = elm$core$List$length(list);
-			var rel_idx = (n < 0) ? (len - elm$core$Basics$abs(n)) : n;
-			var idx = rel_idx % len;
-			return A2(elm_community$list_extra$List$Extra$getAt, idx, list);
-		}
-	});
-var author$project$Polygon$getAt = F2(
-	function (n, polygon) {
-		return author$project$Utils$trust(
-			A2(author$project$Utils$listCyclicGet, n, polygon));
-	});
-var author$project$MelkmanAlgorithm$calcStepInfo = function (model) {
-	var top = A2(
-		author$project$Polygon$getAt,
-		author$project$Utils$trust(
-			A2(author$project$Utils$listCyclicGet, -1, model.deque)),
-		model.polygon);
-	var scd_top = A2(
-		author$project$Polygon$getAt,
-		author$project$Utils$trust(
-			A2(author$project$Utils$listCyclicGet, -2, model.deque)),
-		model.polygon);
-	var scd_bot = A2(
-		author$project$Polygon$getAt,
-		author$project$Utils$trust(
-			A2(author$project$Utils$listCyclicGet, 1, model.deque)),
-		model.polygon);
-	var next = A2(
-		author$project$Polygon$getAt,
-		author$project$Utils$trust(
-			A2(author$project$Utils$listCyclicGet, model.next_point, model.deque)),
-		model.polygon);
-	var top_is_ccw = A3(author$project$Geometry$ccwTest, scd_top, top, next) === 1;
-	var bot = A2(
-		author$project$Polygon$getAt,
-		author$project$Utils$trust(
-			A2(author$project$Utils$listCyclicGet, 0, model.deque)),
-		model.polygon);
-	var bot_is_ccw = A3(author$project$Geometry$ccwTest, next, bot, scd_bot) === 1;
-	return _Utils_Tuple2(top_is_ccw, bot_is_ccw);
-};
 var author$project$MelkmanAlgorithm$started_desc = A2(
 	elm$html$Html$div,
 	_List_Nil,
@@ -7137,6 +7058,25 @@ var author$project$MelkmanAlgorithm$started_desc = A2(
 					elm$html$Html$text('meaning, it will have already found the convex hull of whatever points ' + 'have already been considered')
 				]))
 		]));
+var elm$core$Basics$abs = function (n) {
+	return (n < 0) ? (-n) : n;
+};
+var author$project$Utils$listCyclicGet = F2(
+	function (n, list) {
+		if (!list.b) {
+			return elm$core$Maybe$Nothing;
+		} else {
+			var len = elm$core$List$length(list);
+			var rel_idx = (n < 0) ? (len - elm$core$Basics$abs(n)) : n;
+			var idx = rel_idx % len;
+			return A2(elm_community$list_extra$List$Extra$getAt, idx, list);
+		}
+	});
+var author$project$Polygon$getAt = F2(
+	function (n, polygon) {
+		return author$project$Utils$trust(
+			A2(author$project$Utils$listCyclicGet, n, polygon));
+	});
 var author$project$Utils$writeAction = function (action) {
 	return A2(
 		elm$html$Html$ul,
@@ -7152,46 +7092,65 @@ var author$project$Utils$writeAction = function (action) {
 					]))
 			]));
 };
-var elm$core$Basics$not = _Basics_not;
+var elm$core$Basics$ge = _Utils_ge;
 var author$project$MelkmanAlgorithm$describeStep = function (model) {
 	var _n0 = model.phase;
 	if (_n0.$ === 'NotStartedYet') {
 		return author$project$MelkmanAlgorithm$started_desc;
 	} else {
-		var _n1 = author$project$MelkmanAlgorithm$calcStepInfo(model);
-		var top_is_ccw = _n1.a;
-		var bot_is_ccw = _n1.b;
-		if (top_is_ccw && bot_is_ccw) {
-			return author$project$Utils$writeAction(
-				'Ignored point ' + elm$core$String$fromInt(model.next_point));
-		} else {
-			if (!top_is_ccw) {
-				var top_idx = author$project$Utils$trust(
-					author$project$Deque$pop(model.deque).a);
-				return author$project$Utils$writeAction(
-					'Popped ' + (elm$core$String$fromInt(top_idx) + (' and pushed ' + elm$core$String$fromInt(model.next_point))));
-			} else {
-				if (!bot_is_ccw) {
-					var bot_idx = author$project$Utils$trust(
-						author$project$Deque$remove(model.deque).a);
-					return author$project$Utils$writeAction(
-						'Removed ' + (elm$core$String$fromInt(bot_idx) + (' and inserted ' + elm$core$String$fromInt(model.next_point))));
-				} else {
-					return _Debug_todo(
-						'MelkmanAlgorithm',
-						{
-							start: {line: 176, column: 21},
-							end: {line: 176, column: 31}
-						})('Should never reach here');
-				}
-			}
+		var top_idx = author$project$Utils$trust(
+			A2(author$project$Utils$listCyclicGet, -1, model.deque));
+		var top = A2(author$project$Polygon$getAt, top_idx, model.polygon);
+		var scd_top = A2(
+			author$project$Polygon$getAt,
+			author$project$Utils$trust(
+				A2(author$project$Utils$listCyclicGet, -2, model.deque)),
+			model.polygon);
+		var scd_bot = A2(
+			author$project$Polygon$getAt,
+			author$project$Utils$trust(
+				A2(author$project$Utils$listCyclicGet, 1, model.deque)),
+			model.polygon);
+		var next = A2(author$project$Polygon$getAt, model.next_point, model.polygon);
+		var bot_idx = author$project$Utils$trust(
+			A2(author$project$Utils$listCyclicGet, 0, model.deque));
+		var bot = A2(author$project$Polygon$getAt, bot_idx, model.polygon);
+		var _n1 = model.part;
+		switch (_n1.$) {
+			case 'ConsiderNew':
+				return ((A3(author$project$Geometry$ccwTest, scd_top, top, next) === 1) && (A3(author$project$Geometry$ccwTest, bot, scd_bot, next) === 1)) ? author$project$Utils$writeAction(
+					'Ignored point ' + elm$core$String$fromInt(model.next_point)) : A2(elm$html$Html$div, _List_Nil, _List_Nil);
+			case 'RestoreLeft':
+				return (A3(author$project$Geometry$ccwTest, scd_top, top, next) !== 1) ? author$project$Utils$writeAction(
+					'Popped ' + (elm$core$String$fromInt(top_idx) + (' and pushed ' + elm$core$String$fromInt(model.next_point)))) : A2(elm$html$Html$div, _List_Nil, _List_Nil);
+			case 'RestoreRight':
+				return (A3(author$project$Geometry$ccwTest, next, bot, scd_bot) !== 1) ? author$project$Utils$writeAction(
+					'Removed ' + (elm$core$String$fromInt(top_idx) + (' and inserted ' + elm$core$String$fromInt(model.next_point)))) : A2(elm$html$Html$div, _List_Nil, _List_Nil);
+			default:
+				var next_next_point = model.next_point + 1;
+				return (_Utils_cmp(
+					next_next_point,
+					elm$core$List$length(model.polygon)) > -1) ? author$project$Utils$writeAction('Out of points, done') : author$project$Utils$writeAction('Convexity restored, advance a point');
 		}
 	}
 };
+var author$project$Algorithm$Done = {$: 'Done'};
 var author$project$Deque$insert = F2(
 	function (item, deque) {
 		return A2(elm$core$List$cons, item, deque);
 	});
+var author$project$Deque$pop = function (deque) {
+	var _n0 = elm$core$List$reverse(deque);
+	if (_n0.b) {
+		var last = _n0.a;
+		var rest = _n0.b;
+		return _Utils_Tuple2(
+			elm$core$Maybe$Just(last),
+			elm$core$List$reverse(rest));
+	} else {
+		return _Utils_Tuple2(elm$core$Maybe$Nothing, _List_Nil);
+	}
+};
 var author$project$Deque$push = F2(
 	function (item, deque) {
 		return _Utils_ap(
@@ -7199,6 +7158,20 @@ var author$project$Deque$push = F2(
 			_List_fromArray(
 				[item]));
 	});
+var author$project$Deque$remove = function (deque) {
+	if (deque.b) {
+		var first = deque.a;
+		var rest = deque.b;
+		return _Utils_Tuple2(
+			elm$core$Maybe$Just(first),
+			rest);
+	} else {
+		return _Utils_Tuple2(elm$core$Maybe$Nothing, _List_Nil);
+	}
+};
+var author$project$MelkmanAlgorithm$Increment = {$: 'Increment'};
+var author$project$MelkmanAlgorithm$RestoreLeft = {$: 'RestoreLeft'};
+var author$project$MelkmanAlgorithm$RestoreRight = {$: 'RestoreRight'};
 var author$project$Algorithm$InProgress = {$: 'InProgress'};
 var author$project$MelkmanAlgorithm$initState = function (model) {
 	var thrd = A2(author$project$Polygon$getAt, 2, model.polygon);
@@ -7214,38 +7187,84 @@ var author$project$MelkmanAlgorithm$initState = function (model) {
 			phase: author$project$Algorithm$InProgress
 		});
 };
+var elm$core$Debug$log = _Debug_log;
 var author$project$MelkmanAlgorithm$stepState = function (model) {
 	var _n0 = model.phase;
 	switch (_n0.$) {
 		case 'NotStartedYet':
 			return author$project$MelkmanAlgorithm$initState(model);
 		case 'InProgress':
-			var _n1 = author$project$MelkmanAlgorithm$calcStepInfo(model);
-			var top_is_ccw = _n1.a;
-			var bot_is_ccw = _n1.b;
-			return (top_is_ccw && bot_is_ccw) ? _Utils_update(
-				model,
-				{next_point: model.next_point + 1}) : ((!top_is_ccw) ? _Utils_update(
-				model,
-				{
-					deque: A2(
-						author$project$Deque$push,
-						model.next_point,
-						author$project$Deque$pop(model.deque).b)
-				}) : ((!bot_is_ccw) ? _Utils_update(
-				model,
-				{
-					deque: A2(
-						author$project$Deque$insert,
-						model.next_point,
-						author$project$Deque$remove(model.deque).b),
-					next_point: model.next_point + 1
-				}) : _Debug_todo(
-				'MelkmanAlgorithm',
-				{
-					start: {line: 73, column: 21},
-					end: {line: 73, column: 31}
-				})('Should never reach here')));
+			var top = A2(
+				author$project$Polygon$getAt,
+				author$project$Utils$trust(
+					A2(author$project$Utils$listCyclicGet, -1, model.deque)),
+				model.polygon);
+			var scd_top = A2(
+				author$project$Polygon$getAt,
+				author$project$Utils$trust(
+					A2(author$project$Utils$listCyclicGet, -2, model.deque)),
+				model.polygon);
+			var scd_bot = A2(
+				author$project$Polygon$getAt,
+				author$project$Utils$trust(
+					A2(author$project$Utils$listCyclicGet, 1, model.deque)),
+				model.polygon);
+			var next = A2(author$project$Polygon$getAt, model.next_point, model.polygon);
+			var bot = A2(
+				author$project$Polygon$getAt,
+				author$project$Utils$trust(
+					A2(author$project$Utils$listCyclicGet, 0, model.deque)),
+				model.polygon);
+			var _n1 = A2(
+				elm$core$Debug$log,
+				'top ccw: [scd_top, top, next]',
+				_List_fromArray(
+					[scd_top, top, next]));
+			var _n2 = A2(
+				elm$core$Debug$log,
+				'bot ccw: [next, bot, scd_bot]',
+				_List_fromArray(
+					[next, bot, scd_bot]));
+			var _n3 = model.part;
+			switch (_n3.$) {
+				case 'ConsiderNew':
+					return ((A3(author$project$Geometry$ccwTest, scd_top, top, next) === 1) && (A3(author$project$Geometry$ccwTest, bot, scd_bot, next) === 1)) ? _Utils_update(
+						model,
+						{next_point: model.next_point + 1}) : _Utils_update(
+						model,
+						{part: author$project$MelkmanAlgorithm$RestoreLeft});
+				case 'RestoreLeft':
+					return (A3(author$project$Geometry$ccwTest, scd_top, top, next) !== 1) ? _Utils_update(
+						model,
+						{
+							deque: A2(
+								author$project$Deque$push,
+								model.next_point,
+								author$project$Deque$pop(model.deque).b)
+						}) : _Utils_update(
+						model,
+						{part: author$project$MelkmanAlgorithm$RestoreRight});
+				case 'RestoreRight':
+					return (A3(author$project$Geometry$ccwTest, next, bot, scd_bot) !== 1) ? _Utils_update(
+						model,
+						{
+							deque: A2(
+								author$project$Deque$insert,
+								model.next_point,
+								author$project$Deque$remove(model.deque).b)
+						}) : _Utils_update(
+						model,
+						{part: author$project$MelkmanAlgorithm$Increment});
+				default:
+					var next_next_point = model.next_point + 1;
+					return (_Utils_cmp(
+						next_next_point,
+						elm$core$List$length(model.polygon)) > -1) ? _Utils_update(
+						model,
+						{phase: author$project$Algorithm$Done}) : _Utils_update(
+						model,
+						{next_point: next_next_point, part: author$project$MelkmanAlgorithm$ConsiderNew});
+			}
 		default:
 			return model;
 	}
@@ -7295,7 +7314,10 @@ var author$project$Main$update = F2(
 							return _Utils_update(
 								model,
 								{
-									algo_state: author$project$MelkmanAlgorithm$stepState(grabbed_moved.algo_state),
+									algo_state: A2(
+										elm$core$Debug$log,
+										'model',
+										author$project$MelkmanAlgorithm$stepState(grabbed_moved.algo_state)),
 									progress_log: _Utils_ap(
 										model.progress_log,
 										_List_fromArray(
@@ -7765,7 +7787,7 @@ var author$project$MelkmanAlgorithm$drawState = function (model) {
 					elm$svg$Svg$path,
 					_List_fromArray(
 						[
-							elm$svg$Svg$Attributes$d('M -36 0 v -20'),
+							elm$svg$Svg$Attributes$d('M -36 -10 v 30'),
 							elm$svg$Svg$Attributes$fill('none'),
 							elm$svg$Svg$Attributes$stroke('grey')
 						]),
@@ -7774,7 +7796,7 @@ var author$project$MelkmanAlgorithm$drawState = function (model) {
 					elm$svg$Svg$path,
 					_List_fromArray(
 						[
-							elm$svg$Svg$Attributes$d('M -31 0 v -20'),
+							elm$svg$Svg$Attributes$d('M -31 -10 v 30'),
 							elm$svg$Svg$Attributes$fill('none'),
 							elm$svg$Svg$Attributes$stroke('grey')
 						]),
@@ -7802,41 +7824,7 @@ var author$project$MelkmanAlgorithm$drawState = function (model) {
 					}),
 				model.deque)));
 };
-var author$project$Styles$ccw_triangle_stroke_dash = '3,2';
-var author$project$Styles$ccw_triangle_stroke_width = elm$core$String$fromFloat(0.7);
-var author$project$Styles$ccw_wheel_radius = 5;
-var author$project$Styles$next_point_color = 'yellow';
-var elm$svg$Svg$animateTransform = elm$svg$Svg$trustedNode('animateTransform');
-var elm$svg$Svg$image = elm$svg$Svg$trustedNode('image');
-var elm$svg$Svg$polygon = elm$svg$Svg$trustedNode('polygon');
-var elm$svg$Svg$Attributes$additive = _VirtualDom_attribute('additive');
-var elm$svg$Svg$Attributes$attributeName = _VirtualDom_attribute('attributeName');
-var elm$svg$Svg$Attributes$dur = _VirtualDom_attribute('dur');
-var elm$svg$Svg$Attributes$from = function (value) {
-	return A2(
-		_VirtualDom_attribute,
-		'from',
-		_VirtualDom_noJavaScriptUri(value));
-};
-var elm$svg$Svg$Attributes$height = _VirtualDom_attribute('height');
-var elm$svg$Svg$Attributes$repeatCount = _VirtualDom_attribute('repeatCount');
-var elm$svg$Svg$Attributes$strokeDasharray = _VirtualDom_attribute('stroke-dasharray');
-var elm$svg$Svg$Attributes$to = function (value) {
-	return A2(
-		_VirtualDom_attribute,
-		'to',
-		_VirtualDom_noJavaScriptUri(value));
-};
-var elm$svg$Svg$Attributes$type_ = _VirtualDom_attribute('type');
-var elm$svg$Svg$Attributes$width = _VirtualDom_attribute('width');
-var elm$svg$Svg$Attributes$xlinkHref = function (value) {
-	return A3(
-		_VirtualDom_attributeNS,
-		'http://www.w3.org/1999/xlink',
-		'xlink:href',
-		_VirtualDom_noJavaScriptUri(value));
-};
-var author$project$MelkmanAlgorithm$drawStep = function (model) {
+var author$project$MelkmanAlgorithm$calcStepInfo = function (model) {
 	var top = A2(
 		author$project$Polygon$getAt,
 		author$project$Utils$trust(
@@ -7852,136 +7840,205 @@ var author$project$MelkmanAlgorithm$drawStep = function (model) {
 		author$project$Utils$trust(
 			A2(author$project$Utils$listCyclicGet, 1, model.deque)),
 		model.polygon);
-	var next = A2(
-		author$project$Polygon$getAt,
-		author$project$Utils$trust(
-			A2(author$project$Utils$listCyclicGet, model.next_point, model.deque)),
-		model.polygon);
-	var top_ccw_triangle = _List_fromArray(
-		[scd_top, top, next]);
-	var ccw_wheel_svg = function (_n5) {
-		var x_ = _n5.a;
-		var y_ = _n5.b;
-		return A2(
-			elm$svg$Svg$image,
-			_List_fromArray(
-				[
-					elm$svg$Svg$Attributes$x(
-					elm$core$String$fromFloat(x_ - author$project$Styles$ccw_wheel_radius)),
-					elm$svg$Svg$Attributes$y(
-					elm$core$String$fromFloat(y_ - author$project$Styles$ccw_wheel_radius)),
-					elm$svg$Svg$Attributes$width(
-					elm$core$String$fromFloat(2 * author$project$Styles$ccw_wheel_radius)),
-					elm$svg$Svg$Attributes$height(
-					elm$core$String$fromFloat(2 * author$project$Styles$ccw_wheel_radius)),
-					elm$svg$Svg$Attributes$xlinkHref('static/ccw_wheel.svg'),
-					elm$svg$Svg$Attributes$transform(
-					'translate(0,' + (elm$core$String$fromFloat(2 * y_) + ') scale(1, -1)'))
-				]),
-			_List_fromArray(
-				[
-					A2(
-					elm$svg$Svg$animateTransform,
-					_List_fromArray(
-						[
-							elm$svg$Svg$Attributes$attributeName('transform'),
-							elm$svg$Svg$Attributes$type_('rotate'),
-							elm$svg$Svg$Attributes$dur('1s'),
-							elm$svg$Svg$Attributes$repeatCount('indefinite'),
-							elm$svg$Svg$Attributes$from(
-							'0 ' + (elm$core$String$fromFloat(x_) + (' ' + elm$core$String$fromFloat(y_)))),
-							elm$svg$Svg$Attributes$to(
-							'-360 ' + (elm$core$String$fromFloat(x_) + (' ' + elm$core$String$fromFloat(y_)))),
-							elm$svg$Svg$Attributes$additive('sum')
-						]),
-					_List_Nil)
-				]));
-	};
-	var ccw_svg = F2(
-		function (stroke_, pts_) {
-			return A2(
-				elm$svg$Svg$polygon,
-				_List_fromArray(
-					[
-						elm$svg$Svg$Attributes$fill('none'),
-						elm$svg$Svg$Attributes$stroke(stroke_),
-						elm$svg$Svg$Attributes$strokeWidth(author$project$Styles$ccw_triangle_stroke_width),
-						elm$svg$Svg$Attributes$strokeLinecap('round'),
-						elm$svg$Svg$Attributes$strokeDasharray(author$project$Styles$ccw_triangle_stroke_dash),
-						elm$svg$Svg$Attributes$points(
-						author$project$Utils$svgPointsFromList(pts_))
-					]),
-				_List_Nil);
-		});
-	var top_ccw_svg = A2(ccw_svg, 'pink', top_ccw_triangle);
+	var next = A2(author$project$Polygon$getAt, model.next_point, model.polygon);
+	var top_is_ccw = A3(author$project$Geometry$ccwTest, scd_top, top, next) === 1;
 	var bot = A2(
 		author$project$Polygon$getAt,
 		author$project$Utils$trust(
 			A2(author$project$Utils$listCyclicGet, 0, model.deque)),
 		model.polygon);
-	var bot_ccw_triangle = _List_fromArray(
-		[next, bot, scd_bot]);
-	var bot_ccw_svg = A2(ccw_svg, 'orange', bot_ccw_triangle);
-	var _n0 = author$project$Polygon$midpoint(top_ccw_triangle);
-	var top_ccw_x = _n0.a;
-	var top_ccw_y = _n0.b;
-	var _n1 = next;
-	var next_x = _n1.a;
-	var next_y = _n1.b;
-	var next_point_svg = A2(
-		elm$svg$Svg$circle,
-		_List_fromArray(
-			[
-				elm$svg$Svg$Attributes$fill(author$project$Styles$next_point_color),
-				elm$svg$Svg$Attributes$cx(
-				elm$core$String$fromFloat(next_x)),
-				elm$svg$Svg$Attributes$cy(
-				elm$core$String$fromFloat(next_y)),
-				elm$svg$Svg$Attributes$r(author$project$Styles$point_radius)
-			]),
-		_List_Nil);
-	var _n2 = author$project$MelkmanAlgorithm$calcStepInfo(model);
-	var top_is_ccw = _n2.a;
-	var bot_is_ccw = _n2.b;
-	var _n3 = author$project$Polygon$midpoint(bot_ccw_triangle);
-	var bot_ccw_x = _n3.a;
-	var bot_ccw_y = _n3.b;
-	var _n4 = _Utils_Tuple2(top_is_ccw, bot_is_ccw);
-	if (_n4.a) {
-		if (_n4.b) {
-			return next_point_svg;
-		} else {
-			return A2(
-				elm$svg$Svg$g,
-				_List_Nil,
+	var bot_is_ccw = A3(author$project$Geometry$ccwTest, next, bot, scd_bot) === 1;
+	return _Utils_Tuple2(top_is_ccw, bot_is_ccw);
+};
+var author$project$Styles$ccw_wheel_radius = 5;
+var elm$svg$Svg$animateTransform = elm$svg$Svg$trustedNode('animateTransform');
+var elm$svg$Svg$image = elm$svg$Svg$trustedNode('image');
+var elm$svg$Svg$Attributes$additive = _VirtualDom_attribute('additive');
+var elm$svg$Svg$Attributes$attributeName = _VirtualDom_attribute('attributeName');
+var elm$svg$Svg$Attributes$dur = _VirtualDom_attribute('dur');
+var elm$svg$Svg$Attributes$from = function (value) {
+	return A2(
+		_VirtualDom_attribute,
+		'from',
+		_VirtualDom_noJavaScriptUri(value));
+};
+var elm$svg$Svg$Attributes$height = _VirtualDom_attribute('height');
+var elm$svg$Svg$Attributes$repeatCount = _VirtualDom_attribute('repeatCount');
+var elm$svg$Svg$Attributes$to = function (value) {
+	return A2(
+		_VirtualDom_attribute,
+		'to',
+		_VirtualDom_noJavaScriptUri(value));
+};
+var elm$svg$Svg$Attributes$type_ = _VirtualDom_attribute('type');
+var elm$svg$Svg$Attributes$width = _VirtualDom_attribute('width');
+var elm$svg$Svg$Attributes$xlinkHref = function (value) {
+	return A3(
+		_VirtualDom_attributeNS,
+		'http://www.w3.org/1999/xlink',
+		'xlink:href',
+		_VirtualDom_noJavaScriptUri(value));
+};
+var author$project$MelkmanAlgorithm$ccwWheelSvg = F2(
+	function (_n0, bad_ccw) {
+		var pos_x = _n0.a;
+		var pos_y = _n0.b;
+		return A2(
+			elm$svg$Svg$g,
+			_List_Nil,
+			_Utils_ap(
 				_List_fromArray(
 					[
-						top_ccw_svg,
-						ccw_wheel_svg(
-						_Utils_Tuple2(top_ccw_x, top_ccw_y)),
-						next_point_svg
-					]));
-		}
+						A2(
+						elm$svg$Svg$image,
+						_List_fromArray(
+							[
+								elm$svg$Svg$Attributes$x(
+								elm$core$String$fromFloat(pos_x - author$project$Styles$ccw_wheel_radius)),
+								elm$svg$Svg$Attributes$y(
+								elm$core$String$fromFloat(pos_y - author$project$Styles$ccw_wheel_radius)),
+								elm$svg$Svg$Attributes$width(
+								elm$core$String$fromFloat(2 * author$project$Styles$ccw_wheel_radius)),
+								elm$svg$Svg$Attributes$height(
+								elm$core$String$fromFloat(2 * author$project$Styles$ccw_wheel_radius)),
+								elm$svg$Svg$Attributes$xlinkHref('static/ccw_wheel.svg'),
+								elm$svg$Svg$Attributes$transform(
+								'translate(0,' + (elm$core$String$fromFloat(2 * pos_y) + ') scale(1, -1)'))
+							]),
+						_List_fromArray(
+							[
+								A2(
+								elm$svg$Svg$animateTransform,
+								_List_fromArray(
+									[
+										elm$svg$Svg$Attributes$attributeName('transform'),
+										elm$svg$Svg$Attributes$type_('rotate'),
+										elm$svg$Svg$Attributes$dur('1s'),
+										elm$svg$Svg$Attributes$repeatCount('indefinite'),
+										elm$svg$Svg$Attributes$from(
+										'0 ' + (elm$core$String$fromFloat(pos_x) + (' ' + elm$core$String$fromFloat(pos_y)))),
+										elm$svg$Svg$Attributes$to(
+										'-360 ' + (elm$core$String$fromFloat(pos_x) + (' ' + elm$core$String$fromFloat(pos_y)))),
+										elm$svg$Svg$Attributes$additive('sum')
+									]),
+								_List_Nil)
+							]))
+					]),
+				bad_ccw ? _List_fromArray(
+					[
+						A2(
+						elm$svg$Svg$line,
+						_List_fromArray(
+							[
+								elm$svg$Svg$Attributes$x1(
+								elm$core$String$fromFloat(pos_x - author$project$Styles$ccw_wheel_radius)),
+								elm$svg$Svg$Attributes$y1(
+								elm$core$String$fromFloat(pos_y - author$project$Styles$ccw_wheel_radius)),
+								elm$svg$Svg$Attributes$x2(
+								elm$core$String$fromFloat(pos_x + author$project$Styles$ccw_wheel_radius)),
+								elm$svg$Svg$Attributes$y2(
+								elm$core$String$fromFloat(pos_y + author$project$Styles$ccw_wheel_radius)),
+								elm$svg$Svg$Attributes$stroke('red')
+							]),
+						_List_Nil)
+					]) : _List_Nil));
+	});
+var author$project$Styles$ccw_triangle_stroke_dash = '3,2';
+var author$project$Styles$ccw_triangle_stroke_width = elm$core$String$fromFloat(0.7);
+var author$project$Styles$next_point_color = 'yellow';
+var elm$svg$Svg$polygon = elm$svg$Svg$trustedNode('polygon');
+var elm$svg$Svg$Attributes$fillOpacity = _VirtualDom_attribute('fill-opacity');
+var elm$svg$Svg$Attributes$strokeDasharray = _VirtualDom_attribute('stroke-dasharray');
+var author$project$MelkmanAlgorithm$drawStep = function (model) {
+	var _n0 = model.phase;
+	if (_n0.$ === 'NotStartedYet') {
+		return A2(elm$svg$Svg$g, _List_Nil, _List_Nil);
 	} else {
-		if (_n4.b) {
-			return A2(
-				elm$svg$Svg$g,
-				_List_Nil,
-				_List_fromArray(
-					[
-						bot_ccw_svg,
-						ccw_wheel_svg(
-						_Utils_Tuple2(bot_ccw_x, bot_ccw_y)),
-						next_point_svg
-					]));
-		} else {
-			return _Debug_todo(
-				'MelkmanAlgorithm',
-				{
-					start: {line: 254, column: 13},
-					end: {line: 254, column: 23}
-				})('Should never reach here');
-		}
+		var top = A2(
+			author$project$Polygon$getAt,
+			author$project$Utils$trust(
+				A2(author$project$Utils$listCyclicGet, -1, model.deque)),
+			model.polygon);
+		var scd_top = A2(
+			author$project$Polygon$getAt,
+			author$project$Utils$trust(
+				A2(author$project$Utils$listCyclicGet, -2, model.deque)),
+			model.polygon);
+		var scd_bot = A2(
+			author$project$Polygon$getAt,
+			author$project$Utils$trust(
+				A2(author$project$Utils$listCyclicGet, 1, model.deque)),
+			model.polygon);
+		var next = A2(author$project$Polygon$getAt, model.next_point, model.polygon);
+		var top_ccw_triangle = _List_fromArray(
+			[scd_top, top, next]);
+		var ccwSvg = F2(
+			function (color, pts_) {
+				return A2(
+					elm$svg$Svg$polygon,
+					_List_fromArray(
+						[
+							elm$svg$Svg$Attributes$fill(color),
+							elm$svg$Svg$Attributes$fillOpacity('0.3'),
+							elm$svg$Svg$Attributes$stroke(color),
+							elm$svg$Svg$Attributes$strokeWidth(author$project$Styles$ccw_triangle_stroke_width),
+							elm$svg$Svg$Attributes$strokeLinecap('round'),
+							elm$svg$Svg$Attributes$strokeDasharray(author$project$Styles$ccw_triangle_stroke_dash),
+							elm$svg$Svg$Attributes$points(
+							author$project$Utils$svgPointsFromList(pts_))
+						]),
+					_List_Nil);
+			});
+		var top_ccw_svg = A2(ccwSvg, 'pink', top_ccw_triangle);
+		var bot = A2(
+			author$project$Polygon$getAt,
+			author$project$Utils$trust(
+				A2(author$project$Utils$listCyclicGet, 0, model.deque)),
+			model.polygon);
+		var bot_ccw_triangle = _List_fromArray(
+			[next, bot, scd_bot]);
+		var bot_ccw_svg = A2(ccwSvg, 'orange', bot_ccw_triangle);
+		var _n1 = author$project$Polygon$midpoint(top_ccw_triangle);
+		var top_ccw_x = _n1.a;
+		var top_ccw_y = _n1.b;
+		var _n2 = next;
+		var next_x = _n2.a;
+		var next_y = _n2.b;
+		var next_point_svg = A2(
+			elm$svg$Svg$circle,
+			_List_fromArray(
+				[
+					elm$svg$Svg$Attributes$fill(author$project$Styles$next_point_color),
+					elm$svg$Svg$Attributes$cx(
+					elm$core$String$fromFloat(next_x)),
+					elm$svg$Svg$Attributes$cy(
+					elm$core$String$fromFloat(next_y)),
+					elm$svg$Svg$Attributes$r(author$project$Styles$point_radius)
+				]),
+			_List_Nil);
+		var _n3 = author$project$MelkmanAlgorithm$calcStepInfo(model);
+		var top_is_ccw = _n3.a;
+		var bot_is_ccw = _n3.b;
+		var _n4 = author$project$Polygon$midpoint(bot_ccw_triangle);
+		var bot_ccw_x = _n4.a;
+		var bot_ccw_y = _n4.b;
+		return A2(
+			elm$svg$Svg$g,
+			_List_Nil,
+			_List_fromArray(
+				[
+					top_ccw_svg,
+					A2(
+					author$project$MelkmanAlgorithm$ccwWheelSvg,
+					_Utils_Tuple2(top_ccw_x, top_ccw_y),
+					top_is_ccw),
+					bot_ccw_svg,
+					A2(
+					author$project$MelkmanAlgorithm$ccwWheelSvg,
+					_Utils_Tuple2(bot_ccw_x, bot_ccw_y),
+					bot_is_ccw),
+					next_point_svg
+				]));
 	}
 };
 var author$project$Styles$cartesian_area = elm$svg$Svg$Attributes$transform('scale(1, -1)');

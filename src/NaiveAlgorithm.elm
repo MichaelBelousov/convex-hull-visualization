@@ -236,7 +236,8 @@ drawStep model =
         (ccw_x, ccw_y) = Polygon.midpoint ccw_triangle
     in
     g []
-      [ Svg.polygon [ fill ccw_triangle_fill
+      [ Svg.polygon [ fill ccw_triangle_stroke
+                    , fillOpacity "0.3"
                     , stroke ccw_triangle_stroke
                     , strokeWidth ccw_triangle_stroke_width
                     , strokeLinecap "round"

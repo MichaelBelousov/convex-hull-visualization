@@ -22,10 +22,17 @@ import Deque exposing (Deque)
 import Utils exposing (writeAction, trust,
                        pointToString, listCyclicGet,
                        svgPointsFromList)
-import Svg exposing (Svg, circle, g, polygon, image,
+import Svg exposing (Svg, circle, g, polygon, image, line,
                      path, polyline, text_, animateTransform)
 import Svg.Attributes exposing (..)
 import Styles exposing (..)
+
+
+type Part
+    = ConsiderNew
+    | RestoreLeft
+    | RestoreRight
+    | Increment
 
 
 type alias Model =
@@ -33,6 +40,7 @@ type alias Model =
     , deque : Deque Int
     , phase : Algorithm.Phase
     , next_point : Int
+    , part : Part
     }
 
 
@@ -44,33 +52,60 @@ stepState model =
             initState model
         InProgress ->
             let
-                (top_is_ccw, bot_is_ccw) = calcStepInfo model
+                top = Polygon.getAt (trust <| listCyclicGet -1 model.deque)
+                        <| model.polygon
+                scd_top = Polygon.getAt (trust <| listCyclicGet -2  model.deque)
+                            <| model.polygon
+                bot = Polygon.getAt (trust <| listCyclicGet 0 model.deque)
+                        <| model.polygon
+                scd_bot = Polygon.getAt (trust <| listCyclicGet 1 model.deque)
+                            <| model.polygon
+                next = Polygon.getAt model.next_point model.polygon
+                _ = Debug.log "top ccw: [scd_top, top, next]" [scd_top, top, next]
+                _ = Debug.log "bot ccw: [next, bot, scd_bot]" [next, bot, scd_bot]
             in
-                -- NOTE: consider using case?
-                if top_is_ccw && bot_is_ccw
-                then
-                    { model
-                     | next_point = model.next_point + 1
-                    }
-                else if not top_is_ccw
-                then
-                    { model
-                     | deque = 
-                         model.deque
-                         |> Deque.pop |> Tuple.second
-                         |> Deque.push model.next_point
-                    }
-                else if not bot_is_ccw
-                then
-                    { model
-                     | deque =
-                         model.deque
-                         |> Deque.remove |> Tuple.second
-                         |> Deque.insert model.next_point
-                     , next_point = model.next_point + 1
-                    }
-                else
-                    Debug.todo "Should never reach here"
+            case model.part of
+                ConsiderNew ->
+                    if ccwTest scd_top top next == 1
+                    && ccwTest bot scd_bot next == 1
+                    then
+                        { model | next_point = model.next_point + 1 }
+                    else
+                        { model | part = RestoreLeft }
+                RestoreLeft ->
+                    if ccwTest scd_top top next /= 1
+                    then
+                        { model
+                         | deque = 
+                             model.deque
+                             |> Deque.pop |> Tuple.second
+                             |> Deque.push model.next_point
+                        }
+                    else
+                        { model | part = RestoreRight }
+                RestoreRight ->
+                    if ccwTest next bot scd_bot /= 1
+                    then
+                        { model
+                         | deque =
+                             model.deque
+                             |> Deque.remove |> Tuple.second
+                             |> Deque.insert model.next_point
+                        }
+                    else
+                        { model | part = Increment }
+                Increment ->
+                    let
+                        next_next_point = model.next_point + 1
+                    in
+                        if next_next_point >= List.length model.polygon
+                        then
+                            { model | phase = Done }
+                        else
+                            { model
+                             | part = ConsiderNew
+                             , next_point = next_next_point
+                            }
         Done ->
             model
 
@@ -137,8 +172,7 @@ calcStepInfo model =
                 <| model.polygon
         scd_bot = Polygon.getAt (trust <| listCyclicGet 1 model.deque)
                     <| model.polygon
-        next = Polygon.getAt (trust <| listCyclicGet model.next_point model.deque)
-                <| model.polygon
+        next = Polygon.getAt model.next_point model.polygon
         top_is_ccw = ccwTest scd_top top next == 1
         bot_is_ccw = ccwTest next bot scd_bot == 1
     in
@@ -153,27 +187,43 @@ describeStep model =
             started_desc
         _ ->
             let
-                (top_is_ccw, bot_is_ccw) = calcStepInfo model
+                top_idx = trust <| listCyclicGet -1 model.deque
+                top = Polygon.getAt top_idx model.polygon
+                scd_top = Polygon.getAt (trust <| listCyclicGet -2  model.deque) model.polygon
+                bot_idx = trust <| listCyclicGet 0 model.deque
+                bot = Polygon.getAt bot_idx model.polygon
+                scd_bot = Polygon.getAt (trust <| listCyclicGet 1 model.deque) model.polygon
+                next = Polygon.getAt model.next_point model.polygon
             in
-                if top_is_ccw && bot_is_ccw
-                then
-                    writeAction <| "Ignored point " ++ String.fromInt model.next_point
-                else if not top_is_ccw
-                then
+            case model.part of
+                ConsiderNew ->
+                    if ccwTest scd_top top next == 1
+                    && ccwTest bot scd_bot next == 1
+                    then
+                        writeAction <| "Ignored point " ++ String.fromInt model.next_point
+                    else
+                        div [] []
+                RestoreLeft ->
+                    if ccwTest scd_top top next /= 1
+                    then
+                        writeAction <| "Popped " ++ String.fromInt top_idx
+                               ++ " and pushed " ++ String.fromInt model.next_point
+                    else
+                        div [] []
+                RestoreRight ->
+                    if ccwTest next bot scd_bot /= 1
+                    then
+                        writeAction <| "Removed " ++ String.fromInt top_idx
+                              ++ " and inserted " ++ String.fromInt model.next_point
+                    else
+                        div [] []
+                Increment ->
                     let
-                        top_idx = trust <| Tuple.first <| Deque.pop model.deque
+                        next_next_point = model.next_point + 1
                     in
-                    writeAction <| "Popped " ++ String.fromInt top_idx
-                             ++ " and pushed " ++ String.fromInt model.next_point
-                else if not bot_is_ccw
-                then
-                    let
-                        bot_idx = trust <| Tuple.first <| Deque.remove model.deque
-                    in
-                    writeAction <| "Removed " ++ String.fromInt bot_idx
-                             ++ " and inserted " ++ String.fromInt model.next_point
-                else
-                    Debug.todo "Should never reach here"
+                        if next_next_point >= List.length model.polygon
+                        then writeAction "Out of points, done"
+                        else writeAction "Convexity restored, advance a point"
 
 
 initEmptyState : Polygon -> Model
@@ -182,76 +232,89 @@ initEmptyState polygon =
     , deque = []
     , phase = NotStartedYet
     , next_point = 0
+    , part = ConsiderNew
     }
+
+
+ccwWheelSvg (pos_x, pos_y) bad_ccw =
+    g []
+      (
+      [ image [ x <| String.fromFloat (pos_x-ccw_wheel_radius)
+              , y <| String.fromFloat (pos_y-ccw_wheel_radius)
+              , width <| String.fromFloat (2 * ccw_wheel_radius)
+              , height <| String.fromFloat (2 * ccw_wheel_radius)
+              , xlinkHref "static/ccw_wheel.svg"
+              , transform ("translate(0,"
+                        ++ String.fromFloat (2*pos_y)
+                        ++ ") scale(1, -1)")
+              ]
+              [ animateTransform [ attributeName "transform"
+                                 , type_ "rotate"
+                                 , dur "1s"
+                                 , repeatCount "indefinite"
+                                 , from ("0 "++String.fromFloat pos_x++" "++String.fromFloat pos_y)
+                                 , to ("-360 "++String.fromFloat pos_x++" "++String.fromFloat pos_y)
+                                 , additive "sum"
+                                 ] []
+              ]
+      ] ++ (
+          if bad_ccw
+          then [ line [ x1 <| String.fromFloat <| pos_x-ccw_wheel_radius
+                      , y1 <| String.fromFloat <| pos_y-ccw_wheel_radius
+                      , x2 <| String.fromFloat <| pos_x+ccw_wheel_radius
+                      , y2 <| String.fromFloat <| pos_y+ccw_wheel_radius
+                      , stroke "red"
+                      ] []
+               ]
+          else []
+          )
+      )
+
 
 drawStep : Model -> Svg msg
 drawStep model =
-    let
-        top = Polygon.getAt (trust <| listCyclicGet -1 model.deque) model.polygon
-        scd_top = Polygon.getAt (trust <| listCyclicGet -2  model.deque) model.polygon
-        bot = Polygon.getAt (trust <| listCyclicGet 0 model.deque) model.polygon
-        scd_bot = Polygon.getAt (trust <| listCyclicGet 1 model.deque) model.polygon
-        next = Polygon.getAt (trust <| listCyclicGet model.next_point model.deque) model.polygon
-        (next_x, next_y) = next
-        top_ccw_triangle = [scd_top, top, next]
-        bot_ccw_triangle = [next, bot, scd_bot]
-        (top_ccw_x, top_ccw_y) = Polygon.midpoint top_ccw_triangle
-        (bot_ccw_x, bot_ccw_y) = Polygon.midpoint bot_ccw_triangle
-        (top_is_ccw, bot_is_ccw) = calcStepInfo model
-        ccw_svg stroke_ pts_ =
-            Svg.polygon [ fill "none"
-                        , stroke stroke_
-                        , strokeWidth ccw_triangle_stroke_width
-                        , strokeLinecap "round"
-                        , strokeDasharray ccw_triangle_stroke_dash
-                        , points <| svgPointsFromList pts_
-                        ] []
-        top_ccw_svg = ccw_svg "pink" top_ccw_triangle
-        bot_ccw_svg = ccw_svg "orange" bot_ccw_triangle
-        ccw_wheel_svg (x_, y_) =
-            image [ x <| String.fromFloat (x_-ccw_wheel_radius)
-                  , y <| String.fromFloat (y_-ccw_wheel_radius)
-                  , width <| String.fromFloat (2 * ccw_wheel_radius)
-                  , height <| String.fromFloat (2 * ccw_wheel_radius)
-                  , xlinkHref "static/ccw_wheel.svg"
-                  , transform ("translate(0,"
-                            ++ String.fromFloat (2*y_)
-                            ++ ") scale(1, -1)")
+    case model.phase of
+        NotStartedYet ->
+            g [] []
+        _ ->
+            let
+                top = Polygon.getAt (trust <| listCyclicGet -1 model.deque) model.polygon
+                scd_top = Polygon.getAt (trust <| listCyclicGet -2  model.deque) model.polygon
+                bot = Polygon.getAt (trust <| listCyclicGet 0 model.deque) model.polygon
+                scd_bot = Polygon.getAt (trust <| listCyclicGet 1 model.deque) model.polygon
+                next = Polygon.getAt model.next_point model.polygon
+                (next_x, next_y) = next
+                top_ccw_triangle = [scd_top, top, next]
+                bot_ccw_triangle = [next, bot, scd_bot]
+                (top_ccw_x, top_ccw_y) = Polygon.midpoint top_ccw_triangle
+                (bot_ccw_x, bot_ccw_y) = Polygon.midpoint bot_ccw_triangle
+                (top_is_ccw, bot_is_ccw) = calcStepInfo model
+                ccwSvg color pts_ =
+                    Svg.polygon [ fill color
+                                , fillOpacity "0.3"
+                                , stroke color
+                                , strokeWidth ccw_triangle_stroke_width
+                                , strokeLinecap "round"
+                                , strokeDasharray ccw_triangle_stroke_dash
+                                , points <| svgPointsFromList pts_
+                                ] []
+                top_ccw_svg = ccwSvg "pink" top_ccw_triangle
+                bot_ccw_svg = ccwSvg "orange" bot_ccw_triangle
+                next_point_svg =
+                    circle [ fill next_point_color
+                           , cx <| String.fromFloat next_x
+                           , cy <| String.fromFloat next_y
+                           , r point_radius
+                           ]
+                           []
+            in
+                g []
+                  [ top_ccw_svg
+                  , ccwWheelSvg (top_ccw_x, top_ccw_y) top_is_ccw
+                  , bot_ccw_svg
+                  , ccwWheelSvg (bot_ccw_x, bot_ccw_y) bot_is_ccw
+                  , next_point_svg
                   ]
-                  [ animateTransform [ attributeName "transform"
-                                     , type_ "rotate"
-                                     , dur "1s"
-                                     , repeatCount "indefinite"
-                                     , from ("0 "++String.fromFloat x_++" "++String.fromFloat y_)
-                                     , to ("-360 "++String.fromFloat x_++" "++String.fromFloat y_)
-                                     , additive "sum"
-                                     ] []
-                  ]
-        next_point_svg =
-            circle [ fill next_point_color
-                   , cx <| String.fromFloat next_x
-                   , cy <| String.fromFloat next_y
-                   , r point_radius
-                   ]
-                   []
-    in
-    case (top_is_ccw, bot_is_ccw) of
-        (True, True) ->
-            next_point_svg
-        (False, True) ->
-            g []
-              [ bot_ccw_svg
-              , ccw_wheel_svg (bot_ccw_x, bot_ccw_y)
-              , next_point_svg
-              ]
-        (True, False) ->
-            g []
-              [ top_ccw_svg
-              , ccw_wheel_svg (top_ccw_x, top_ccw_y)
-              , next_point_svg
-              ]
-        (False, False) ->
-            Debug.todo "Should never reach here"
 
 
 drawHull : Model -> Svg msg
@@ -278,11 +341,11 @@ drawState model =
     g []
       (
           -- TODO: move to constants
-      [ Svg.path [ d "M -36 0 v -20"
+      [ Svg.path [ d "M -36 -10 v 30"
                  , fill "none"
                  , stroke "grey" ]
                  []
-      , Svg.path [ d "M -31 0 v -20"
+      , Svg.path [ d "M -31 -10 v 30"
                  , fill "none"
                  , stroke "grey" ]
                  []

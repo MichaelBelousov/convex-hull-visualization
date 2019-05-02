@@ -70,7 +70,7 @@ update msg model =
                     }
                 _ ->
                     { model
-                     | algo_state = ConvexHullAlgorithm.stepState grabbed_moved.algo_state
+                     | algo_state = Debug.log "model" <| ConvexHullAlgorithm.stepState grabbed_moved.algo_state
                      , progress_log = model.progress_log
                         ++ [ConvexHullAlgorithm.describeStep grabbed_moved.algo_state]
                     }
@@ -201,9 +201,8 @@ intro = div
                  ++ "but you've removed all the dents.")
             ]
         , p []
-            [ text "You can ignore the grey "
-            , i [] [ text "stack " ]
-            , text ("on the left, we'll use it soon, and that plus sign "
+            [ text ("You can ignore the grey container "
+                 ++ "on the left, we'll use it soon, and that plus sign "
                  ++ "is just the origin for your reference. "
                  ++ "For now, feel free to build your own polygon by "
                  ++ "interacting with the available tools. "
