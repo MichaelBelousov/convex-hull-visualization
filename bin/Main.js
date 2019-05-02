@@ -5324,7 +5324,6 @@ var _MJS_m4x4makeBasis = F3(function(vx, vy, vz) {
 
     return r;
 });
-var author$project$Main$NotStartedYet = {$: 'NotStartedYet'};
 var elm$core$Basics$negate = function (n) {
 	return -n;
 };
@@ -5916,15 +5915,16 @@ var author$project$Main$intro = A2(
 					elm$html$Html$text('If you haven\'t looked it up already, a simple polygon ' + ('doesn\'t have any of its edges intersecting or overlapping. ' + ('If you decide to do that, you will break the algorithms, ' + 'but it\'s worth experimenting with anyway.')))
 				]))
 		]));
+var author$project$Algorithm$NotStartedYet = {$: 'NotStartedYet'};
+var author$project$NaiveAlgorithm$initEmptyState = function (polygon) {
+	return {next_point: 0, phase: author$project$Algorithm$NotStartedYet, polygon: polygon, stack: _List_Nil};
+};
 var author$project$Main$before_start_state = {
+	algo_state: author$project$NaiveAlgorithm$initEmptyState(author$project$Main$init_polygon),
 	grabbed: elm$core$Maybe$Nothing,
 	mouse_in_svg: _Utils_Tuple2(0, 0),
-	next_point: -1,
-	polygon: author$project$Main$init_polygon,
 	progress_log: _List_fromArray(
-		[author$project$Main$intro]),
-	progress_state: author$project$Main$NotStartedYet,
-	stack: _List_Nil
+		[author$project$Main$intro])
 };
 var author$project$Main$MouseMoved = function (a) {
 	return {$: 'MouseMoved', a: a};
@@ -6663,8 +6663,8 @@ var author$project$Main$trust = function (x) {
 		return _Debug_todo(
 			'Main',
 			{
-				start: {line: 344, column: 20},
-				end: {line: 344, column: 30}
+				start: {line: 326, column: 20},
+				end: {line: 326, column: 30}
 			})('trust got Nothing');
 	}
 };
@@ -6717,18 +6717,23 @@ var elm_community$list_extra$List$Extra$getAt = F2(
 	});
 var author$project$Main$deletePoint = F2(
 	function (model, point_idx) {
+		var polygon = model.algo_state.polygon;
 		var point = author$project$Main$trust(
-			A2(elm_community$list_extra$List$Extra$getAt, point_idx, model.polygon));
-		return (elm$core$List$length(model.polygon) > 3) ? _Utils_update(
-			model,
+			A2(elm_community$list_extra$List$Extra$getAt, point_idx, polygon));
+		var algo_state = model.algo_state;
+		var new_algo_state = _Utils_update(
+			algo_state,
 			{
 				polygon: A2(
 					elm$core$List$filter,
 					function (p) {
 						return !_Utils_eq(p, point);
 					},
-					model.polygon)
-			}) : model;
+					polygon)
+			});
+		return (elm$core$List$length(polygon) > 3) ? _Utils_update(
+			model,
+			{algo_state: new_algo_state}) : model;
 	});
 var elm$core$List$sum = function (numbers) {
 	return A3(elm$core$List$foldl, elm$core$Basics$add, 0, numbers);
@@ -6897,7 +6902,9 @@ var elm_community$list_extra$List$Extra$splitAt = F2(
 	});
 var author$project$Main$insertPoint = F2(
 	function (model, edge_idx) {
-		var _n0 = A2(elm_community$list_extra$List$Extra$splitAt, edge_idx + 1, model.polygon);
+		var polygon = model.algo_state.polygon;
+		var algo_state = model.algo_state;
+		var _n0 = A2(elm_community$list_extra$List$Extra$splitAt, edge_idx + 1, polygon);
 		var front = _n0.a;
 		var back = _n0.b;
 		var mdpt = function () {
@@ -6939,23 +6946,48 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 318, column: 22},
-							end: {line: 318, column: 32}
+							start: {line: 302, column: 22},
+							end: {line: 302, column: 32}
 						})('bad polygon');
 				}
 			}
 		}();
+		var new_polygon = _Utils_ap(
+			front,
+			_Utils_ap(
+				_List_fromArray(
+					[mdpt]),
+				back));
+		var new_algo_state = _Utils_update(
+			algo_state,
+			{polygon: new_polygon});
 		return _Utils_update(
 			model,
-			{
-				polygon: _Utils_ap(
-					front,
-					_Utils_ap(
-						_List_fromArray(
-							[mdpt]),
-						back))
-			});
+			{algo_state: new_algo_state});
 	});
+var author$project$Main$updateGrab = function (model) {
+	var _n0 = model.grabbed;
+	if (_n0.$ === 'Just') {
+		var grabbed = _n0.a;
+		var algo_state = model.algo_state;
+		var new_algo_state = _Utils_update(
+			algo_state,
+			{
+				polygon: A2(
+					elm$core$List$indexedMap,
+					F2(
+						function (i, p) {
+							return _Utils_eq(i, grabbed) ? model.mouse_in_svg : p;
+						}),
+					model.algo_state.polygon)
+			});
+		return _Utils_update(
+			model,
+			{algo_state: new_algo_state});
+	} else {
+		return model;
+	}
+};
 var author$project$Geometry$ccwTest = F3(
 	function (_n0, _n1, _n2) {
 		var ax = _n0.a;
@@ -6967,21 +6999,7 @@ var author$project$Geometry$ccwTest = F3(
 		var value = ((ax * (by - cy)) - (bx * (ay - cy))) + (cx * (ay - by));
 		return (value > 0) ? 1 : ((value < 0) ? (-1) : 0);
 	});
-var author$project$Main$Done = {$: 'Done'};
-var author$project$Main$listPenultimate = function (list) {
-	var _n0 = elm$core$List$reverse(list);
-	if (_n0.b && _n0.b.b) {
-		var a = _n0.a;
-		var _n1 = _n0.b;
-		var b = _n1.a;
-		var rest = _n1.b;
-		return elm$core$Maybe$Just(b);
-	} else {
-		return elm$core$Maybe$Nothing;
-	}
-};
-var author$project$Main$InProgress = {$: 'InProgress'};
-var author$project$Main$started_desc = A2(
+var author$project$NaiveAlgorithm$started_desc = A2(
 	elm$html$Html$div,
 	_List_Nil,
 	_List_fromArray(
@@ -7009,6 +7027,20 @@ var author$project$Main$started_desc = A2(
 					elm$html$Html$text('To start, we put the first two points of our polygon in a stack, ' + ('and we start considering the remaining points in order. The point ' + ('we\'re considering is in yellow, and the dashed yellow triangle ' + ('is a CCW test between the top two members of the stack, and that ' + ('point of consideration. Note the black spinny arrow that should ' + 'helpfully illustrate whether the triangle\'s points are in CCW order.')))))
 				]))
 		]));
+var elm$core$Basics$abs = function (n) {
+	return (n < 0) ? (-n) : n;
+};
+var author$project$Utils$listCyclicGet = F2(
+	function (n, list) {
+		if (!list.b) {
+			return elm$core$Maybe$Nothing;
+		} else {
+			var len = elm$core$List$length(list);
+			var rel_idx = (n < 0) ? (len - elm$core$Basics$abs(n)) : n;
+			var idx = rel_idx % len;
+			return A2(elm_community$list_extra$List$Extra$getAt, idx, list);
+		}
+	});
 var author$project$Utils$trust = function (x) {
 	if (x.$ === 'Just') {
 		var y = x.a;
@@ -7017,11 +7049,76 @@ var author$project$Utils$trust = function (x) {
 		return _Debug_todo(
 			'Utils',
 			{
-				start: {line: 15, column: 20},
-				end: {line: 15, column: 30}
+				start: {line: 27, column: 20},
+				end: {line: 27, column: 30}
 			})('trust got Nothing');
 	}
 };
+var author$project$Polygon$getAt = F2(
+	function (n, polygon) {
+		return author$project$Utils$trust(
+			A2(author$project$Utils$listCyclicGet, n, polygon));
+	});
+var elm$core$Basics$round = _Basics_round;
+var elm$core$String$fromFloat = _String_fromNumber;
+var author$project$Utils$pointToString = function (_n0) {
+	var x = _n0.a;
+	var y = _n0.b;
+	return elm$core$String$fromFloat(
+		elm$core$Basics$round(x * 100) / 100.0) + (', ' + elm$core$String$fromFloat(
+		elm$core$Basics$round(y * 100) / 100.0));
+};
+var author$project$Utils$writePointAction = F3(
+	function (action, _n0, index) {
+		var x = _n0.a;
+		var y = _n0.b;
+		return A2(
+			elm$html$Html$ul,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					elm$html$Html$li,
+					_List_Nil,
+					_List_fromArray(
+						[
+							elm$html$Html$text(
+							action + (': ' + (elm$core$String$fromInt(index) + (' at (' + (author$project$Utils$pointToString(
+								_Utils_Tuple2(x, y)) + ')')))))
+						]))
+				]));
+	});
+var author$project$NaiveAlgorithm$describeStep = function (model) {
+	var _n0 = model.phase;
+	if (_n0.$ === 'NotStartedYet') {
+		return author$project$NaiveAlgorithm$started_desc;
+	} else {
+		var top_idx = author$project$Utils$trust(
+			A2(author$project$Utils$listCyclicGet, -1, model.stack));
+		var top = A2(author$project$Polygon$getAt, top_idx, model.polygon);
+		var scd_idx = author$project$Utils$trust(
+			A2(author$project$Utils$listCyclicGet, -2, model.stack));
+		var scd = A2(author$project$Polygon$getAt, scd_idx, model.polygon);
+		var next = A2(author$project$Polygon$getAt, model.next_point, model.polygon);
+		var is_not_ccw = A3(author$project$Geometry$ccwTest, scd, top, next) < 1;
+		var _n1 = _Utils_Tuple2(is_not_ccw, model.next_point);
+		if (_n1.a) {
+			if (_n1.b === 1) {
+				return A3(author$project$Utils$writePointAction, 'Removed and popped point 0, then pushed point', next, model.next_point);
+			} else {
+				return A3(author$project$Utils$writePointAction, 'Popped point', top, top_idx);
+			}
+		} else {
+			if (_n1.b === 1) {
+				return A3(author$project$Utils$writePointAction, 'Finished at point', top, top_idx);
+			} else {
+				return A3(author$project$Utils$writePointAction, 'Pushed point', next, model.next_point);
+			}
+		}
+	}
+};
+var author$project$Algorithm$Done = {$: 'Done'};
+var author$project$Algorithm$InProgress = {$: 'InProgress'};
 var elm$core$List$tail = function (list) {
 	if (list.b) {
 		var x = list.a;
@@ -7099,52 +7196,19 @@ var author$project$Polygon$restartAtCCW = function (polygon) {
 			})('bad polygon?');
 	}
 };
-var author$project$Main$startAlgorithmState = function (model) {
+var author$project$NaiveAlgorithm$initState = function (model) {
 	var oriented_polygon = author$project$Polygon$isCCW(model.polygon) ? model.polygon : elm$core$List$reverse(model.polygon);
 	var shifted_polygon = author$project$Polygon$restartAtCCW(oriented_polygon);
 	return _Utils_update(
 		model,
 		{
 			next_point: 2,
+			phase: author$project$Algorithm$InProgress,
 			polygon: shifted_polygon,
-			progress_log: _Utils_ap(
-				model.progress_log,
-				_List_fromArray(
-					[author$project$Main$started_desc])),
-			progress_state: author$project$Main$InProgress,
 			stack: _List_fromArray(
 				[0, 1])
 		});
 };
-var elm$core$Basics$round = _Basics_round;
-var elm$core$String$fromFloat = _String_fromNumber;
-var author$project$Main$pointToString = function (_n0) {
-	var x = _n0.a;
-	var y = _n0.b;
-	return elm$core$String$fromFloat(
-		elm$core$Basics$round(x * 100) / 100.0) + (', ' + elm$core$String$fromFloat(
-		elm$core$Basics$round(y * 100) / 100.0));
-};
-var author$project$Main$writePointAction = F3(
-	function (action, _n0, index) {
-		var x = _n0.a;
-		var y = _n0.b;
-		return A2(
-			elm$html$Html$ul,
-			_List_Nil,
-			_List_fromArray(
-				[
-					A2(
-					elm$html$Html$li,
-					_List_Nil,
-					_List_fromArray(
-						[
-							elm$html$Html$text(
-							action + (': ' + (elm$core$String$fromInt(index) + (' at (' + (author$project$Main$pointToString(
-								_Utils_Tuple2(x, y)) + ')')))))
-						]))
-				]));
-	});
 var author$project$Stack$pop = function (stack) {
 	var _n0 = elm$core$List$reverse(stack);
 	if (_n0.b) {
@@ -7164,54 +7228,34 @@ var author$project$Stack$push = F2(
 			_List_fromArray(
 				[item]));
 	});
-var author$project$Main$progressConvexHull = function (model) {
-	var _n0 = model.progress_state;
+var author$project$NaiveAlgorithm$stepState = function (model) {
+	var _n0 = model.phase;
 	switch (_n0.$) {
 		case 'NotStartedYet':
-			return author$project$Main$startAlgorithmState(model);
+			return author$project$NaiveAlgorithm$initState(model);
 		case 'InProgress':
-			var top_idx = author$project$Main$trust(
-				elm_community$list_extra$List$Extra$last(model.stack));
-			var top = author$project$Main$trust(
-				A2(elm_community$list_extra$List$Extra$getAt, top_idx, model.polygon));
-			var scd = author$project$Main$trust(
-				A2(
-					elm_community$list_extra$List$Extra$getAt,
-					author$project$Main$trust(
-						author$project$Main$listPenultimate(model.stack)),
-					model.polygon));
-			var next = author$project$Main$trust(
-				A2(elm_community$list_extra$List$Extra$getAt, model.next_point, model.polygon));
+			var top_idx = author$project$Utils$trust(
+				A2(author$project$Utils$listCyclicGet, -1, model.stack));
+			var top = A2(author$project$Polygon$getAt, top_idx, model.polygon);
+			var scd_idx = author$project$Utils$trust(
+				A2(author$project$Utils$listCyclicGet, -2, model.stack));
+			var scd = A2(author$project$Polygon$getAt, scd_idx, model.polygon);
+			var next = A2(author$project$Polygon$getAt, model.next_point, model.polygon);
 			var is_not_ccw = A3(author$project$Geometry$ccwTest, scd, top, next) < 1;
 			var _n1 = _Utils_Tuple2(is_not_ccw, model.next_point);
 			if (_n1.a) {
 				if (_n1.b === 1) {
-					var removed_zero = author$project$Main$trust(
+					var removed_zero = author$project$Utils$trust(
 						elm$core$List$tail(model.stack));
 					var popped_zero = author$project$Stack$pop(removed_zero).b;
 					var pushed_next = A2(author$project$Stack$push, popped_zero, model.next_point);
 					return _Utils_update(
 						model,
-						{
-							progress_log: _Utils_ap(
-								model.progress_log,
-								_List_fromArray(
-									[
-										A3(author$project$Main$writePointAction, 'Removed and popped point 0, ' + 'then pushed point', next, model.next_point)
-									])),
-							progress_state: author$project$Main$Done,
-							stack: pushed_next
-						});
+						{phase: author$project$Algorithm$Done, stack: pushed_next});
 				} else {
 					return _Utils_update(
 						model,
 						{
-							progress_log: _Utils_ap(
-								model.progress_log,
-								_List_fromArray(
-									[
-										A3(author$project$Main$writePointAction, 'Popped point', top, top_idx)
-									])),
 							stack: author$project$Stack$pop(model.stack).b
 						});
 				}
@@ -7221,25 +7265,13 @@ var author$project$Main$progressConvexHull = function (model) {
 						model,
 						{
 							next_point: (model.next_point + 1) % elm$core$List$length(model.polygon),
-							progress_log: _Utils_ap(
-								model.progress_log,
-								_List_fromArray(
-									[
-										A3(author$project$Main$writePointAction, 'Finished at point', top, top_idx)
-									])),
-							progress_state: author$project$Main$Done
+							phase: author$project$Algorithm$Done
 						});
 				} else {
 					return _Utils_update(
 						model,
 						{
 							next_point: (model.next_point + 1) % elm$core$List$length(model.polygon),
-							progress_log: _Utils_ap(
-								model.progress_log,
-								_List_fromArray(
-									[
-										A3(author$project$Main$writePointAction, 'Pushed point', next, model.next_point)
-									])),
 							stack: A2(author$project$Stack$push, model.stack, model.next_point)
 						});
 				}
@@ -7272,25 +7304,7 @@ var author$project$Main$update = F2(
 		var nocmd = function (model_) {
 			return _Utils_Tuple2(model_, elm$core$Platform$Cmd$none);
 		};
-		var grabbed_moved = function () {
-			var _n3 = model.grabbed;
-			if (_n3.$ === 'Just') {
-				var grabbed = _n3.a;
-				return _Utils_update(
-					model,
-					{
-						polygon: A2(
-							elm$core$List$indexedMap,
-							F2(
-								function (i, p) {
-									return _Utils_eq(i, grabbed) ? model.mouse_in_svg : p;
-								}),
-							model.polygon)
-					});
-			} else {
-				return model;
-			}
-		}();
+		var grabbed_moved = author$project$Main$updateGrab(model);
 		var andScroll = function (model_) {
 			return _Utils_Tuple2(
 				model_,
@@ -7300,13 +7314,25 @@ var author$project$Main$update = F2(
 			case 'StepAlgorithm':
 				return andScroll(
 					function () {
-						var _n1 = model.progress_state;
+						var _n1 = model.algo_state.phase;
 						if (_n1.$ === 'Done') {
 							return _Utils_update(
-								author$project$Main$before_start_state,
-								{polygon: model.polygon});
+								model,
+								{
+									algo_state: author$project$NaiveAlgorithm$initEmptyState(model.algo_state.polygon)
+								});
 						} else {
-							return author$project$Main$progressConvexHull(grabbed_moved);
+							return _Utils_update(
+								model,
+								{
+									algo_state: author$project$NaiveAlgorithm$stepState(grabbed_moved.algo_state),
+									progress_log: _Utils_ap(
+										model.progress_log,
+										_List_fromArray(
+											[
+												author$project$NaiveAlgorithm$describeStep(grabbed_moved.algo_state)
+											]))
+								});
 						}
 					}());
 			case 'DoubleClickPoint':
@@ -7352,8 +7378,8 @@ var author$project$Main$update = F2(
 							return _Debug_todo(
 								'Main',
 								{
-									start: {line: 89, column: 21},
-									end: {line: 89, column: 31}
+									start: {line: 104, column: 21},
+									end: {line: 104, column: 31}
 								})('bad value sent over svgCoords port sub');
 						}
 					}());
@@ -7393,7 +7419,7 @@ var elm$html$Html$Events$onClick = function (msg) {
 var elm$svg$Svg$Attributes$id = _VirtualDom_attribute('id');
 var author$project$Main$viewNarration = function (model) {
 	var btn_label = function () {
-		var _n0 = model.progress_state;
+		var _n0 = model.algo_state.phase;
 		switch (_n0.$) {
 			case 'NotStartedYet':
 				return 'start!';
@@ -7451,7 +7477,7 @@ var author$project$Main$svgPointsFromList = function (listPoint) {
 	return A2(
 		elm$core$String$join,
 		' ',
-		A2(elm$core$List$map, author$project$Main$pointToString, listPoint));
+		A2(elm$core$List$map, author$project$Utils$pointToString, listPoint));
 };
 var elm$svg$Svg$trustedNode = _VirtualDom_nodeNS('http://www.w3.org/2000/svg');
 var elm$svg$Svg$animateTransform = elm$svg$Svg$trustedNode('animateTransform');
@@ -7497,16 +7523,16 @@ var author$project$Main$drawCurrentCCW = function (model) {
 		A2(
 			elm_community$list_extra$List$Extra$getAt,
 			author$project$Main$trust(
-				elm_community$list_extra$List$Extra$last(model.stack)),
-			model.polygon));
+				elm_community$list_extra$List$Extra$last(model.algo_state.stack)),
+			model.algo_state.polygon));
 	var scd = author$project$Main$trust(
 		A2(
 			elm_community$list_extra$List$Extra$getAt,
 			author$project$Main$trust(
-				author$project$Main$listPenultimate(model.stack)),
-			model.polygon));
+				A2(author$project$Utils$listCyclicGet, -2, model.algo_state.stack)),
+			model.algo_state.polygon));
 	var next = author$project$Main$trust(
-		A2(elm_community$list_extra$List$Extra$getAt, model.next_point, model.polygon));
+		A2(elm_community$list_extra$List$Extra$getAt, model.algo_state.next_point, model.algo_state.polygon));
 	var ccw_triangle = _List_fromArray(
 		[scd, top, next]);
 	var _n0 = author$project$Polygon$midpoint(ccw_triangle);
@@ -7707,18 +7733,16 @@ var elm$html$Html$Events$onMouseUp = function (msg) {
 		elm$json$Json$Decode$succeed(msg));
 };
 var author$project$Main$drawPolygon = function (model) {
-	var _n0 = model.progress_state;
+	var polygon = model.algo_state.polygon;
+	var _n0 = model.algo_state.phase;
 	if (_n0.$ === 'NotStartedYet') {
-		var edge_click_handlers = function (i) {
-			return _List_Nil;
-		};
 		return A2(
 			elm$svg$Svg$g,
 			_List_Nil,
 			_Utils_ap(
 				A2(
 					author$project$Main$drawPolygonEdges,
-					model.polygon,
+					polygon,
 					function (i) {
 						return _List_fromArray(
 							[
@@ -7729,7 +7753,7 @@ var author$project$Main$drawPolygon = function (model) {
 					}),
 				A2(
 					author$project$Main$drawPolygonVerts,
-					model.polygon,
+					polygon,
 					function (i) {
 						return _List_fromArray(
 							[
@@ -7747,36 +7771,25 @@ var author$project$Main$drawPolygon = function (model) {
 			_Utils_ap(
 				A2(
 					author$project$Main$drawPolygonEdges,
-					model.polygon,
+					polygon,
 					function (i) {
 						return _List_Nil;
 					}),
 				A2(
 					author$project$Main$drawPolygonVerts,
-					model.polygon,
+					polygon,
 					function (i) {
 						return _List_Nil;
 					})));
 	}
 };
-var elm$core$Basics$abs = function (n) {
-	return (n < 0) ? (-n) : n;
-};
-var author$project$Polygon$getAt = F2(
-	function (n, polygon) {
-		var len = elm$core$List$length(polygon);
-		var rel_idx = (n < 0) ? (len - elm$core$Basics$abs(n)) : n;
-		var idx = rel_idx % len;
-		return author$project$Utils$trust(
-			A2(elm_community$list_extra$List$Extra$getAt, idx, polygon));
-	});
 var author$project$Main$calcHullProgressPolyline = function (model) {
 	return A2(
 		elm$core$List$map,
 		function (n) {
-			return A2(author$project$Polygon$getAt, n, model.polygon);
+			return A2(author$project$Polygon$getAt, n, model.algo_state.polygon);
 		},
-		model.stack);
+		model.algo_state.stack);
 };
 var author$project$Styles$hull = function (other_attrs) {
 	return _Utils_ap(
@@ -7843,7 +7856,7 @@ var author$project$Main$drawStack = function (model) {
 									elm$core$String$fromInt(n))
 								]));
 					}),
-				model.stack)));
+				model.algo_state.stack)));
 };
 var author$project$Main$label_offset = 0.2;
 var elm_explorations$linear_algebra$Math$Vector2$add = _MJS_v2add;
@@ -7862,15 +7875,16 @@ var author$project$Main$drawVertsIndex = function (model) {
 				function (i, _n0) {
 					var vx = _n0.a;
 					var vy = _n0.b;
-					var _n1 = A2(author$project$Polygon$getAt, i - 1, model.polygon);
+					var polygon = model.algo_state.polygon;
+					var _n1 = A2(author$project$Polygon$getAt, i - 1, polygon);
 					var prev_x = _n1.a;
 					var prev_y = _n1.b;
 					var prev = A2(elm_explorations$linear_algebra$Math$Vector2$vec2, prev_x, prev_y);
-					var _n2 = A2(author$project$Polygon$getAt, i + 1, model.polygon);
+					var _n2 = A2(author$project$Polygon$getAt, i + 1, polygon);
 					var next_x = _n2.a;
 					var next_y = _n2.b;
 					var next = A2(elm_explorations$linear_algebra$Math$Vector2$vec2, next_x, next_y);
-					var _n3 = A2(author$project$Polygon$getAt, i, model.polygon);
+					var _n3 = A2(author$project$Polygon$getAt, i, polygon);
 					var curr_x = _n3.a;
 					var curr_y = _n3.b;
 					var curr = A2(elm_explorations$linear_algebra$Math$Vector2$vec2, curr_x, curr_y);
@@ -7906,7 +7920,7 @@ var author$project$Main$drawVertsIndex = function (model) {
 								elm$core$String$fromInt(i))
 							]));
 				}),
-			model.polygon));
+			model.algo_state.polygon));
 };
 var elm$svg$Svg$svg = elm$svg$Svg$trustedNode('svg');
 var elm$svg$Svg$Attributes$viewBox = _VirtualDom_attribute('viewBox');
@@ -7944,14 +7958,15 @@ var author$project$Main$drawConvexHullAlgorithmsState = function (model) {
 								]))))
 				]));
 	};
-	var _n0 = model.progress_state;
+	var polygon = model.algo_state.polygon;
+	var _n0 = model.algo_state.phase;
 	if (_n0.$ === 'InProgress') {
 		return svgBase(
 			_List_fromArray(
 				[
 					author$project$Main$drawNextPoint(
 					author$project$Main$trust(
-						A2(elm_community$list_extra$List$Extra$getAt, model.next_point, model.polygon))),
+						A2(elm_community$list_extra$List$Extra$getAt, model.algo_state.next_point, polygon))),
 					author$project$Main$drawCurrentCCW(model)
 				]));
 	} else {

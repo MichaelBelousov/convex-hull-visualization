@@ -6,13 +6,13 @@ import Html exposing (Html, Attribute, div, button, text, a,
                       table, tr, td, p, i, b, ul, ol, li)
 import Html.Events exposing (onClick, onDoubleClick, onMouseUp, onMouseDown)
 import Html.Attributes exposing (..)
-import List
+-- import List
 import List.Extra exposing (getAt, last, splitAt)
-import Tuple
-import Debug
+-- import Tuple
+-- import Debug
 import Json.Decode as Decode
 import Json.Encode as Encode
-import String exposing (..)
+import String
 import Svg exposing (Svg, svg, circle, polyline, polygon,
                      line, g, path, image, text_, animateTransform)
 import Svg.Attributes exposing (height, width, viewBox, xlinkHref, id,
@@ -24,12 +24,13 @@ import Svg.Attributes exposing (height, width, viewBox, xlinkHref, id,
 import SvgPorts exposing (mouseToSvgCoords, decodeSvgPoint)
 import ScrollPorts exposing (scrollToBottom)
 import Math.Vector2 as Vec2D exposing (Vec2, vec2)
-import Stack exposing (Stack, pop, push)
 import Geometry exposing (Point, ccwTest)
 import Polygon exposing (Polygon)
 import Polyline exposing (Polyline)
-import Utils exposing (trust, makeCube)
+import Utils exposing (..)
 import Styles
+import Algorithm exposing (..)
+import NaiveAlgorithm
 
 -- Browser Model
 
@@ -42,40 +43,54 @@ type Msg
     | MouseMoved Encode.Value
     | DoNothing
 
+-- update the grabbed point
+updateGrab : Model -> Model
+updateGrab model =
+    case model.grabbed of
+        Just grabbed ->
+            let
+                algo_state = model.algo_state
+                new_algo_state = 
+                    { algo_state
+                     | polygon = List.indexedMap
+                                     (\i p -> if i == grabbed
+                                             then model.mouse_in_svg
+                                             else p)
+                                     model.algo_state.polygon
+                    }
+            in
+                { model | algo_state = new_algo_state }
+        Nothing ->
+            model
+
+
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     let
-        grabbed_moved =
-            case model.grabbed of
-                Just grabbed ->
-                     { model
-                       | polygon = List.indexedMap
-                                       (\i p -> if i == grabbed
-                                                then model.mouse_in_svg
-                                                else p)
-                                       model.polygon
-                     }
-                Nothing ->
-                    model
+        grabbed_moved = updateGrab model
         andScroll model_ = ( model_, scrollToBottom "progress-log" )
         nocmd model_ = ( model_, Cmd.none )
     in
     case msg of
         StepAlgorithm ->
-            andScroll <| case model.progress_state of
+            andScroll <| case model.algo_state.phase of
                 Done ->
-                    { before_start_state | polygon = model.polygon }
+                    { model
+                     | algo_state = NaiveAlgorithm.initEmptyState model.algo_state.polygon
+                    }
                 _ ->
-                    progressConvexHull grabbed_moved
+                    { model
+                     | algo_state = NaiveAlgorithm.stepState grabbed_moved.algo_state
+                     , progress_log = model.progress_log
+                        ++ [NaiveAlgorithm.describeStep grabbed_moved.algo_state]
+                    }
         DoubleClickPoint point_idx ->
-            deletePoint model point_idx
-            |> nocmd
+            nocmd <| deletePoint model point_idx
         LeftClickEdge edge_idx ->
             let
                 insert_done = insertPoint grabbed_moved edge_idx
             in
-                { insert_done | grabbed = Just (edge_idx+1) }
-                |> nocmd
+                nocmd <| { insert_done | grabbed = Just (edge_idx+1) }
         GrabPoint point_idx ->
             nocmd <| { grabbed_moved | grabbed = Just point_idx }
         ReleasePoint ->
@@ -145,7 +160,7 @@ viewVisualization model =
 viewNarration : Model -> Html Msg
 viewNarration model =
     let
-        btn_label = case model.progress_state of
+        btn_label = case model.algo_state.phase of
             NotStartedYet ->
                 "start!"
             InProgress ->
@@ -166,20 +181,11 @@ viewNarration model =
 
 
 type alias Model =
-    { polygon : Polygon
-    , stack : Stack Int
-    , progress_state : ModelState
-    , next_point : Int
-    , grabbed : Maybe Int
+    { grabbed : Maybe Int
     , progress_log : List (Html Msg)
     , mouse_in_svg : Point
+    , algo_state : NaiveAlgorithm.Model
     }
-
-
-type ModelState
-    = NotStartedYet
-    | InProgress
-    | Done
 
 
 -- Constants
@@ -197,17 +203,17 @@ label_x_shift = dx "2.5"
 label_y_shift = dy "2.5"
 label_offset = 0.2
 point_color = "blue"
-point_radius = fromFloat 2
+point_radius = String.fromFloat 2
 next_point_color = "yellow"
 ccw_triangle_fill = "none"
 ccw_triangle_stroke = "yellow"
-ccw_triangle_stroke_width = fromFloat 0.7
+ccw_triangle_stroke_width = String.fromFloat 0.7
 ccw_triangle_stroke_dash = "3,2"
 ccw_wheel_radius = 5
 ccw_wheel_id = "ccw_wheel"
 origin_fill = "none"
 origin_stroke = "black"
-origin_stroke_width = fromFloat 0.3
+origin_stroke_width = String.fromFloat 0.3
 
 progress_log_id = "progress-log"
 
@@ -252,32 +258,6 @@ intro = div
             ]
         ]
 
--- TODO: push these guys into some managed list of content that expands as the algorithm goes, with good scrolling
-started_desc : Html Msg
-started_desc =
-    div
-        []
-        [ p []
-            [ text "Since we're given a "
-            , i [] [ text "simple polygon " ]
-            , text ("our edges shouldn't overlap, and we'll just assume we were given our polygon "
-                 ++ "in counter-clockwise (CCW) order. If it isn't, we'll just reverse the point "
-                 ++ "in counter-clockwise (CCW) order. If it isn't, we'll just reverse the point "
-                 ++ "order. After we know it's in CCW order, we'll identify the bottom-left-most "
-                 ++ "point, we'll "
-                 ++ "start there and call it '0'. We'll even number the rest of the points "
-                 ++ "in CCW order going up from 0, to 1, then 2, etc. You can see we've "
-                 ++ "already relabeled them. ")
-            ]
-        , p []
-            [ text ("To start, we put the first two points of our polygon in a stack, "
-                 ++ "and we start considering the remaining points in order. The point "
-                 ++ "we're considering is in yellow, and the dashed yellow triangle "
-                 ++ "is a CCW test between the top two members of the stack, and that "
-                 ++ "point of consideration. Note the black spinny arrow that should "
-                 ++ "helpfully illustrate whether the triangle's points are in CCW order.")
-            ]
-        ]
 
 -- Utilities
 
@@ -293,17 +273,21 @@ makeCube half_sz =
 deletePoint : Model -> Int -> Model
 deletePoint model point_idx =
     let
-        point = trust <| getAt point_idx model.polygon
+        polygon = model.algo_state.polygon
+        point = trust <| getAt point_idx polygon
+        algo_state = model.algo_state
+        new_algo_state = { algo_state | polygon = List.filter (\p -> p /= point) polygon }
     in
-        if List.length model.polygon > 3
-        then { model | polygon = List.filter (\p -> p /= point) model.polygon }
+        if List.length polygon > 3
+        then { model | algo_state = new_algo_state }
         else model
 
 
 insertPoint : Model -> Int -> Model
 insertPoint model edge_idx =
     let
-        (front, back) = splitAt (edge_idx+1) model.polygon
+        polygon = model.algo_state.polygon
+        (front, back) = splitAt (edge_idx+1) polygon
         mdpt = case (last front, List.head back) of
                 (Just x, Just y) ->
                     Polygon.midpoint [x, y]
@@ -316,24 +300,22 @@ insertPoint model edge_idx =
                                      , trust <| last back
                                      ]
                 _ -> Debug.todo "bad polygon"
+        new_polygon = front ++ [mdpt] ++ back
+        algo_state = model.algo_state
+        new_algo_state = { algo_state | polygon = new_polygon }
     in
-    { model | polygon = front ++ [mdpt] ++ back }
+    { model | algo_state = new_algo_state }
 
 -- initial page state
 
     -- state when the app starts
 before_start_state : Model
 before_start_state =
-    { polygon = init_polygon
-    , stack = []
-    , progress_state = NotStartedYet
-    , next_point = -1
-    , grabbed = Nothing
+    { grabbed = Nothing
     , progress_log = [intro]
     , mouse_in_svg = (0,0)
+    , algo_state = NaiveAlgorithm.initEmptyState init_polygon
     }
-
-
 
 
 -- trust that a Maybe is fulfilled
@@ -347,6 +329,7 @@ trust x =
 drawConvexHullAlgorithmsState : Model -> Html Msg
 drawConvexHullAlgorithmsState model =
     let
+        polygon = model.algo_state.polygon
         svgBase extra =
             div [ class "resizable-svg-container" ]
                 [ svg [ viewBox "-40 -12 80 30"
@@ -364,9 +347,9 @@ drawConvexHullAlgorithmsState model =
                       )
                  ]
     in
-    case model.progress_state of
+    case model.algo_state.phase of
         InProgress ->
-            svgBase [ drawNextPoint <| trust <| getAt model.next_point model.polygon
+            svgBase [ drawNextPoint <| trust <| getAt model.algo_state.next_point polygon
                     , drawCurrentCCW model
                     ]
         _ ->
@@ -393,12 +376,12 @@ drawStack model =
              []
       ] ++ List.indexedMap
              (\i n -> text_ [ x "-33.5"
-                            , y <| fromInt (18 - 4*i)
+                            , y <| String.fromInt (18 - 4*i)
                             , Svg.Attributes.class "stack-entry"
                             , cartesian_flip
                             ]
-                            [ text <| fromInt n ])
-             model.stack
+                            [ text <| String.fromInt n ])
+             model.algo_state.stack
       )
 
 
@@ -406,26 +389,25 @@ drawStack model =
 -- Draw the polygon, return svg message
 drawPolygon : Model -> Svg Msg
 drawPolygon model =
-    case model.progress_state of
+    let
+        polygon = model.algo_state.polygon
+    in
+    case model.algo_state.phase of
         -- attach  polygon editing handlers if algorithm not started yet
         NotStartedYet ->
-            let
-             edge_click_handlers i = [
-                                     ]
-            in
             g []
-              (  drawPolygonEdges model.polygon (\i -> [ onMouseDown (LeftClickEdge i)
-                                                       , onMouseUp   (ReleasePoint)
-                                                       ])
-              ++ drawPolygonVerts model.polygon (\i -> [ onDoubleClick (DoubleClickPoint i)
-                                                       , onMouseDown   (GrabPoint i)
-                                                       , onMouseUp     (ReleasePoint)
-                                                       ])
+              (  drawPolygonEdges polygon (\i -> [ onMouseDown (LeftClickEdge i)
+                                                 , onMouseUp   (ReleasePoint)
+                                                 ])
+              ++ drawPolygonVerts polygon (\i -> [ onDoubleClick (DoubleClickPoint i)
+                                                 , onMouseDown   (GrabPoint i)
+                                                 , onMouseUp     (ReleasePoint)
+                                                 ])
               )
         _ ->
             g []
-              (  drawPolygonEdges model.polygon (\i->[])
-              ++ drawPolygonVerts model.polygon (\i->[])
+              (  drawPolygonEdges polygon (\i->[])
+              ++ drawPolygonVerts polygon (\i->[])
               )
 
 drawPolygonEdges : Polygon -> (Int -> List (Attribute m)) -> List (Svg m)
@@ -433,8 +415,8 @@ drawPolygonEdges polygon interactions =
     List.indexedMap
         (\i ((x1_,y1_),(x2_,y2_)) ->
                 line (Styles.polygon 
-                     ([ x1 <| fromFloat x1_, y1 <| fromFloat y1_
-                      , x2 <| fromFloat x2_, y2 <| fromFloat y2_
+                     ([ x1 <| String.fromFloat x1_, y1 <| String.fromFloat y1_
+                      , x2 <| String.fromFloat x2_, y2 <| String.fromFloat y2_
                       ] ++ interactions i)
                      )
                      [])
@@ -446,8 +428,8 @@ drawPolygonVerts polygon interactions =
         (\i (x,y) ->
                 circle (
                        [ fill point_color
-                       , cx <| fromFloat x
-                       , cy <| fromFloat y
+                       , cx <| String.fromFloat x
+                       , cy <| String.fromFloat y
                        , r point_radius
                        ] ++ interactions i
                        )
@@ -457,8 +439,8 @@ drawPolygonVerts polygon interactions =
 
 calcHullProgressPolyline : Model -> Polyline
 calcHullProgressPolyline model =
-    model.stack
-    |> List.map (\n -> Polygon.getAt n model.polygon)
+    model.algo_state.stack
+    |> List.map (\n -> Polygon.getAt n model.algo_state.polygon)
 
 
 -- Draw every polyline, return svg message
@@ -475,8 +457,8 @@ drawPolyline model =
 drawNextPoint : Point -> Svg Msg
 drawNextPoint (x,y) =
     circle [ fill next_point_color
-           , cx <| fromFloat x
-           , cy <| fromFloat y
+           , cx <| String.fromFloat x
+           , cy <| String.fromFloat y
            , r point_radius
            ]
            []
@@ -485,9 +467,9 @@ drawNextPoint (x,y) =
 drawCurrentCCW : Model -> Svg Msg
 drawCurrentCCW model =
     let
-        top = trust <| getAt (trust <| last model.stack) model.polygon
-        scd = trust <| getAt (trust <| listPenultimate model.stack) model.polygon
-        next = trust <| getAt model.next_point model.polygon
+        top = trust <| getAt (trust <| last model.algo_state.stack) model.algo_state.polygon
+        scd = trust <| getAt (trust <| listCyclicGet -2 model.algo_state.stack) model.algo_state.polygon
+        next = trust <| getAt model.algo_state.next_point model.algo_state.polygon
         ccw_triangle = [scd, top, next]
         (ccw_x, ccw_y) = Polygon.midpoint ccw_triangle
     in
@@ -500,21 +482,21 @@ drawCurrentCCW model =
                 , points <| svgPointsFromList ccw_triangle
                 ] []
         -- flip with corrective translation
-      , image [ x <| fromFloat (ccw_x-ccw_wheel_radius)
-              , y <| fromFloat (ccw_y-ccw_wheel_radius)
-              , width <| fromFloat (2 * ccw_wheel_radius)
-              , height <| fromFloat (2 * ccw_wheel_radius)
+      , image [ x <| String.fromFloat (ccw_x-ccw_wheel_radius)
+              , y <| String.fromFloat (ccw_y-ccw_wheel_radius)
+              , width <| String.fromFloat (2 * ccw_wheel_radius)
+              , height <| String.fromFloat (2 * ccw_wheel_radius)
               , xlinkHref "static/ccw_wheel.svg"
               , transform ("translate(0,"
-                        ++ fromFloat (2*ccw_y)
+                        ++ String.fromFloat (2*ccw_y)
                         ++ ") scale(1, -1)")
               ]
               [ animateTransform [ attributeName "transform"
                                  , type_ "rotate"
                                  , dur "1s"
                                  , repeatCount "indefinite"
-                                 , from ("0 "++fromFloat ccw_x++" "++fromFloat ccw_y)
-                                 , to ("-360 "++fromFloat ccw_x++" "++fromFloat ccw_y)
+                                 , from ("0 "++String.fromFloat ccw_x++" "++String.fromFloat ccw_y)
+                                 , to ("-360 "++String.fromFloat ccw_x++" "++String.fromFloat ccw_y)
                                  , additive "sum"
                                  ] []
               ]
@@ -526,11 +508,12 @@ drawVertsIndex model =
     g [] <| List.indexedMap
             (\i (vx,vy) ->
                 let
-                    (prev_x, prev_y) = Polygon.getAt (i-1) model.polygon
+                    polygon = model.algo_state.polygon
+                    (prev_x, prev_y) = Polygon.getAt (i-1) polygon
                     prev = Vec2D.vec2 prev_x prev_y
-                    (curr_x, curr_y) = Polygon.getAt i model.polygon
+                    (curr_x, curr_y) = Polygon.getAt i polygon
                     curr = Vec2D.vec2 curr_x curr_y
-                    (next_x, next_y) = Polygon.getAt (i+1) model.polygon
+                    (next_x, next_y) = Polygon.getAt (i+1) polygon
                     next = Vec2D.vec2 next_x next_y
                     -- centered around origin
                     cprev = Vec2D.sub prev curr
@@ -540,14 +523,14 @@ drawVertsIndex model =
                     label = Vec2D.add clabel curr
                     (label_x, label_y) = (Vec2D.getX label, Vec2D.getY label)
                 in
-                    text_ [ x <| fromFloat label_x
-                          , y <| fromFloat (-label_y)
+                    text_ [ x <| String.fromFloat label_x
+                          , y <| String.fromFloat (-label_y)
                           , Svg.Attributes.class "point-label"
                           , cartesian_flip
                           ]
-                          [ text <| fromInt i ]
+                          [ text <| String.fromInt i ]
             )
-            model.polygon
+            model.algo_state.polygon
 
 
 -- Mapping the list of points into svg attributes value
@@ -555,125 +538,7 @@ svgPointsFromList : List Point-> String
 svgPointsFromList listPoint =
     listPoint
         |> List.map pointToString
-        |> join " "
-
-
--- Mapping point tuple into string
-pointToString : Point -> String
-pointToString (x, y) =
-    fromFloat (Basics.toFloat(round(x * 100)) / 100.0)
-    ++ ", "
-    ++ fromFloat (Basics.toFloat(round(y * 100)) / 100.0)
-
-writePointAction : String -> Point -> Int -> Html msg
-writePointAction action (x,y) index =
-    ul []
-       [ li []
-            [ text
-               (  action ++ ": "
-               ++ fromInt index ++ " at ("
-               ++ pointToString (x,y) ++ ")"
-               )
-            ]
-       ]
-
-
-counter_example : Polygon
-counter_example =
-    [ (-15,-15)
-    , (15,-15)
-    , (21.70, 3.23)
-    , (11.84, -6.72)
-    , (15.55, 3.55)
-    , (8.24, 6.20)
-    , (27.75, 28.26)
-    , (4.74, 24.23)
-    , (-0.02, 20.20)
-    , (0.92, 11.40)
-    , (3.79, 8.11)
-    , (6.12, -1.00)
-    , (2.20, -3.22)
-    , (2.51, -9.69)
-    , (-4.90, -9.69)
-    , (-7.87, -5.03)
-    , (-4.26, 0.79)
-    , (-9.25, 4.82)
-    , (-6.60, 16.81)
-    , (-15,15)
-    ]
-
-listPenultimate : List a -> Maybe a
-listPenultimate list =
-    case List.reverse list of
-        a::b::rest -> Just b
-        _ -> Nothing
-
-
-startAlgorithmState : Model -> Model
-startAlgorithmState model =
-    let
-        oriented_polygon = if Polygon.isCCW model.polygon
-                           then model.polygon
-                           else List.reverse model.polygon
-        shifted_polygon = Polygon.restartAtCCW oriented_polygon
-    in
-    { model | polygon = shifted_polygon
-            , next_point = 2
-            , stack = [0,1]
-            , progress_state = InProgress
-            , progress_log = model.progress_log ++ [started_desc]
-    }
-
-progressConvexHull : Model -> Model
-progressConvexHull model =
-    case model.progress_state of
-        NotStartedYet ->
-            startAlgorithmState model
-        InProgress ->
-            let
-                top_idx = trust <| last model.stack
-                top = trust <| getAt top_idx model.polygon
-                scd = trust <| getAt (trust <| listPenultimate model.stack) model.polygon
-                next = trust <| getAt model.next_point model.polygon
-                is_not_ccw = ccwTest scd top next < 1
-            in
-                case (is_not_ccw, model.next_point) of
-                    (True, 1) ->
-                        let
-                            removed_zero = trust <| List.tail model.stack
-                            popped_zero = Tuple.second <| pop removed_zero
-                            pushed_next = push popped_zero model.next_point
-                        in
-                        { model
-                         | stack = pushed_next
-                         , progress_log =
-                             model.progress_log
-                             ++ [writePointAction ("Removed and popped point 0, "
-                                                ++ "then pushed point") next model.next_point]
-                         , progress_state = Done
-                        }
-                    (True, _) ->
-                        { model
-                         | stack = Tuple.second <| pop model.stack
-                         , progress_log = model.progress_log
-                             ++ [writePointAction "Popped point" top top_idx]
-                        }
-                    (False, 1) ->
-                        { model
-                         | progress_log = model.progress_log
-                             ++ [writePointAction "Finished at point" top top_idx]
-                         , next_point = remainderBy (List.length model.polygon) (model.next_point+1)
-                         , progress_state = Done
-                        }
-                    (False, _) ->
-                        { model
-                         | stack = push model.stack model.next_point
-                         , progress_log = model.progress_log
-                             ++ [writePointAction "Pushed point" next model.next_point]
-                         , next_point = remainderBy (List.length model.polygon) (model.next_point+1)
-                        }
-        Done ->
-            model
+        |> String.join " "
 
 
 -- Browser Init

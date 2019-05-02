@@ -1,6 +1,7 @@
 {-
 Module containing utilities for working with polygons
 -}
+
 module Polygon exposing
     ( Polygon
     , isCCW
@@ -10,12 +11,15 @@ module Polygon exposing
     , getEdges
     )
 
-import Utils exposing (trust)
+
+import Utils exposing (trust, listCyclicGet)
 import Polyline
 import List.Extra exposing (last, getAt)
 import Geometry exposing (Point, Edge, ccwTest)
 
+
 type alias Polygon = List Point
+
 
 -- returns whether a polygon is in CCW order
 isCCW : Polygon -> Bool
@@ -43,19 +47,15 @@ midpoint polygon =
         ( xsum / toFloat len
         , ysum / toFloat len)
 
+
 {-
 get the nth vertex of a polygon in its order,
 allowing negative and cyclic indices
 -}
 getAt : Int -> Polygon -> Point
 getAt n polygon =
-    let
-        len = List.length polygon
-        rel_idx = if n < 0 then len - (abs n)
-                           else n
-        idx = remainderBy len rel_idx
-    in
-    trust <| List.Extra.getAt idx polygon
+    trust <| listCyclicGet n polygon
+
 
 -- shift a CCW polygon until it starts with three CCW points
 restartAtCCW : Polygon -> Polygon
@@ -67,6 +67,7 @@ restartAtCCW polygon =
             else restartAtCCW <| b::c::rest ++ [a]
         _ ->
             Debug.todo "bad polygon?"
+
 
 -- get the edges belonging to a polygon
 getEdges : Polygon -> List (Point, Point)
