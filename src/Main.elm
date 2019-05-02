@@ -61,8 +61,10 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     let
         grabbed_moved = updateGrab model
-        andScroll model_ = ( model_, scrollToBottom "progress-log" )
         nocmd model_ = ( model_, Cmd.none )
+        andScroll model_ = if model.have_narration
+                           then ( model_, scrollToBottom "progress-log" )
+                           else nocmd model_
     in
     case msg of
         StepAlgorithm ->
@@ -336,7 +338,6 @@ before_start_state =
 drawMelkmanAlgorithmState : MelkmanAlgorithm.Model -> Html Msg
 drawMelkmanAlgorithmState model =
     let
-        _ = Debug.log "melkman" model
         polygon = model.polygon
         svgBase extra =
             div [ class "resizable-svg-container" ]
@@ -364,7 +365,6 @@ drawMelkmanAlgorithmState model =
 drawNaiveAlgorithmState : NaiveAlgorithm.Model -> Html Msg
 drawNaiveAlgorithmState model =
     let
-        _ = Debug.log "naive" model
         polygon = model.polygon
         svgBase extra =
             div [ class "resizable-svg-container" ]

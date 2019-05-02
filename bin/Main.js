@@ -6947,8 +6947,8 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 314, column: 22},
-							end: {line: 314, column: 32}
+							start: {line: 316, column: 22},
+							end: {line: 316, column: 32}
 						})('bad polygon');
 				}
 			}
@@ -7479,9 +7479,9 @@ var author$project$Main$update = F2(
 		};
 		var grabbed_moved = author$project$Main$updateGrab(model);
 		var andScroll = function (model_) {
-			return _Utils_Tuple2(
+			return model.have_narration ? _Utils_Tuple2(
 				model_,
-				author$project$ScrollPorts$scrollToBottom('progress-log'));
+				author$project$ScrollPorts$scrollToBottom('progress-log')) : nocmd(model_);
 		};
 		switch (msg.$) {
 			case 'StepAlgorithm':
@@ -7596,8 +7596,8 @@ var author$project$Main$update = F2(
 							return _Debug_todo(
 								'Main',
 								{
-									start: {line: 125, column: 21},
-									end: {line: 125, column: 31}
+									start: {line: 127, column: 21},
+									end: {line: 127, column: 31}
 								})('bad value sent over svgCoords port sub');
 						}
 					}());
@@ -8314,7 +8314,6 @@ var author$project$MelkmanAlgorithm$drawStep = function (model) {
 	}
 };
 var author$project$Styles$cartesian_area = elm$svg$Svg$Attributes$transform('scale(1, -1)');
-var elm$core$Debug$log = _Debug_log;
 var elm$svg$Svg$svg = elm$svg$Svg$trustedNode('svg');
 var elm$svg$Svg$Attributes$viewBox = _VirtualDom_attribute('viewBox');
 var author$project$Main$drawMelkmanAlgorithmState = function (model) {
@@ -8352,9 +8351,8 @@ var author$project$Main$drawMelkmanAlgorithmState = function (model) {
 				]));
 	};
 	var polygon = model.polygon;
-	var _n0 = A2(elm$core$Debug$log, 'melkman', model);
-	var _n1 = model.phase;
-	if (_n1.$ === 'InProgress') {
+	var _n0 = model.phase;
+	if (_n0.$ === 'InProgress') {
 		return svgBase(
 			_List_fromArray(
 				[
@@ -8574,9 +8572,8 @@ var author$project$Main$drawNaiveAlgorithmState = function (model) {
 				]));
 	};
 	var polygon = model.polygon;
-	var _n0 = A2(elm$core$Debug$log, 'naive', model);
-	var _n1 = model.phase;
-	if (_n1.$ === 'InProgress') {
+	var _n0 = model.phase;
+	if (_n0.$ === 'InProgress') {
 		return svgBase(
 			_List_fromArray(
 				[

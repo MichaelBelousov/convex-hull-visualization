@@ -85,7 +85,6 @@ button::last-child {
 
 .visualization-wrap {
     width: 60%;
-    height: 100vh;
     position: relative;
     vertical-align: top;
 }
@@ -96,20 +95,20 @@ button::last-child {
 
 .left-visualization-wrap {
     width: 35%;
-    height: 100vh;
     vertical-align: bottom;
 }
 .left-visualization {
     margin-bottom: 50%;
+    position: sticky;
 }
 
 .right-visualization-wrap {
     width: 35%;
-    height: 100vh;
     vertical-align: bottom;
 }
 .right-visualization {
     margin-bottom: 50%;
+    position: sticky;
 }
 
 .narration {
