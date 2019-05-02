@@ -19,13 +19,13 @@ pop deque =
             (Nothing, [])
 
 
-push : Deque a -> a -> Deque a
-push deque item =
+push : a -> Deque a -> Deque a
+push item deque =
     deque ++ [item]
 
 
-insert : Deque a -> a -> Deque a
-insert deque item ->
+insert : a -> Deque a -> Deque a
+insert item deque ->
     item::deque
 
 

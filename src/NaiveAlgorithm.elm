@@ -12,13 +12,12 @@ module NaiveAlgorithm exposing
 
 
 import Html exposing (Html, text, p, div, i)
-import Stack exposing (Stack)
 import Polygon exposing (Polygon)
 import Utils exposing (listCyclicGet)
 import Geometry exposing (ccwTest)
 import Algorithm exposing (..)
 import Html exposing (Html)
-import Stack exposing (Stack, push, pop)
+import Stack exposing (Stack)
 import Utils exposing (writePointAction, trust)
 
 
@@ -48,17 +47,18 @@ stepState model =
                 case (is_not_ccw, model.next_point) of
                     (True, 1) ->
                         let
-                            removed_zero = trust <| List.tail model.stack
-                            popped_zero = Tuple.second <| pop removed_zero
-                            pushed_next = push popped_zero model.next_point
+                            new_stack = model.stack
+                                |> List.tail |> trust 
+                                |> Stack.pop |> Tuple.second
+                                |> Stack.push model.next_point
                         in
                         { model
-                         | stack = pushed_next
+                         | stack = new_stack
                          , phase = Done
                         }
                     (True, _) ->
                         { model
-                         | stack = Tuple.second <| pop model.stack
+                         | stack = Tuple.second <| Stack.pop model.stack
                         }
                     (False, 1) ->
                         { model
@@ -68,7 +68,7 @@ stepState model =
                         }
                     (False, _) ->
                         { model
-                         | stack = push model.stack model.next_point
+                         | stack = Stack.push model.next_point model.stack 
                          , next_point = remainderBy (List.length model.polygon) (model.next_point+1)
                         }
         Done ->

@@ -11,13 +11,12 @@ module MelkmanAlgorithm exposing
 
 
 import Html exposing (Html, text, p, div, i)
-import Stack exposing (Stack)
 import Polygon exposing (Polygon)
 import Utils exposing (listCyclicGet)
 import Geometry exposing (ccwTest)
 import Algorithm exposing (..)
 import Html exposing (Html)
-import Stack exposing (Stack, push, pop)
+import Deque exposing (Deque)
 import Utils exposing (writePointAction, trust)
 
 
@@ -78,6 +77,8 @@ stepState model =
 initState : Model -> Model
 initState model =
     let
+        start_deque = []
+        |> Deque.push
         oriented_polygon = if Polygon.isCCW model.polygon
                            then model.polygon
                            else List.reverse model.polygon

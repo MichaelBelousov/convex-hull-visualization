@@ -7222,7 +7222,7 @@ var author$project$Stack$pop = function (stack) {
 	}
 };
 var author$project$Stack$push = F2(
-	function (stack, item) {
+	function (item, stack) {
 		return _Utils_ap(
 			stack,
 			_List_fromArray(
@@ -7245,13 +7245,15 @@ var author$project$NaiveAlgorithm$stepState = function (model) {
 			var _n1 = _Utils_Tuple2(is_not_ccw, model.next_point);
 			if (_n1.a) {
 				if (_n1.b === 1) {
-					var removed_zero = author$project$Utils$trust(
-						elm$core$List$tail(model.stack));
-					var popped_zero = author$project$Stack$pop(removed_zero).b;
-					var pushed_next = A2(author$project$Stack$push, popped_zero, model.next_point);
+					var new_stack = A2(
+						author$project$Stack$push,
+						model.next_point,
+						author$project$Stack$pop(
+							author$project$Utils$trust(
+								elm$core$List$tail(model.stack))).b);
 					return _Utils_update(
 						model,
-						{phase: author$project$Algorithm$Done, stack: pushed_next});
+						{phase: author$project$Algorithm$Done, stack: new_stack});
 				} else {
 					return _Utils_update(
 						model,
@@ -7272,7 +7274,7 @@ var author$project$NaiveAlgorithm$stepState = function (model) {
 						model,
 						{
 							next_point: (model.next_point + 1) % elm$core$List$length(model.polygon),
-							stack: A2(author$project$Stack$push, model.stack, model.next_point)
+							stack: A2(author$project$Stack$push, model.next_point, model.stack)
 						});
 				}
 			}

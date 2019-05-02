@@ -11,6 +11,6 @@ pop stack =
         [] -> (Nothing, [])
 
 
-push : Stack a -> a -> Stack a
-push stack item =
+push : a -> Stack a -> Stack a
+push item stack =
     stack ++ [item]
