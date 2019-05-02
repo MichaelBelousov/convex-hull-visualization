@@ -7,7 +7,9 @@ module Utils exposing
     , makeCube
     , listCyclicGet
     , writePointAction
+    , writeAction
     , pointToString
+    , svgPointsFromList
     )
 
 
@@ -56,15 +58,15 @@ listCyclicGet n list =
 -- construct an html note of an action to a point
 writePointAction : String -> Point -> Int -> Html msg
 writePointAction action (x,y) index =
-    ul []
-       [ li []
-            [ text
-               (  action ++ ": "
-               ++ String.fromInt index ++ " at ("
-               ++ pointToString (x,y) ++ ")"
-               )
-            ]
-       ]
+    writeAction (  action ++ ": "
+                ++ String.fromInt index ++ " at ("
+                ++ pointToString (x,y) ++ ")"
+                )
+
+
+writeAction : String -> Html msg
+writeAction action =
+    ul [] [ li [] [ text action ] ]
 
 
 -- construct a representative string from a point tuple
@@ -73,3 +75,11 @@ pointToString (x, y) =
     String.fromFloat (toFloat(round(x * 100)) / 100.0)
     ++ ", "
     ++ String.fromFloat (toFloat(round(y * 100)) / 100.0)
+
+
+-- Mapping the list of points into svg attributes value
+svgPointsFromList : List Point-> String
+svgPointsFromList listPoint =
+    listPoint
+        |> List.map pointToString
+        |> String.join " "

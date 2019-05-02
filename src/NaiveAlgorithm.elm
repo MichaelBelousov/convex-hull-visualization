@@ -7,22 +7,22 @@ module NaiveAlgorithm exposing
     , describeStep
     , Model
     , initEmptyState
-    , counter_example
     , drawStep
     , drawHull
     , drawState
+    , counter_example
     )
 
 
 import Html exposing (Html, text, p, div, i)
 import Polygon exposing (Polygon)
-import Utils exposing (listCyclicGet)
 import Geometry exposing (Point, ccwTest)
 import Algorithm exposing (..)
 import Html exposing (Html)
 import Stack exposing (Stack)
 import Utils exposing (writePointAction, trust,
-                       pointToString, listCyclicGet)
+                       pointToString, listCyclicGet,
+                       svgPointsFromList)
 import Svg exposing (Svg, circle, g, polygon, image,
                      path, polyline, text_, animateTransform)
 import Svg.Attributes exposing (..)
@@ -155,6 +155,7 @@ describeStep model =
                 (False, _) ->
                      writePointAction "Pushed point" next model.next_point
 
+
 initEmptyState : Polygon -> Model
 initEmptyState polygon =
     { polygon = polygon
@@ -210,14 +211,6 @@ drawState model =
       )
 
 
--- Mapping the list of points into svg attributes value
-svgPointsFromList : List Point-> String
-svgPointsFromList listPoint =
-    listPoint
-        |> List.map pointToString
-        |> String.join " "
-
-
 drawHull : Model -> Svg msg
 drawHull model =
     let
@@ -230,8 +223,7 @@ drawHull model =
                 <| svgPointsFromList
                 <| hull
              ]
-             )
-             []
+             ) []
 
 drawStep : Model -> Svg msg
 drawStep model =

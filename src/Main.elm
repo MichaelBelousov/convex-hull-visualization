@@ -17,8 +17,8 @@ import Geometry exposing (Point, ccwTest)
 import Polygon exposing (Polygon)
 import Utils exposing (..)
 import Algorithm exposing (..)
-import NaiveAlgorithm
-import MelkmanAlgorithm
+-- import NaiveAlgorithm as ConvexHullAlgorithm
+import MelkmanAlgorithm as ConvexHullAlgorithm
 import Drawing
 import Styles exposing (cartesian_area)
 
@@ -66,13 +66,13 @@ update msg model =
             andScroll <| case model.algo_state.phase of
                 Done ->
                     { model
-                     | algo_state = NaiveAlgorithm.initEmptyState model.algo_state.polygon
+                     | algo_state = ConvexHullAlgorithm.initEmptyState model.algo_state.polygon
                     }
                 _ ->
                     { model
-                     | algo_state = NaiveAlgorithm.stepState grabbed_moved.algo_state
+                     | algo_state = ConvexHullAlgorithm.stepState grabbed_moved.algo_state
                      , progress_log = model.progress_log
-                        ++ [NaiveAlgorithm.describeStep grabbed_moved.algo_state]
+                        ++ [ConvexHullAlgorithm.describeStep grabbed_moved.algo_state]
                     }
         DoubleClickPoint point_idx ->
             nocmd <| deletePoint model point_idx
@@ -174,7 +174,7 @@ type alias Model =
     { grabbed : Maybe Int
     , progress_log : List (Html Msg)
     , mouse_in_svg : Point
-    , algo_state : NaiveAlgorithm.Model
+    , algo_state : ConvexHullAlgorithm.Model
     }
 
 
@@ -266,7 +266,7 @@ before_start_state =
     { grabbed = Nothing
     , progress_log = [intro]
     , mouse_in_svg = (0,0)
-    , algo_state = NaiveAlgorithm.initEmptyState init_polygon
+    , algo_state = ConvexHullAlgorithm.initEmptyState init_polygon
     }
 
 
@@ -282,9 +282,9 @@ drawConvexHullAlgorithmsState model =
                       ]
                       (
                       [ Drawing.drawOrigin
-                      , NaiveAlgorithm.drawState model.algo_state
+                      , ConvexHullAlgorithm.drawState model.algo_state
                       , drawPolygon model
-                      , NaiveAlgorithm.drawHull model.algo_state
+                      , ConvexHullAlgorithm.drawHull model.algo_state
                       ] ++ extra ++
                       [ Drawing.drawVertsIndex model.algo_state.polygon
                       ]
@@ -293,7 +293,7 @@ drawConvexHullAlgorithmsState model =
     in
     case model.algo_state.phase of
         InProgress ->
-            svgBase [ NaiveAlgorithm.drawStep model.algo_state ]
+            svgBase [ ConvexHullAlgorithm.drawStep model.algo_state ]
         _ ->
             svgBase []
 

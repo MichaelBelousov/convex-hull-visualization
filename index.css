@@ -50,7 +50,6 @@ button:hover {
 }
 
 .progress-log {
-    max-height: 100vh;
     vertical-align: middle;
     pointer-events: none;
 }

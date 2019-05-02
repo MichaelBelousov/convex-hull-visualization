@@ -7,17 +7,25 @@ module MelkmanAlgorithm exposing
     , describeStep
     , Model
     , initEmptyState
+    , drawStep
+    , drawHull
+    , drawState
     )
 
 
 import Html exposing (Html, text, p, div, i)
 import Polygon exposing (Polygon)
-import Utils exposing (listCyclicGet)
 import Geometry exposing (ccwTest)
 import Algorithm exposing (..)
 import Html exposing (Html)
 import Deque exposing (Deque)
-import Utils exposing (writePointAction, trust, listCyclicGet)
+import Utils exposing (writeAction, trust,
+                       pointToString, listCyclicGet,
+                       svgPointsFromList)
+import Svg exposing (Svg, circle, g, polygon, image,
+                     path, polyline, text_, animateTransform)
+import Svg.Attributes exposing (..)
+import Styles exposing (..)
 
 
 type alias Model =
@@ -36,19 +44,9 @@ stepState model =
             initState model
         InProgress ->
             let
-                top = Polygon.getAt (trust <| listCyclicGet -1 model.deque)
-                        <| model.polygon
-                scd_top = Polygon.getAt (trust <| listCyclicGet -2  model.deque)
-                            <| model.polygon
-                bot = Polygon.getAt (trust <| listCyclicGet 0 model.deque)
-                        <| model.polygon
-                scd_bot = Polygon.getAt (trust <| listCyclicGet 1 model.deque)
-                            <| model.polygon
-                next = Polygon.getAt (trust <| listCyclicGet model.next_point model.deque)
-                        <| model.polygon
-                top_is_ccw = ccwTest scd_top top next == 1
-                bot_is_ccw = ccwTest next bot scd_bot == 1
+                (top_is_ccw, bot_is_ccw) = calcStepInfo model
             in
+                -- NOTE: consider using case?
                 if top_is_ccw && bot_is_ccw
                 then
                     { model
@@ -72,7 +70,7 @@ stepState model =
                      , next_point = model.next_point + 1
                     }
                 else
-                    model
+                    Debug.todo "Should never reach here"
         Done ->
             model
 
@@ -96,29 +94,55 @@ initState model =
 
 started_desc : Html msg
 started_desc =
-    div
-        []
+    div []
         [ p []
-            [ text "Since we're given a "
-            , i [] [ text "simple polygon " ]
-            , text ("our edges shouldn't overlap, and we'll just assume we were given our polygon "
-                 ++ "in counter-clockwise (CCW) order. If it isn't, we'll just reverse the point "
-                 ++ "in counter-clockwise (CCW) order. If it isn't, we'll just reverse the point "
-                 ++ "order. After we know it's in CCW order, we'll identify the bottom-left-most "
-                 ++ "point, we'll "
-                 ++ "start there and call it '0'. We'll even number the rest of the points "
-                 ++ "in CCW order going up from 0, to 1, then 2, etc. You can see we've "
-                 ++ "already relabeled them. ")
+            [ text ("The Melkman algorithm is the latest (1987) and considered the best "
+                 ++ "linear-time algorithm for finding a polygon's convex hull. "
+                 ++ "This time, we don't need to shift our polygon until we find a "
+                 ++ "counter-clockwise oriented triple, and we won't even check if "
+                 ++ "our polygon was given in counter-clockwise order exactly. ")
             ]
         , p []
-            [ text ("To start, we put the first two points of our polygon in a stack, "
-                 ++ "and we start considering the remaining points in order. The point "
-                 ++ "we're considering is in yellow, and the dashed yellow triangle "
-                 ++ "is a CCW test between the top two members of the stack, and that "
-                 ++ "point of consideration. Note the black spinny arrow that should "
-                 ++ "helpfully illustrate whether the triangle's points are in CCW order.")
+            [ text ("Instead of a stack, we'll use a deque, which is like a stack that "
+                 ++ "you can pop and push on both ends. Pushing and popping the bottom are "
+                 ++ "referred to as ")
+            , i [] [ text "inserting "]
+            , text  "and "
+            , i [] [ text "removing. "]
+            ]
+        , p []
+            [ text ("We start by grabbing the first three element of our polygon from "
+                 ++ "anywhere, whatever order we had them in at first is convenient. "
+                 ++ "Then we make a triangle, a convex hull of the already considered points "
+                 ++ "in counter clockwise order. If they're already CCW, then that's just ")
+            , i [] [ text "[third, first, second, third] "]
+            , text  "otherwise we do "
+            , i [] [ text "[third, second, first, third]"]
+            , text  ". This algorithm is "
+            , i [] [ text "incremental "]
+            , text ("meaning, it will have already found the convex hull of whatever points "
+                 ++ "have already been considered")
             ]
         ]
+
+
+calcStepInfo : Model -> (Bool, Bool)
+calcStepInfo model =
+    let
+        top = Polygon.getAt (trust <| listCyclicGet -1 model.deque)
+                <| model.polygon
+        scd_top = Polygon.getAt (trust <| listCyclicGet -2  model.deque)
+                    <| model.polygon
+        bot = Polygon.getAt (trust <| listCyclicGet 0 model.deque)
+                <| model.polygon
+        scd_bot = Polygon.getAt (trust <| listCyclicGet 1 model.deque)
+                    <| model.polygon
+        next = Polygon.getAt (trust <| listCyclicGet model.next_point model.deque)
+                <| model.polygon
+        top_is_ccw = ccwTest scd_top top next == 1
+        bot_is_ccw = ccwTest next bot scd_bot == 1
+    in
+        (top_is_ccw, bot_is_ccw)
 
 
 -- describe what the algorithm would do this step
@@ -129,24 +153,27 @@ describeStep model =
             started_desc
         _ ->
             let
-                top_idx = trust <| listCyclicGet -1 model.deque
-                top = Polygon.getAt top_idx model.polygon
-                scd_idx = trust <| listCyclicGet -2 model.deque
-                scd = Polygon.getAt scd_idx model.polygon
-                next = Polygon.getAt model.next_point model.polygon
-                is_not_ccw = ccwTest scd top next < 1
+                (top_is_ccw, bot_is_ccw) = calcStepInfo model
             in
-            case (is_not_ccw, model.next_point) of
-                (True, 1) ->
-                     writePointAction "Removed and popped point 0, then pushed point"
-                                      next
-                                      model.next_point
-                (True, _) ->
-                     writePointAction "Popped point" top top_idx
-                (False, 1) ->
-                     writePointAction "Finished at point" top top_idx
-                (False, _) ->
-                     writePointAction "Pushed point" next model.next_point
+                if top_is_ccw && bot_is_ccw
+                then
+                    writeAction <| "Ignored point " ++ String.fromInt model.next_point
+                else if not top_is_ccw
+                then
+                    let
+                        top_idx = trust <| Tuple.first <| Deque.pop model.deque
+                    in
+                    writeAction <| "Popped " ++ String.fromInt top_idx
+                             ++ " and pushed " ++ String.fromInt model.next_point
+                else if not bot_is_ccw
+                then
+                    let
+                        bot_idx = trust <| Tuple.first <| Deque.remove model.deque
+                    in
+                    writeAction <| "Removed " ++ String.fromInt bot_idx
+                             ++ " and inserted " ++ String.fromInt model.next_point
+                else
+                    Debug.todo "Should never reach here"
 
 
 initEmptyState : Polygon -> Model
@@ -156,3 +183,115 @@ initEmptyState polygon =
     , phase = NotStartedYet
     , next_point = 0
     }
+
+drawStep : Model -> Svg msg
+drawStep model =
+    let
+        top = Polygon.getAt (trust <| listCyclicGet -1 model.deque) model.polygon
+        scd_top = Polygon.getAt (trust <| listCyclicGet -2  model.deque) model.polygon
+        bot = Polygon.getAt (trust <| listCyclicGet 0 model.deque) model.polygon
+        scd_bot = Polygon.getAt (trust <| listCyclicGet 1 model.deque) model.polygon
+        next = Polygon.getAt (trust <| listCyclicGet model.next_point model.deque) model.polygon
+        (next_x, next_y) = next
+        top_ccw_triangle = [scd_top, top, next]
+        bot_ccw_triangle = [next, bot, scd_bot]
+        (top_ccw_x, top_ccw_y) = Polygon.midpoint top_ccw_triangle
+        (bot_ccw_x, bot_ccw_y) = Polygon.midpoint bot_ccw_triangle
+        (top_is_ccw, bot_is_ccw) = calcStepInfo model
+        ccw_svg stroke_ pts_ =
+            Svg.polygon [ fill "none"
+                        , stroke stroke_
+                        , strokeWidth ccw_triangle_stroke_width
+                        , strokeLinecap "round"
+                        , strokeDasharray ccw_triangle_stroke_dash
+                        , points <| svgPointsFromList pts_
+                        ] []
+        top_ccw_svg = ccw_svg "pink" top_ccw_triangle
+        bot_ccw_svg = ccw_svg "orange" bot_ccw_triangle
+        ccw_wheel_svg (x_, y_) =
+            image [ x <| String.fromFloat (x_-ccw_wheel_radius)
+                  , y <| String.fromFloat (y_-ccw_wheel_radius)
+                  , width <| String.fromFloat (2 * ccw_wheel_radius)
+                  , height <| String.fromFloat (2 * ccw_wheel_radius)
+                  , xlinkHref "static/ccw_wheel.svg"
+                  , transform ("translate(0,"
+                            ++ String.fromFloat (2*y_)
+                            ++ ") scale(1, -1)")
+                  ]
+                  [ animateTransform [ attributeName "transform"
+                                     , type_ "rotate"
+                                     , dur "1s"
+                                     , repeatCount "indefinite"
+                                     , from ("0 "++String.fromFloat x_++" "++String.fromFloat y_)
+                                     , to ("-360 "++String.fromFloat x_++" "++String.fromFloat y_)
+                                     , additive "sum"
+                                     ] []
+                  ]
+        next_point_svg =
+            circle [ fill next_point_color
+                   , cx <| String.fromFloat next_x
+                   , cy <| String.fromFloat next_y
+                   , r point_radius
+                   ]
+                   []
+    in
+    case (top_is_ccw, bot_is_ccw) of
+        (True, True) ->
+            next_point_svg
+        (False, True) ->
+            g []
+              [ bot_ccw_svg
+              , ccw_wheel_svg (bot_ccw_x, bot_ccw_y)
+              , next_point_svg
+              ]
+        (True, False) ->
+            g []
+              [ top_ccw_svg
+              , ccw_wheel_svg (top_ccw_x, top_ccw_y)
+              , next_point_svg
+              ]
+        (False, False) ->
+            Debug.todo "Should never reach here"
+
+
+drawHull : Model -> Svg msg
+drawHull model =
+    let
+        hull =
+            model.deque
+            |> List.map (\n -> Polygon.getAt n model.polygon)
+    in
+    polyline (Styles.hull
+             [ points
+                <| svgPointsFromList
+                <| hull
+             ]
+             ) []
+
+
+drawState : Model -> Svg msg
+drawState model =
+    let
+        len = List.length model.deque
+        deque_center_y = 10 - 2*len
+    in
+    g []
+      (
+          -- TODO: move to constants
+      [ Svg.path [ d "M -36 0 v -20"
+                 , fill "none"
+                 , stroke "grey" ]
+                 []
+      , Svg.path [ d "M -31 0 v -20"
+                 , fill "none"
+                 , stroke "grey" ]
+                 []
+      ] ++ List.indexedMap
+             (\i n -> text_ [ x "-33.5"
+                            , y <| String.fromInt (deque_center_y - 4*i)
+                            , class "stack-entry"
+                            , cartesian_flip
+                            ]
+                            [ text <| String.fromInt n ])
+             model.deque
+      )
