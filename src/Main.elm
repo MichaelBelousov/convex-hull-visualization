@@ -6,31 +6,21 @@ import Html exposing (Html, Attribute, div, button, text, a,
                       table, tr, td, p, i, b, ul, ol, li)
 import Html.Events exposing (onClick, onDoubleClick, onMouseUp, onMouseDown)
 import Html.Attributes exposing (..)
--- import List
 import List.Extra exposing (getAt, last, splitAt)
--- import Tuple
--- import Debug
 import Json.Decode as Decode
 import Json.Encode as Encode
-import String
-import Svg exposing (Svg, svg, circle, polyline, polygon,
-                     line, g, path, image, text_, animateTransform)
-import Svg.Attributes exposing (height, width, viewBox, xlinkHref, id,
-                                fill, stroke, strokeWidth, strokeLinecap,
-                                strokeDasharray, cx, cy, r, points, d, x, y,
-                                x1, y1, x2, y2, transform, attributeName,
-                                type_, dur, repeatCount, from, to, additive,
-                                dx, dy)
+import Svg exposing (Svg, svg)
+import Svg.Attributes exposing (viewBox)
 import SvgPorts exposing (mouseToSvgCoords, decodeSvgPoint)
 import ScrollPorts exposing (scrollToBottom)
-import Math.Vector2 as Vec2D exposing (Vec2, vec2)
 import Geometry exposing (Point, ccwTest)
 import Polygon exposing (Polygon)
-import Polyline exposing (Polyline)
 import Utils exposing (..)
-import Styles
 import Algorithm exposing (..)
 import NaiveAlgorithm
+import MelkmanAlgorithm
+import Drawing
+import Styles exposing (cartesian_area)
 
 -- Browser Model
 
@@ -50,7 +40,7 @@ updateGrab model =
         Just grabbed ->
             let
                 algo_state = model.algo_state
-                new_algo_state = 
+                new_algo_state =
                     { algo_state
                      | polygon = List.indexedMap
                                      (\i p -> if i == grabbed
@@ -170,7 +160,7 @@ viewNarration model =
     in
         td [ class "narration" ]
            [ div [ class "progress-log"
-                 , id progress_log_id
+                 , id "progress-log"
                  ]
                  model.progress_log
             , div [ class "next-btn-container" ]
@@ -188,34 +178,8 @@ type alias Model =
     }
 
 
--- Constants
-
-    -- App Constants
 app_title = "Polygon Convex Hull"
-
-    -- States
 init_polygon = makeCube 15
-
-    -- Style
-cartesian_area = transform "scale(1, -1)"
-cartesian_flip= transform "scale(1, -1)"
-label_x_shift = dx "2.5"
-label_y_shift = dy "2.5"
-label_offset = 0.2
-point_color = "blue"
-point_radius = String.fromFloat 2
-next_point_color = "yellow"
-ccw_triangle_fill = "none"
-ccw_triangle_stroke = "yellow"
-ccw_triangle_stroke_width = String.fromFloat 0.7
-ccw_triangle_stroke_dash = "3,2"
-ccw_wheel_radius = 5
-ccw_wheel_id = "ccw_wheel"
-origin_fill = "none"
-origin_stroke = "black"
-origin_stroke_width = String.fromFloat 0.3
-
-progress_log_id = "progress-log"
 
 -- NOTE: generate z-order constants from a priority list?
 
@@ -259,17 +223,6 @@ intro = div
         ]
 
 
--- Utilities
-
-makeCube : Float -> Polygon
-makeCube half_sz =
-    [ (-half_sz,  -half_sz)
-    , (half_sz, -half_sz)
-    , (half_sz, half_sz)
-    , (-half_sz, half_sz) ]
-
--- Interactions
-
 deletePoint : Model -> Int -> Model
 deletePoint model point_idx =
     let
@@ -306,7 +259,6 @@ insertPoint model edge_idx =
     in
     { model | algo_state = new_algo_state }
 
--- initial page state
 
     -- state when the app starts
 before_start_state : Model
@@ -316,14 +268,6 @@ before_start_state =
     , mouse_in_svg = (0,0)
     , algo_state = NaiveAlgorithm.initEmptyState init_polygon
     }
-
-
--- trust that a Maybe is fulfilled
-trust : Maybe a -> a
-trust x =
-    case x of
-        Just y -> y
-        Nothing -> Debug.todo "trust got Nothing"
 
 
 drawConvexHullAlgorithmsState : Model -> Html Msg
@@ -337,211 +281,45 @@ drawConvexHullAlgorithmsState model =
                       , cartesian_area
                       ]
                       (
-                      [ drawOrigin
-                      , drawStack model
+                      [ Drawing.drawOrigin
+                      , NaiveAlgorithm.drawState model.algo_state
                       , drawPolygon model
-                      , drawPolyline model
+                      , NaiveAlgorithm.drawHull model.algo_state
                       ] ++ extra ++
-                      [ drawVertsIndex model
+                      [ Drawing.drawVertsIndex model.algo_state.polygon
                       ]
                       )
                  ]
     in
     case model.algo_state.phase of
         InProgress ->
-            svgBase [ drawNextPoint <| trust <| getAt model.algo_state.next_point polygon
-                    , drawCurrentCCW model
-                    ]
+            svgBase [ NaiveAlgorithm.drawStep model.algo_state ]
         _ ->
             svgBase []
-
-drawOrigin : Svg Msg
-drawOrigin =
-    path [ d "M 0 0 h 5 h -10 h 5 v 5 v -10"
-         , fill origin_fill
-         , stroke origin_stroke
-         , strokeWidth origin_stroke_width
-         ]
-         []
-
-
-drawStack : Model -> Svg Msg
-drawStack model =
-    g []
-      (
-          -- TODO: move to constants
-      [ path [ d "M -36 0 v -20 h 5 v 20"
-             , fill "none"
-             , stroke "grey" ]
-             []
-      ] ++ List.indexedMap
-             (\i n -> text_ [ x "-33.5"
-                            , y <| String.fromInt (18 - 4*i)
-                            , Svg.Attributes.class "stack-entry"
-                            , cartesian_flip
-                            ]
-                            [ text <| String.fromInt n ])
-             model.algo_state.stack
-      )
-
 
 
 -- Draw the polygon, return svg message
 drawPolygon : Model -> Svg Msg
 drawPolygon model =
     let
-        polygon = model.algo_state.polygon
+        edge_attrs i =
+            case model.algo_state.phase of
+                NotStartedYet ->
+                    [ onMouseDown (LeftClickEdge i)
+                    , onMouseUp   (ReleasePoint)
+                    ]
+                _ -> []
+        vert_attrs i =
+            case model.algo_state.phase of
+                NotStartedYet ->
+                    [ onDoubleClick (DoubleClickPoint i)
+                    , onMouseDown   (GrabPoint i)
+                    , onMouseUp     (ReleasePoint)
+                    ]
+                _ -> []
     in
-    case model.algo_state.phase of
-        -- attach  polygon editing handlers if algorithm not started yet
-        NotStartedYet ->
-            g []
-              (  drawPolygonEdges polygon (\i -> [ onMouseDown (LeftClickEdge i)
-                                                 , onMouseUp   (ReleasePoint)
-                                                 ])
-              ++ drawPolygonVerts polygon (\i -> [ onDoubleClick (DoubleClickPoint i)
-                                                 , onMouseDown   (GrabPoint i)
-                                                 , onMouseUp     (ReleasePoint)
-                                                 ])
-              )
-        _ ->
-            g []
-              (  drawPolygonEdges polygon (\i->[])
-              ++ drawPolygonVerts polygon (\i->[])
-              )
+        Drawing.drawPolygon model.algo_state.polygon edge_attrs vert_attrs
 
-drawPolygonEdges : Polygon -> (Int -> List (Attribute m)) -> List (Svg m)
-drawPolygonEdges polygon interactions =
-    List.indexedMap
-        (\i ((x1_,y1_),(x2_,y2_)) ->
-                line (Styles.polygon 
-                     ([ x1 <| String.fromFloat x1_, y1 <| String.fromFloat y1_
-                      , x2 <| String.fromFloat x2_, y2 <| String.fromFloat y2_
-                      ] ++ interactions i)
-                     )
-                     [])
-        (Polygon.getEdges polygon)
-
-drawPolygonVerts : Polygon -> (Int -> List (Attribute m)) -> List (Svg m)
-drawPolygonVerts polygon interactions =
-    List.indexedMap
-        (\i (x,y) ->
-                circle (
-                       [ fill point_color
-                       , cx <| String.fromFloat x
-                       , cy <| String.fromFloat y
-                       , r point_radius
-                       ] ++ interactions i
-                       )
-                       []
-                       )
-        polygon
-
-calcHullProgressPolyline : Model -> Polyline
-calcHullProgressPolyline model =
-    model.algo_state.stack
-    |> List.map (\n -> Polygon.getAt n model.algo_state.polygon)
-
-
--- Draw every polyline, return svg message
-drawPolyline : Model -> Svg Msg
-drawPolyline model =
-    polyline (Styles.hull
-             [ points <| svgPointsFromList <| calcHullProgressPolyline model
-             ]
-             )
-             []
-
-
--- Draw the next consideration point in the naive algorithm
-drawNextPoint : Point -> Svg Msg
-drawNextPoint (x,y) =
-    circle [ fill next_point_color
-           , cx <| String.fromFloat x
-           , cy <| String.fromFloat y
-           , r point_radius
-           ]
-           []
-
-
-drawCurrentCCW : Model -> Svg Msg
-drawCurrentCCW model =
-    let
-        top = trust <| getAt (trust <| last model.algo_state.stack) model.algo_state.polygon
-        scd = trust <| getAt (trust <| listCyclicGet -2 model.algo_state.stack) model.algo_state.polygon
-        next = trust <| getAt model.algo_state.next_point model.algo_state.polygon
-        ccw_triangle = [scd, top, next]
-        (ccw_x, ccw_y) = Polygon.midpoint ccw_triangle
-    in
-    g []
-      [ polygon [ fill ccw_triangle_fill
-                , stroke ccw_triangle_stroke
-                , strokeWidth ccw_triangle_stroke_width
-                , strokeLinecap "round"
-                , strokeDasharray ccw_triangle_stroke_dash
-                , points <| svgPointsFromList ccw_triangle
-                ] []
-        -- flip with corrective translation
-      , image [ x <| String.fromFloat (ccw_x-ccw_wheel_radius)
-              , y <| String.fromFloat (ccw_y-ccw_wheel_radius)
-              , width <| String.fromFloat (2 * ccw_wheel_radius)
-              , height <| String.fromFloat (2 * ccw_wheel_radius)
-              , xlinkHref "static/ccw_wheel.svg"
-              , transform ("translate(0,"
-                        ++ String.fromFloat (2*ccw_y)
-                        ++ ") scale(1, -1)")
-              ]
-              [ animateTransform [ attributeName "transform"
-                                 , type_ "rotate"
-                                 , dur "1s"
-                                 , repeatCount "indefinite"
-                                 , from ("0 "++String.fromFloat ccw_x++" "++String.fromFloat ccw_y)
-                                 , to ("-360 "++String.fromFloat ccw_x++" "++String.fromFloat ccw_y)
-                                 , additive "sum"
-                                 ] []
-              ]
-      ]
-
-
-drawVertsIndex : Model -> Svg Msg
-drawVertsIndex model =
-    g [] <| List.indexedMap
-            (\i (vx,vy) ->
-                let
-                    polygon = model.algo_state.polygon
-                    (prev_x, prev_y) = Polygon.getAt (i-1) polygon
-                    prev = Vec2D.vec2 prev_x prev_y
-                    (curr_x, curr_y) = Polygon.getAt i polygon
-                    curr = Vec2D.vec2 curr_x curr_y
-                    (next_x, next_y) = Polygon.getAt (i+1) polygon
-                    next = Vec2D.vec2 next_x next_y
-                    -- centered around origin
-                    cprev = Vec2D.sub prev curr
-                    cnext = Vec2D.sub next curr
-                    clabel = Vec2D.scale (-label_offset) -- NOTE: could clamp by normalized + offset
-                            <| Vec2D.scale 0.5 <| Vec2D.add cprev cnext
-                    label = Vec2D.add clabel curr
-                    (label_x, label_y) = (Vec2D.getX label, Vec2D.getY label)
-                in
-                    text_ [ x <| String.fromFloat label_x
-                          , y <| String.fromFloat (-label_y)
-                          , Svg.Attributes.class "point-label"
-                          , cartesian_flip
-                          ]
-                          [ text <| String.fromInt i ]
-            )
-            model.algo_state.polygon
-
-
--- Mapping the list of points into svg attributes value
-svgPointsFromList : List Point-> String
-svgPointsFromList listPoint =
-    listPoint
-        |> List.map pointToString
-        |> String.join " "
-
-
--- Browser Init
 
 main : Program () Model Msg
 main =

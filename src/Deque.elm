@@ -25,7 +25,7 @@ push item deque =
 
 
 insert : a -> Deque a -> Deque a
-insert item deque ->
+insert item deque =
     item::deque
 
 

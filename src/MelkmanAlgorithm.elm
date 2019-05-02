@@ -36,20 +36,25 @@ stepState model =
             initState model
         InProgress ->
             let
-                top = trust <| listCyclicGet -1  deque
-                scd_top = trust <| listCyclicGet -2  deque
-                bot = trust <| listCyclicGet 0 deque
-                scd_bot = trust <| listCyclicGet 1 deque
-                next = trust <| listCyclicGet model.next_point deque
-                top_is_ccw = ccwTest scd_top top next
-                bot_is_ccw = ccwTest next bot scd_bot
+                top = Polygon.getAt (trust <| listCyclicGet -1 model.deque)
+                        <| model.polygon
+                scd_top = Polygon.getAt (trust <| listCyclicGet -2  model.deque)
+                            <| model.polygon
+                bot = Polygon.getAt (trust <| listCyclicGet 0 model.deque)
+                        <| model.polygon
+                scd_bot = Polygon.getAt (trust <| listCyclicGet 1 model.deque)
+                            <| model.polygon
+                next = Polygon.getAt (trust <| listCyclicGet model.next_point model.deque)
+                        <| model.polygon
+                top_is_ccw = ccwTest scd_top top next == 1
+                bot_is_ccw = ccwTest next bot scd_bot == 1
             in
                 if top_is_ccw && bot_is_ccw
                 then
                     { model
                      | next_point = model.next_point + 1
                     }
-                else if !top_is_ccw
+                else if not top_is_ccw
                 then
                     { model
                      | deque = 
@@ -57,11 +62,11 @@ stepState model =
                          |> Deque.pop |> Tuple.second
                          |> Deque.push model.next_point
                     }
-                else if !bot_is_ccw
+                else if not bot_is_ccw
                 then
                     { model
                      | deque =
-                         model.que
+                         model.deque
                          |> Deque.remove |> Tuple.second
                          |> Deque.insert model.next_point
                      , next_point = model.next_point + 1
@@ -82,9 +87,9 @@ initState model =
     in
         { model 
           | next_point = 3
-          , deque = if ccwTest fst scd thrd
-                then [thrd, fst, scd, thrd]
-                else [thrd, scd, fst, thrd]
+          , deque = if ccwTest fst scd thrd == 1
+                then [2, 0, 1, 2]
+                else [2, 1, 0, 2]
           , phase = InProgress
         }
 
@@ -124,9 +129,9 @@ describeStep model =
             started_desc
         _ ->
             let
-                top_idx = trust <| listCyclicGet -1 model.stack
+                top_idx = trust <| listCyclicGet -1 model.deque
                 top = Polygon.getAt top_idx model.polygon
-                scd_idx = trust <| listCyclicGet -2 model.stack
+                scd_idx = trust <| listCyclicGet -2 model.deque
                 scd = Polygon.getAt scd_idx model.polygon
                 next = Polygon.getAt model.next_point model.polygon
                 is_not_ccw = ccwTest scd top next < 1
@@ -143,36 +148,11 @@ describeStep model =
                 (False, _) ->
                      writePointAction "Pushed point" next model.next_point
 
+
 initEmptyState : Polygon -> Model
 initEmptyState polygon =
     { polygon = polygon
-    , stack = []
+    , deque = []
     , phase = NotStartedYet
     , next_point = 0
     }
-
-
--- an example of a polygon for which this algorithm fails
-counter_example : Polygon
-counter_example =
-    [ (-15, -15)
-    , (15, -15)
-    , (21.70, 3.23)
-    , (11.84, -6.72)
-    , (15.55, 3.55)
-    , (8.24, 6.20)
-    , (27.75, 28.26)
-    , (4.74, 24.23)
-    , (-0.02, 20.20)
-    , (0.92, 11.40)
-    , (3.79, 8.11)
-    , (6.12, -1.00)
-    , (2.20, -3.22)
-    , (2.51, -9.69)
-    , (-4.90, -9.69)
-    , (-7.87, -5.03)
-    , (-4.26, 0.79)
-    , (-9.25, 4.82)
-    , (-6.60, 16.81)
-    , (-15, 15)
-    ]

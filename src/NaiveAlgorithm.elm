@@ -8,17 +8,25 @@ module NaiveAlgorithm exposing
     , Model
     , initEmptyState
     , counter_example
+    , drawStep
+    , drawHull
+    , drawState
     )
 
 
 import Html exposing (Html, text, p, div, i)
 import Polygon exposing (Polygon)
 import Utils exposing (listCyclicGet)
-import Geometry exposing (ccwTest)
+import Geometry exposing (Point, ccwTest)
 import Algorithm exposing (..)
 import Html exposing (Html)
 import Stack exposing (Stack)
-import Utils exposing (writePointAction, trust)
+import Utils exposing (writePointAction, trust,
+                       pointToString, listCyclicGet)
+import Svg exposing (Svg, circle, g, polygon, image,
+                     path, polyline, text_, animateTransform)
+import Svg.Attributes exposing (..)
+import Styles exposing (..)
 
 
 type alias Model =
@@ -180,3 +188,92 @@ counter_example =
     , (-6.60, 16.81)
     , (-15, 15)
     ]
+
+
+drawState : Model -> Svg msg
+drawState model =
+    g []
+      (
+          -- TODO: move to constants
+      [ Svg.path [ d "M -36 0 v -20 h 5 v 20"
+                 , fill "none"
+                 , stroke "grey" ]
+                 []
+      ] ++ List.indexedMap
+             (\i n -> text_ [ x "-33.5"
+                            , y <| String.fromInt (18 - 4*i)
+                            , class "stack-entry"
+                            , cartesian_flip
+                            ]
+                            [ text <| String.fromInt n ])
+             model.stack
+      )
+
+
+-- Mapping the list of points into svg attributes value
+svgPointsFromList : List Point-> String
+svgPointsFromList listPoint =
+    listPoint
+        |> List.map pointToString
+        |> String.join " "
+
+
+drawHull : Model -> Svg msg
+drawHull model =
+    let
+        hull =
+            model.stack
+            |> List.map (\n -> Polygon.getAt n model.polygon)
+    in
+    polyline (Styles.hull
+             [ points
+                <| svgPointsFromList
+                <| hull
+             ]
+             )
+             []
+
+drawStep : Model -> Svg msg
+drawStep model =
+    let
+        top = Polygon.getAt (trust <| listCyclicGet -1 model.stack) model.polygon
+        scd = Polygon.getAt (trust <| listCyclicGet -2 model.stack) model.polygon
+        next = Polygon.getAt model.next_point model.polygon
+        (next_x, next_y) = next
+        ccw_triangle = [scd, top, next]
+        (ccw_x, ccw_y) = Polygon.midpoint ccw_triangle
+    in
+    g []
+      [ Svg.polygon [ fill ccw_triangle_fill
+                    , stroke ccw_triangle_stroke
+                    , strokeWidth ccw_triangle_stroke_width
+                    , strokeLinecap "round"
+                    , strokeDasharray ccw_triangle_stroke_dash
+                    , points <| svgPointsFromList ccw_triangle
+                    ] []
+        -- flip with corrective translation
+      , image [ x <| String.fromFloat (ccw_x-ccw_wheel_radius)
+              , y <| String.fromFloat (ccw_y-ccw_wheel_radius)
+              , width <| String.fromFloat (2 * ccw_wheel_radius)
+              , height <| String.fromFloat (2 * ccw_wheel_radius)
+              , xlinkHref "static/ccw_wheel.svg"
+              , transform ("translate(0,"
+                        ++ String.fromFloat (2*ccw_y)
+                        ++ ") scale(1, -1)")
+              ]
+              [ animateTransform [ attributeName "transform"
+                                 , type_ "rotate"
+                                 , dur "1s"
+                                 , repeatCount "indefinite"
+                                 , from ("0 "++String.fromFloat ccw_x++" "++String.fromFloat ccw_y)
+                                 , to ("-360 "++String.fromFloat ccw_x++" "++String.fromFloat ccw_y)
+                                 , additive "sum"
+                                 ] []
+              ]
+      , circle [ fill next_point_color
+               , cx <| String.fromFloat next_x
+               , cy <| String.fromFloat next_y
+               , r point_radius
+               ]
+               []
+      ]
