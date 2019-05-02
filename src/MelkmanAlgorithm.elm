@@ -13,7 +13,7 @@ module MelkmanAlgorithm exposing
     )
 
 
-import Html exposing (Html, text, p, div, i)
+import Html exposing (Html, text, p, div, i, ol, li, br, sub)
 import Polygon exposing (Polygon)
 import Geometry exposing (ccwTest)
 import Algorithm exposing (..)
@@ -131,6 +131,28 @@ initState model =
 
 started_desc : Html msg
 started_desc =
+    let
+        d_t = i [] [ text "D"
+                   , sub [] [ text "t" ]
+                   ]
+        d_b = i [] [ text "D"
+                   , sub [] [ text "b" ]
+                   ]
+        v_i = i [] [ text "v"
+                   , sub [] [ text "i" ]
+                   ]
+        d_bp1 = i [] [ text "D"
+                     , sub [] [ text "b+1" ]
+                     ]
+        d_tm1 = i [] [ text "D"
+                     , sub [] [ text "t-1" ]
+                     ]
+        c = text ", "
+        v0 = "v" ++ (String.fromChar <| Char.fromCode 8320)
+        v1 = "v" ++ (String.fromChar <| Char.fromCode 8321)
+        v2 = "v" ++ (String.fromChar <| Char.fromCode 8322)
+        larr = String.fromChar <| Char.fromCode 8592
+    in
     div []
         [ p []
             [ text ("The Melkman algorithm is the latest (1987) and considered the best "
@@ -158,7 +180,46 @@ started_desc =
             , text  ". This algorithm is "
             , i [] [ text "incremental "]
             , text ("meaning, it will have already found the convex hull of whatever points "
-                 ++ "have already been considered")
+                 ++ "have already been considered. The algorithm is as follows: ")
+            ]
+        , p []
+            [ ol []
+                 [ li []
+                      [ text ("if CCW("++v0++", "++v1++", "++v2++") "
+                           ++ "then D "++larr++" ["++v2++", "++v0++", "++v1++", "++v2++"]; "
+                           ++ "else D "++larr++" ["++v2++", "++v1++", "++v0++", "++v2++"].")
+                      , br [] []
+                      , text ("i "++larr++" 3")
+                      ]
+                 , li []
+                      [ text "while CCW("
+                      , d_tm1, c, d_t, c, v_i
+                      , text ") and CCW("
+                      , d_b, c, d_bp1, c, v_i
+                      , text ") do:"
+                      , br [] []
+                      , text ("i "++larr++" i + 1")
+                      ]
+                 , li []
+                      [ text "until CCW("
+                      , d_tm1, c, d_t, c, v_i
+                      , text ") pop", d_t
+                      , br [] []
+                      , text "push", v_i
+                      ]
+                 , li []
+                      [ text "until CCW("
+                      , v_i, c, d_b, c, d_bp1
+                      , text ") remove", d_t
+                      , br [] []
+                      , text "insert", v_i
+                      ]
+                 , li []
+                      [ text ("i "++larr++" i + 1")
+                      , br [] []
+                      , text "if i is greather than |P|, terminate; else go back to step 1."
+                      ]
+                 ]
             ]
         ]
 

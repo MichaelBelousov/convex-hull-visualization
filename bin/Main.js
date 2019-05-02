@@ -7000,72 +7000,246 @@ var author$project$Geometry$ccwTest = F3(
 		var value = ((ax * (by - cy)) - (bx * (ay - cy))) + (cx * (ay - by));
 		return (value > 0) ? 1 : ((value < 0) ? (-1) : 0);
 	});
-var author$project$MelkmanAlgorithm$started_desc = A2(
-	elm$html$Html$div,
-	_List_Nil,
-	_List_fromArray(
-		[
-			A2(
-			elm$html$Html$p,
-			_List_Nil,
-			_List_fromArray(
-				[
-					elm$html$Html$text('The Melkman algorithm is the latest (1987) and considered the best ' + ('linear-time algorithm for finding a polygon\'s convex hull. ' + ('This time, we don\'t need to shift our polygon until we find a ' + ('counter-clockwise oriented triple, and we won\'t even check if ' + 'our polygon was given in counter-clockwise order exactly. '))))
-				])),
-			A2(
-			elm$html$Html$p,
-			_List_Nil,
-			_List_fromArray(
-				[
-					elm$html$Html$text('Instead of a stack, we\'ll use a deque, which is like a stack that ' + ('you can pop and push on both ends. Pushing and popping the bottom are ' + 'referred to as ')),
-					A2(
-					elm$html$Html$i,
-					_List_Nil,
-					_List_fromArray(
-						[
-							elm$html$Html$text('inserting ')
-						])),
-					elm$html$Html$text('and '),
-					A2(
-					elm$html$Html$i,
-					_List_Nil,
-					_List_fromArray(
-						[
-							elm$html$Html$text('removing. ')
-						]))
-				])),
-			A2(
-			elm$html$Html$p,
-			_List_Nil,
-			_List_fromArray(
-				[
-					elm$html$Html$text('We start by grabbing the first three element of our polygon from ' + ('anywhere, whatever order we had them in at first is convenient. ' + ('Then we make a triangle, a convex hull of the already considered points ' + 'in counter clockwise order. If they\'re already CCW, then that\'s just '))),
-					A2(
-					elm$html$Html$i,
-					_List_Nil,
-					_List_fromArray(
-						[
-							elm$html$Html$text('[third, first, second, third] ')
-						])),
-					elm$html$Html$text('otherwise we do '),
-					A2(
-					elm$html$Html$i,
-					_List_Nil,
-					_List_fromArray(
-						[
-							elm$html$Html$text('[third, second, first, third]')
-						])),
-					elm$html$Html$text('. This algorithm is '),
-					A2(
-					elm$html$Html$i,
-					_List_Nil,
-					_List_fromArray(
-						[
-							elm$html$Html$text('incremental ')
-						])),
-					elm$html$Html$text('meaning, it will have already found the convex hull of whatever points ' + 'have already been considered')
-				]))
-		]));
+var elm$core$Char$fromCode = _Char_fromCode;
+var elm$core$String$cons = _String_cons;
+var elm$core$String$fromChar = function (_char) {
+	return A2(elm$core$String$cons, _char, '');
+};
+var elm$html$Html$br = _VirtualDom_node('br');
+var elm$html$Html$ol = _VirtualDom_node('ol');
+var elm$html$Html$sub = _VirtualDom_node('sub');
+var author$project$MelkmanAlgorithm$started_desc = function () {
+	var v_i = A2(
+		elm$html$Html$i,
+		_List_Nil,
+		_List_fromArray(
+			[
+				elm$html$Html$text('v'),
+				A2(
+				elm$html$Html$sub,
+				_List_Nil,
+				_List_fromArray(
+					[
+						elm$html$Html$text('i')
+					]))
+			]));
+	var v2 = 'v' + elm$core$String$fromChar(
+		elm$core$Char$fromCode(8322));
+	var v1 = 'v' + elm$core$String$fromChar(
+		elm$core$Char$fromCode(8321));
+	var v0 = 'v' + elm$core$String$fromChar(
+		elm$core$Char$fromCode(8320));
+	var larr = elm$core$String$fromChar(
+		elm$core$Char$fromCode(8592));
+	var d_tm1 = A2(
+		elm$html$Html$i,
+		_List_Nil,
+		_List_fromArray(
+			[
+				elm$html$Html$text('D'),
+				A2(
+				elm$html$Html$sub,
+				_List_Nil,
+				_List_fromArray(
+					[
+						elm$html$Html$text('t-1')
+					]))
+			]));
+	var d_t = A2(
+		elm$html$Html$i,
+		_List_Nil,
+		_List_fromArray(
+			[
+				elm$html$Html$text('D'),
+				A2(
+				elm$html$Html$sub,
+				_List_Nil,
+				_List_fromArray(
+					[
+						elm$html$Html$text('t')
+					]))
+			]));
+	var d_bp1 = A2(
+		elm$html$Html$i,
+		_List_Nil,
+		_List_fromArray(
+			[
+				elm$html$Html$text('D'),
+				A2(
+				elm$html$Html$sub,
+				_List_Nil,
+				_List_fromArray(
+					[
+						elm$html$Html$text('b+1')
+					]))
+			]));
+	var d_b = A2(
+		elm$html$Html$i,
+		_List_Nil,
+		_List_fromArray(
+			[
+				elm$html$Html$text('D'),
+				A2(
+				elm$html$Html$sub,
+				_List_Nil,
+				_List_fromArray(
+					[
+						elm$html$Html$text('b')
+					]))
+			]));
+	var c = elm$html$Html$text(', ');
+	return A2(
+		elm$html$Html$div,
+		_List_Nil,
+		_List_fromArray(
+			[
+				A2(
+				elm$html$Html$p,
+				_List_Nil,
+				_List_fromArray(
+					[
+						elm$html$Html$text('The Melkman algorithm is the latest (1987) and considered the best ' + ('linear-time algorithm for finding a polygon\'s convex hull. ' + ('This time, we don\'t need to shift our polygon until we find a ' + ('counter-clockwise oriented triple, and we won\'t even check if ' + 'our polygon was given in counter-clockwise order exactly. '))))
+					])),
+				A2(
+				elm$html$Html$p,
+				_List_Nil,
+				_List_fromArray(
+					[
+						elm$html$Html$text('Instead of a stack, we\'ll use a deque, which is like a stack that ' + ('you can pop and push on both ends. Pushing and popping the bottom are ' + 'referred to as ')),
+						A2(
+						elm$html$Html$i,
+						_List_Nil,
+						_List_fromArray(
+							[
+								elm$html$Html$text('inserting ')
+							])),
+						elm$html$Html$text('and '),
+						A2(
+						elm$html$Html$i,
+						_List_Nil,
+						_List_fromArray(
+							[
+								elm$html$Html$text('removing. ')
+							]))
+					])),
+				A2(
+				elm$html$Html$p,
+				_List_Nil,
+				_List_fromArray(
+					[
+						elm$html$Html$text('We start by grabbing the first three element of our polygon from ' + ('anywhere, whatever order we had them in at first is convenient. ' + ('Then we make a triangle, a convex hull of the already considered points ' + 'in counter clockwise order. If they\'re already CCW, then that\'s just '))),
+						A2(
+						elm$html$Html$i,
+						_List_Nil,
+						_List_fromArray(
+							[
+								elm$html$Html$text('[third, first, second, third] ')
+							])),
+						elm$html$Html$text('otherwise we do '),
+						A2(
+						elm$html$Html$i,
+						_List_Nil,
+						_List_fromArray(
+							[
+								elm$html$Html$text('[third, second, first, third]')
+							])),
+						elm$html$Html$text('. This algorithm is '),
+						A2(
+						elm$html$Html$i,
+						_List_Nil,
+						_List_fromArray(
+							[
+								elm$html$Html$text('incremental ')
+							])),
+						elm$html$Html$text('meaning, it will have already found the convex hull of whatever points ' + 'have already been considered. The algorithm is as follows: ')
+					])),
+				A2(
+				elm$html$Html$p,
+				_List_Nil,
+				_List_fromArray(
+					[
+						A2(
+						elm$html$Html$ol,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A2(
+								elm$html$Html$li,
+								_List_Nil,
+								_List_fromArray(
+									[
+										elm$html$Html$text('if CCW(' + (v0 + (', ' + (v1 + (', ' + (v2 + (') ' + ('then D ' + (larr + (' [' + (v2 + (', ' + (v0 + (', ' + (v1 + (', ' + (v2 + (']; ' + ('else D ' + (larr + (' [' + (v2 + (', ' + (v1 + (', ' + (v0 + (', ' + (v2 + '].')))))))))))))))))))))))))))),
+										A2(elm$html$Html$br, _List_Nil, _List_Nil),
+										elm$html$Html$text('i ' + (larr + ' 3'))
+									])),
+								A2(
+								elm$html$Html$li,
+								_List_Nil,
+								_List_fromArray(
+									[
+										elm$html$Html$text('while CCW('),
+										d_tm1,
+										c,
+										d_t,
+										c,
+										v_i,
+										elm$html$Html$text(') and CCW('),
+										d_b,
+										c,
+										d_bp1,
+										c,
+										v_i,
+										elm$html$Html$text(') do:'),
+										A2(elm$html$Html$br, _List_Nil, _List_Nil),
+										elm$html$Html$text('i ' + (larr + ' i + 1'))
+									])),
+								A2(
+								elm$html$Html$li,
+								_List_Nil,
+								_List_fromArray(
+									[
+										elm$html$Html$text('until CCW('),
+										d_tm1,
+										c,
+										d_t,
+										c,
+										v_i,
+										elm$html$Html$text(') pop'),
+										d_t,
+										A2(elm$html$Html$br, _List_Nil, _List_Nil),
+										elm$html$Html$text('push'),
+										v_i
+									])),
+								A2(
+								elm$html$Html$li,
+								_List_Nil,
+								_List_fromArray(
+									[
+										elm$html$Html$text('until CCW('),
+										v_i,
+										c,
+										d_b,
+										c,
+										d_bp1,
+										elm$html$Html$text(') remove'),
+										d_t,
+										A2(elm$html$Html$br, _List_Nil, _List_Nil),
+										elm$html$Html$text('insert'),
+										v_i
+									])),
+								A2(
+								elm$html$Html$li,
+								_List_Nil,
+								_List_fromArray(
+									[
+										elm$html$Html$text('i ' + (larr + ' i + 1')),
+										A2(elm$html$Html$br, _List_Nil, _List_Nil),
+										elm$html$Html$text('if i is greather than |P|, terminate; else go back to step 1.')
+									]))
+							]))
+					]))
+			]));
+}();
 var elm$core$Basics$abs = function (n) {
 	return (n < 0) ? (-n) : n;
 };
