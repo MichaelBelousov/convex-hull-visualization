@@ -288,6 +288,7 @@ drawStep model =
                 (next_x, next_y) = next
                 top_ccw_triangle = [scd_top, top, next]
                 bot_ccw_triangle = [next, bot, scd_bot]
+                alt_bot_ccw_triangle = [bot, scd_bot, next]
                 (top_ccw_x, top_ccw_y) = Polygon.midpoint top_ccw_triangle
                 (bot_ccw_x, bot_ccw_y) = Polygon.midpoint bot_ccw_triangle
                 (top_is_ccw, bot_is_ccw) = calcStepInfo model
@@ -302,6 +303,7 @@ drawStep model =
                                 ] []
                 top_ccw_svg = ccwSvg "pink" top_ccw_triangle
                 bot_ccw_svg = ccwSvg "orange" bot_ccw_triangle
+                alt_bot_ccw_svg = ccwSvg "teal" alt_bot_ccw_triangle
                 next_point_svg =
                     circle [ fill next_point_color
                            , cx <| String.fromFloat next_x
@@ -310,13 +312,29 @@ drawStep model =
                            ]
                            []
             in
-                g []
-                  [ top_ccw_svg
-                  , ccwWheelSvg (top_ccw_x, top_ccw_y) top_is_ccw
-                  , bot_ccw_svg
-                  , ccwWheelSvg (bot_ccw_x, bot_ccw_y) bot_is_ccw
-                  , next_point_svg
-                  ]
+            case model.part of
+                ConsiderNew ->
+                    g []
+                      [ top_ccw_svg
+                      , ccwWheelSvg (top_ccw_x, top_ccw_y) top_is_ccw
+                      , alt_bot_ccw_svg -- TODO: do more uniformly
+                      , ccwWheelSvg (bot_ccw_x, bot_ccw_y) bot_is_ccw
+                      , next_point_svg
+                      ]
+                RestoreLeft ->
+                    g []
+                      [ top_ccw_svg
+                      , ccwWheelSvg (top_ccw_x, top_ccw_y) top_is_ccw
+                      , next_point_svg
+                      ]
+                RestoreRight ->
+                    g []
+                      [ bot_ccw_svg
+                      , ccwWheelSvg (bot_ccw_x, bot_ccw_y) bot_is_ccw
+                      , next_point_svg
+                      ]
+                Increment ->
+                    g [] []
 
 
 drawHull : Model -> Svg msg

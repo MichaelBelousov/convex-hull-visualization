@@ -8039,6 +8039,9 @@ var author$project$MelkmanAlgorithm$drawStep = function (model) {
 		var bot_ccw_triangle = _List_fromArray(
 			[next, bot, scd_bot]);
 		var bot_ccw_svg = A2(ccwSvg, 'orange', bot_ccw_triangle);
+		var alt_bot_ccw_triangle = _List_fromArray(
+			[bot, scd_bot, next]);
+		var alt_bot_ccw_svg = A2(ccwSvg, 'teal', alt_bot_ccw_triangle);
 		var _n1 = author$project$Polygon$midpoint(top_ccw_triangle);
 		var top_ccw_x = _n1.a;
 		var top_ccw_y = _n1.b;
@@ -8063,23 +8066,55 @@ var author$project$MelkmanAlgorithm$drawStep = function (model) {
 		var _n4 = author$project$Polygon$midpoint(bot_ccw_triangle);
 		var bot_ccw_x = _n4.a;
 		var bot_ccw_y = _n4.b;
-		return A2(
-			elm$svg$Svg$g,
-			_List_Nil,
-			_List_fromArray(
-				[
-					top_ccw_svg,
-					A2(
-					author$project$MelkmanAlgorithm$ccwWheelSvg,
-					_Utils_Tuple2(top_ccw_x, top_ccw_y),
-					top_is_ccw),
-					bot_ccw_svg,
-					A2(
-					author$project$MelkmanAlgorithm$ccwWheelSvg,
-					_Utils_Tuple2(bot_ccw_x, bot_ccw_y),
-					bot_is_ccw),
-					next_point_svg
-				]));
+		var _n5 = model.part;
+		switch (_n5.$) {
+			case 'ConsiderNew':
+				return A2(
+					elm$svg$Svg$g,
+					_List_Nil,
+					_List_fromArray(
+						[
+							top_ccw_svg,
+							A2(
+							author$project$MelkmanAlgorithm$ccwWheelSvg,
+							_Utils_Tuple2(top_ccw_x, top_ccw_y),
+							top_is_ccw),
+							alt_bot_ccw_svg,
+							A2(
+							author$project$MelkmanAlgorithm$ccwWheelSvg,
+							_Utils_Tuple2(bot_ccw_x, bot_ccw_y),
+							bot_is_ccw),
+							next_point_svg
+						]));
+			case 'RestoreLeft':
+				return A2(
+					elm$svg$Svg$g,
+					_List_Nil,
+					_List_fromArray(
+						[
+							top_ccw_svg,
+							A2(
+							author$project$MelkmanAlgorithm$ccwWheelSvg,
+							_Utils_Tuple2(top_ccw_x, top_ccw_y),
+							top_is_ccw),
+							next_point_svg
+						]));
+			case 'RestoreRight':
+				return A2(
+					elm$svg$Svg$g,
+					_List_Nil,
+					_List_fromArray(
+						[
+							bot_ccw_svg,
+							A2(
+							author$project$MelkmanAlgorithm$ccwWheelSvg,
+							_Utils_Tuple2(bot_ccw_x, bot_ccw_y),
+							bot_is_ccw),
+							next_point_svg
+						]));
+			default:
+				return A2(elm$svg$Svg$g, _List_Nil, _List_Nil);
+		}
 	}
 };
 var author$project$Styles$cartesian_area = elm$svg$Svg$Attributes$transform('scale(1, -1)');
