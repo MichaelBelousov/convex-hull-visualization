@@ -5923,6 +5923,7 @@ var author$project$Main$MouseMoved = function (a) {
 	return {$: 'MouseMoved', a: a};
 };
 var author$project$Main$DoNothing = {$: 'DoNothing'};
+var author$project$Main$Restart = {$: 'Restart'};
 var author$project$Main$StepAlgorithm = {$: 'StepAlgorithm'};
 var author$project$Main$whichKey = function (string) {
 	switch (string) {
@@ -5930,6 +5931,8 @@ var author$project$Main$whichKey = function (string) {
 			return author$project$Main$StepAlgorithm;
 		case ' ':
 			return author$project$Main$StepAlgorithm;
+		case 'r':
+			return author$project$Main$Restart;
 		default:
 			return author$project$Main$DoNothing;
 	}
@@ -6939,8 +6942,8 @@ var author$project$Main$insertPoint = F2(
 					return _Debug_todo(
 						'Main',
 						{
-							start: {line: 254, column: 22},
-							end: {line: 254, column: 32}
+							start: {line: 274, column: 22},
+							end: {line: 274, column: 32}
 						})('bad polygon');
 				}
 			}
@@ -7187,7 +7190,6 @@ var author$project$MelkmanAlgorithm$initState = function (model) {
 			phase: author$project$Algorithm$InProgress
 		});
 };
-var elm$core$Debug$log = _Debug_log;
 var author$project$MelkmanAlgorithm$stepState = function (model) {
 	var _n0 = model.phase;
 	switch (_n0.$) {
@@ -7215,18 +7217,8 @@ var author$project$MelkmanAlgorithm$stepState = function (model) {
 				author$project$Utils$trust(
 					A2(author$project$Utils$listCyclicGet, 0, model.deque)),
 				model.polygon);
-			var _n1 = A2(
-				elm$core$Debug$log,
-				'top ccw: [scd_top, top, next]',
-				_List_fromArray(
-					[scd_top, top, next]));
-			var _n2 = A2(
-				elm$core$Debug$log,
-				'bot ccw: [next, bot, scd_bot]',
-				_List_fromArray(
-					[next, bot, scd_bot]));
-			var _n3 = model.part;
-			switch (_n3.$) {
+			var _n1 = model.part;
+			switch (_n1.$) {
 				case 'ConsiderNew':
 					return ((A3(author$project$Geometry$ccwTest, scd_top, top, next) === 1) && (A3(author$project$Geometry$ccwTest, bot, scd_bot, next) === 1)) ? _Utils_update(
 						model,
@@ -7237,24 +7229,24 @@ var author$project$MelkmanAlgorithm$stepState = function (model) {
 					return (A3(author$project$Geometry$ccwTest, scd_top, top, next) !== 1) ? _Utils_update(
 						model,
 						{
-							deque: A2(
-								author$project$Deque$push,
-								model.next_point,
-								author$project$Deque$pop(model.deque).b)
+							deque: author$project$Deque$pop(model.deque).b
 						}) : _Utils_update(
 						model,
-						{part: author$project$MelkmanAlgorithm$RestoreRight});
+						{
+							deque: A2(author$project$Deque$push, model.next_point, model.deque),
+							part: author$project$MelkmanAlgorithm$RestoreRight
+						});
 				case 'RestoreRight':
 					return (A3(author$project$Geometry$ccwTest, next, bot, scd_bot) !== 1) ? _Utils_update(
 						model,
 						{
-							deque: A2(
-								author$project$Deque$insert,
-								model.next_point,
-								author$project$Deque$remove(model.deque).b)
+							deque: author$project$Deque$remove(model.deque).b
 						}) : _Utils_update(
 						model,
-						{part: author$project$MelkmanAlgorithm$Increment});
+						{
+							deque: A2(author$project$Deque$insert, model.next_point, model.deque),
+							part: author$project$MelkmanAlgorithm$Increment
+						});
 				default:
 					var next_next_point = model.next_point + 1;
 					return (_Utils_cmp(
@@ -7269,6 +7261,29 @@ var author$project$MelkmanAlgorithm$stepState = function (model) {
 			return model;
 	}
 };
+var author$project$NaiveAlgorithm$counter_example = _List_fromArray(
+	[
+		_Utils_Tuple2(-15, -15),
+		_Utils_Tuple2(15, -15),
+		_Utils_Tuple2(21.7, 3.23),
+		_Utils_Tuple2(11.84, -6.72),
+		_Utils_Tuple2(15.55, 3.55),
+		_Utils_Tuple2(8.24, 6.2),
+		_Utils_Tuple2(27.75, 28.26),
+		_Utils_Tuple2(4.74, 24.23),
+		_Utils_Tuple2(-2.0e-2, 20.2),
+		_Utils_Tuple2(0.92, 11.4),
+		_Utils_Tuple2(3.79, 8.11),
+		_Utils_Tuple2(6.12, -1.0),
+		_Utils_Tuple2(2.2, -3.22),
+		_Utils_Tuple2(2.51, -9.69),
+		_Utils_Tuple2(-4.9, -9.69),
+		_Utils_Tuple2(-7.87, -5.03),
+		_Utils_Tuple2(-4.26, 0.79),
+		_Utils_Tuple2(-9.25, 4.82),
+		_Utils_Tuple2(-6.6, 16.81),
+		_Utils_Tuple2(-15, 15)
+	]);
 var author$project$ScrollPorts$scrollToBottom_ = _Platform_outgoingPort('scrollToBottom_', elm$core$Basics$identity);
 var elm$json$Json$Encode$string = _Json_wrap;
 var author$project$ScrollPorts$scrollToBottom = function (id) {
@@ -7285,6 +7300,7 @@ var author$project$SvgPorts$decodeSvgPoint = A3(
 	author$project$SvgPorts$SvgPoint,
 	A2(elm$json$Json$Decode$field, 'x', elm$json$Json$Decode$float),
 	A2(elm$json$Json$Decode$field, 'y', elm$json$Json$Decode$float));
+var elm$core$Debug$log = _Debug_log;
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var elm$json$Json$Decode$decodeValue = _Json_run;
@@ -7327,6 +7343,18 @@ var author$project$Main$update = F2(
 								});
 						}
 					}());
+			case 'Restart':
+				var algo_state = author$project$MelkmanAlgorithm$initEmptyState(model.algo_state.polygon);
+				return nocmd(
+					_Utils_update(
+						author$project$Main$before_start_state,
+						{algo_state: algo_state}));
+			case 'BadPolygon':
+				var algo_state = author$project$MelkmanAlgorithm$initEmptyState(author$project$NaiveAlgorithm$counter_example);
+				return nocmd(
+					_Utils_update(
+						author$project$Main$before_start_state,
+						{algo_state: algo_state}));
 			case 'DoubleClickPoint':
 				var point_idx = msg.a;
 				return nocmd(
@@ -7370,8 +7398,8 @@ var author$project$Main$update = F2(
 							return _Debug_todo(
 								'Main',
 								{
-									start: {line: 94, column: 21},
-									end: {line: 94, column: 31}
+									start: {line: 110, column: 21},
+									end: {line: 110, column: 31}
 								})('bad value sent over svgCoords port sub');
 						}
 					}());
@@ -7380,6 +7408,7 @@ var author$project$Main$update = F2(
 		}
 	});
 var author$project$Main$app_title = 'Polygon Convex Hull';
+var author$project$Main$BadPolygon = {$: 'BadPolygon'};
 var elm$html$Html$button = _VirtualDom_node('button');
 var elm$html$Html$td = _VirtualDom_node('td');
 var elm$html$Html$Attributes$stringProperty = F2(
@@ -7409,17 +7438,19 @@ var elm$html$Html$Events$onClick = function (msg) {
 		elm$json$Json$Decode$succeed(msg));
 };
 var author$project$Main$viewNarration = function (model) {
-	var btn_label = function () {
-		var _n0 = model.algo_state.phase;
-		switch (_n0.$) {
+	var _n0 = function () {
+		var _n1 = model.algo_state.phase;
+		switch (_n1.$) {
 			case 'NotStartedYet':
-				return 'start!';
+				return _Utils_Tuple2('start!', author$project$Main$StepAlgorithm);
 			case 'InProgress':
-				return 'next step';
+				return _Utils_Tuple2('next step', author$project$Main$StepAlgorithm);
 			default:
-				return 'restart';
+				return _Utils_Tuple2('restart', author$project$Main$Restart);
 		}
 	}();
+	var btn_label = _n0.a;
+	var btn_action = _n0.b;
 	return A2(
 		elm$html$Html$td,
 		_List_fromArray(
@@ -7448,11 +7479,21 @@ var author$project$Main$viewNarration = function (model) {
 						elm$html$Html$button,
 						_List_fromArray(
 							[
-								elm$html$Html$Events$onClick(author$project$Main$StepAlgorithm)
+								elm$html$Html$Events$onClick(btn_action)
 							]),
 						_List_fromArray(
 							[
 								elm$html$Html$text(btn_label)
+							])),
+						A2(
+						elm$html$Html$button,
+						_List_fromArray(
+							[
+								elm$html$Html$Events$onClick(author$project$Main$BadPolygon)
+							]),
+						_List_fromArray(
+							[
+								elm$html$Html$text('Bad Polygon')
 							]))
 					]))
 			]));
@@ -7776,7 +7817,7 @@ var author$project$MelkmanAlgorithm$drawHull = function (model) {
 };
 var author$project$MelkmanAlgorithm$drawState = function (model) {
 	var len = elm$core$List$length(model.deque);
-	var deque_center_y = 10 - (2 * len);
+	var deque_center_y = (-6) + (4 * (len - 1));
 	return A2(
 		elm$svg$Svg$g,
 		_List_Nil,
@@ -7812,7 +7853,7 @@ var author$project$MelkmanAlgorithm$drawState = function (model) {
 								[
 									elm$svg$Svg$Attributes$x('-33.5'),
 									elm$svg$Svg$Attributes$y(
-									elm$core$String$fromInt(deque_center_y - (4 * i))),
+									elm$core$String$fromInt(deque_center_y - (4 * (i + 1)))),
 									elm$svg$Svg$Attributes$class('stack-entry'),
 									author$project$Styles$cartesian_flip
 								]),
@@ -7938,7 +7979,7 @@ var author$project$MelkmanAlgorithm$ccwWheelSvg = F2(
 								elm$core$String$fromFloat(pos_x + author$project$Styles$ccw_wheel_radius)),
 								elm$svg$Svg$Attributes$y2(
 								elm$core$String$fromFloat(pos_y + author$project$Styles$ccw_wheel_radius)),
-								elm$svg$Svg$Attributes$stroke('red')
+								elm$svg$Svg$Attributes$stroke('black')
 							]),
 						_List_Nil)
 					]) : _List_Nil));

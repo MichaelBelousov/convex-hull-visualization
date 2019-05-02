@@ -52,17 +52,11 @@ stepState model =
             initState model
         InProgress ->
             let
-                top = Polygon.getAt (trust <| listCyclicGet -1 model.deque)
-                        <| model.polygon
-                scd_top = Polygon.getAt (trust <| listCyclicGet -2  model.deque)
-                            <| model.polygon
-                bot = Polygon.getAt (trust <| listCyclicGet 0 model.deque)
-                        <| model.polygon
-                scd_bot = Polygon.getAt (trust <| listCyclicGet 1 model.deque)
-                            <| model.polygon
+                top = Polygon.getAt (trust <| listCyclicGet -1 model.deque) model.polygon
+                scd_top = Polygon.getAt (trust <| listCyclicGet -2  model.deque) model.polygon
+                bot = Polygon.getAt (trust <| listCyclicGet 0 model.deque) model.polygon
+                scd_bot = Polygon.getAt (trust <| listCyclicGet 1 model.deque) model.polygon
                 next = Polygon.getAt model.next_point model.polygon
-                _ = Debug.log "top ccw: [scd_top, top, next]" [scd_top, top, next]
-                _ = Debug.log "bot ccw: [next, bot, scd_bot]" [next, bot, scd_bot]
             in
             case model.part of
                 ConsiderNew ->
@@ -79,10 +73,14 @@ stepState model =
                          | deque = 
                              model.deque
                              |> Deque.pop |> Tuple.second
-                             |> Deque.push model.next_point
                         }
                     else
-                        { model | part = RestoreRight }
+                        { model
+                         | deque = 
+                             model.deque
+                             |> Deque.push model.next_point
+                         , part = RestoreRight
+                        }
                 RestoreRight ->
                     if ccwTest next bot scd_bot /= 1
                     then
@@ -90,10 +88,14 @@ stepState model =
                          | deque =
                              model.deque
                              |> Deque.remove |> Tuple.second
-                             |> Deque.insert model.next_point
                         }
                     else
-                        { model | part = Increment }
+                        { model
+                         | deque =
+                             model.deque
+                             |> Deque.insert model.next_point
+                         , part = Increment
+                        }
                 Increment ->
                     let
                         next_next_point = model.next_point + 1
@@ -263,7 +265,7 @@ ccwWheelSvg (pos_x, pos_y) bad_ccw =
                       , y1 <| String.fromFloat <| pos_y-ccw_wheel_radius
                       , x2 <| String.fromFloat <| pos_x+ccw_wheel_radius
                       , y2 <| String.fromFloat <| pos_y+ccw_wheel_radius
-                      , stroke "red"
+                      , stroke "black"
                       ] []
                ]
           else []
@@ -336,7 +338,7 @@ drawState : Model -> Svg msg
 drawState model =
     let
         len = List.length model.deque
-        deque_center_y = 10 - 2*len
+        deque_center_y = -6 + 4*(len-1)
     in
     g []
       (
@@ -351,7 +353,7 @@ drawState model =
                  []
       ] ++ List.indexedMap
              (\i n -> text_ [ x "-33.5"
-                            , y <| String.fromInt (deque_center_y - 4*i)
+                            , y <| String.fromInt (deque_center_y - 4*(i+1))
                             , class "stack-entry"
                             , cartesian_flip
                             ]

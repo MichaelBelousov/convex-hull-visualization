@@ -3,7 +3,7 @@ module Main exposing (main)
 import Browser
 import Browser.Events exposing (onKeyUp)
 import Html exposing (Html, Attribute, div, button, text, a,
-                      table, tr, td, p, i, b, ul, ol, li)
+                      table, tr, td, p, i, b, ul, ol, li, span)
 import Html.Events exposing (onClick, onDoubleClick, onMouseUp, onMouseDown)
 import Html.Attributes exposing (..)
 import List.Extra exposing (getAt, last, splitAt)
@@ -17,7 +17,7 @@ import Geometry exposing (Point, ccwTest)
 import Polygon exposing (Polygon)
 import Utils exposing (..)
 import Algorithm exposing (..)
--- import NaiveAlgorithm as ConvexHullAlgorithm
+import NaiveAlgorithm
 import MelkmanAlgorithm as ConvexHullAlgorithm
 import Drawing
 import Styles exposing (cartesian_area)
@@ -26,6 +26,8 @@ import Styles exposing (cartesian_area)
 
 type Msg
     = StepAlgorithm
+    | Restart
+    | BadPolygon
     | DoubleClickPoint Int
     | LeftClickEdge Int
     | GrabPoint Int
@@ -74,6 +76,20 @@ update msg model =
                      , progress_log = model.progress_log
                         ++ [ConvexHullAlgorithm.describeStep grabbed_moved.algo_state]
                     }
+        Restart ->
+            let
+                algo_state = ConvexHullAlgorithm.initEmptyState model.algo_state.polygon
+            in
+            nocmd <| { before_start_state
+                      | algo_state = algo_state
+                     }
+        BadPolygon ->
+            let
+                algo_state = ConvexHullAlgorithm.initEmptyState NaiveAlgorithm.counter_example
+            in
+            nocmd <| { before_start_state
+                      | algo_state = algo_state
+                     }
         DoubleClickPoint point_idx ->
             nocmd <| deletePoint model point_idx
         LeftClickEdge edge_idx ->
@@ -108,6 +124,8 @@ whichKey string =
             StepAlgorithm
         " " ->
             StepAlgorithm
+        "r" ->
+            Restart
         _ ->
             DoNothing
 
@@ -150,13 +168,14 @@ viewVisualization model =
 viewNarration : Model -> Html Msg
 viewNarration model =
     let
-        btn_label = case model.algo_state.phase of
-            NotStartedYet ->
-                "start!"
-            InProgress ->
-                "next step"
-            Done ->
-                "restart"
+        (btn_label, btn_action) =
+            case model.algo_state.phase of
+                NotStartedYet ->
+                    ("start!", StepAlgorithm)
+                InProgress ->
+                    ("next step", StepAlgorithm)
+                Done ->
+                    ("restart", Restart)
     in
         td [ class "narration" ]
            [ div [ class "progress-log"
@@ -164,8 +183,10 @@ viewNarration model =
                  ]
                  model.progress_log
             , div [ class "next-btn-container" ]
-                  [ button [ onClick StepAlgorithm ]
+                  [ button [ onClick btn_action ]
                            [ text btn_label ]
+                  , button [ onClick BadPolygon ]
+                           [ text "Bad Polygon" ]
                   ]
            ]
 
@@ -176,7 +197,6 @@ type alias Model =
     , mouse_in_svg : Point
     , algo_state : ConvexHullAlgorithm.Model
     }
-
 
 app_title = "Polygon Convex Hull"
 init_polygon = makeCube 15

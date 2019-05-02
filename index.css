@@ -12,10 +12,15 @@ button {
     font-style: bold;
     font-size: 16pt;
     text-align: center;
+    margin-right: 10px;
 }
 
 button:hover {
     background-color: #1a8ebb;
+}
+
+button::last-child {
+    margin-right: 0px;
 }
 
 .resizable-svg {
@@ -75,14 +80,14 @@ button:hover {
 
 .visualization {
     vertical-align: top;
-    width: 50%;
+    width: 60%;
     height: 100vh;
     position: fixed;
 }
 
 .narration {
     vertical-align: middle;
-    width: 50%;
+    width: 40%;
     height: 100vh;
 }
 .point-label {
