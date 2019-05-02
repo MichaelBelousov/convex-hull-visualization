@@ -47,7 +47,8 @@ stepState model =
                 case (is_not_ccw, model.next_point) of
                     (True, 1) ->
                         let
-                            new_stack = model.stack
+                            new_stack =
+                                model.stack
                                 |> List.tail |> trust 
                                 |> Stack.pop |> Tuple.second
                                 |> Stack.push model.next_point

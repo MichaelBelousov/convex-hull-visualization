@@ -17,12 +17,12 @@ import Geometry exposing (ccwTest)
 import Algorithm exposing (..)
 import Html exposing (Html)
 import Deque exposing (Deque)
-import Utils exposing (writePointAction, trust)
+import Utils exposing (writePointAction, trust, listCyclicGet)
 
 
 type alias Model =
     { polygon : Polygon
-    , stack : Deque Int
+    , deque : Deque Int
     , phase : Algorithm.Phase
     , next_point : Int
     }
@@ -36,39 +36,38 @@ stepState model =
             initState model
         InProgress ->
             let
-                top_idx = trust <| listCyclicGet -1 model.stack
-                top = Polygon.getAt top_idx model.polygon
-                scd_idx = trust <| listCyclicGet -2 model.stack
-                scd = Polygon.getAt scd_idx model.polygon
-                next = Polygon.getAt model.next_point model.polygon
-                is_not_ccw = ccwTest scd top next < 1
+                top = trust <| listCyclicGet -1  deque
+                scd_top = trust <| listCyclicGet -2  deque
+                bot = trust <| listCyclicGet 0 deque
+                scd_bot = trust <| listCyclicGet 1 deque
+                next = trust <| listCyclicGet model.next_point deque
+                top_is_ccw = ccwTest scd_top top next
+                bot_is_ccw = ccwTest next bot scd_bot
             in
-                case (is_not_ccw, model.next_point) of
-                    (True, 1) ->
-                        let
-                            removed_zero = trust <| List.tail model.stack
-                            popped_zero = Tuple.second <| pop removed_zero
-                            pushed_next = push popped_zero model.next_point
-                        in
-                        { model
-                         | stack = pushed_next
-                         , phase = Done
-                        }
-                    (True, _) ->
-                        { model
-                         | stack = Tuple.second <| pop model.stack
-                        }
-                    (False, 1) ->
-                        { model
-                         | next_point = remainderBy (List.length model.polygon)
-                                                    (model.next_point+1)
-                         , phase = Done
-                        }
-                    (False, _) ->
-                        { model
-                         | stack = push model.stack model.next_point
-                         , next_point = remainderBy (List.length model.polygon) (model.next_point+1)
-                        }
+                if top_is_ccw && bot_is_ccw
+                then
+                    { model
+                     | next_point = model.next_point + 1
+                    }
+                else if !top_is_ccw
+                then
+                    { model
+                     | deque = 
+                         model.deque
+                         |> Deque.pop |> Tuple.second
+                         |> Deque.push model.next_point
+                    }
+                else if !bot_is_ccw
+                then
+                    { model
+                     | deque =
+                         model.que
+                         |> Deque.remove |> Tuple.second
+                         |> Deque.insert model.next_point
+                     , next_point = model.next_point + 1
+                    }
+                else
+                    model
         Done ->
             model
 
@@ -77,19 +76,17 @@ stepState model =
 initState : Model -> Model
 initState model =
     let
-        start_deque = []
-        |> Deque.push
-        oriented_polygon = if Polygon.isCCW model.polygon
-                           then model.polygon
-                           else List.reverse model.polygon
-        shifted_polygon = Polygon.restartAtCCW oriented_polygon
+        fst = Polygon.getAt 0 model.polygon
+        scd = Polygon.getAt 1 model.polygon
+        thrd = Polygon.getAt 2 model.polygon
     in
-    { model 
-      | polygon = shifted_polygon
-      , next_point = 2
-      , stack = [0,1]
-      , phase = InProgress
-    }
+        { model 
+          | next_point = 3
+          , deque = if ccwTest fst scd thrd
+                then [thrd, fst, scd, thrd]
+                else [thrd, scd, fst, thrd]
+          , phase = InProgress
+        }
 
 
 started_desc : Html msg
