@@ -18,7 +18,7 @@ import Polygon exposing (Polygon)
 import Utils exposing (..)
 import Algorithm exposing (..)
 import NaiveAlgorithm
-import MelkmanAlgorithm as ConvexHullAlgorithm
+import MelkmanAlgorithm
 import Drawing
 import Styles exposing (cartesian_area)
 
@@ -33,6 +33,7 @@ type Msg
     | GrabPoint Int
     | ReleasePoint
     | MouseMoved Encode.Value
+    | ToggleNarration
     | DoNothing
 
 -- update the grabbed point
@@ -41,17 +42,17 @@ updateGrab model =
     case model.grabbed of
         Just grabbed ->
             let
-                algo_state = model.algo_state
-                new_algo_state =
-                    { algo_state
+                naive_state = model.naive_state
+                new_naive_state =
+                    { naive_state
                      | polygon = List.indexedMap
                                      (\i p -> if i == grabbed
                                              then model.mouse_in_svg
                                              else p)
-                                     model.algo_state.polygon
+                                     model.naive_state.polygon
                     }
             in
-                { model | algo_state = new_algo_state }
+                { model | naive_state = new_naive_state }
         Nothing ->
             model
 
@@ -65,30 +66,44 @@ update msg model =
     in
     case msg of
         StepAlgorithm ->
-            andScroll <| case model.algo_state.phase of
-                Done ->
+            andScroll
+            <| case (model.naive_state.phase, model.melkman_state.phase) of
+                (NotStartedYet, _) ->
+                    let
+                        melkman_state = grabbed_moved.melkman_state
+                        synced_melkman_state =
+                            { melkman_state | polygon = grabbed_moved.naive_state.polygon }
+                    in
                     { model
-                     | algo_state = ConvexHullAlgorithm.initEmptyState model.algo_state.polygon
+                     | naive_state = NaiveAlgorithm.stepState grabbed_moved.naive_state
+                     , melkman_state = MelkmanAlgorithm.stepState synced_melkman_state
+                     , progress_log = model.progress_log
+                        ++ [MelkmanAlgorithm.describeStep synced_melkman_state]
+                    }
+                (Done, Done) ->
+                    { model
+                     | naive_state = NaiveAlgorithm.initEmptyState model.naive_state.polygon
+                     , melkman_state = MelkmanAlgorithm.initEmptyState model.melkman_state.polygon
                     }
                 _ ->
                     { model
-                     | algo_state = Debug.log "model" <| ConvexHullAlgorithm.stepState grabbed_moved.algo_state
+                     | naive_state = NaiveAlgorithm.stepState grabbed_moved.naive_state
+                     , melkman_state = MelkmanAlgorithm.stepState grabbed_moved.melkman_state
                      , progress_log = model.progress_log
-                        ++ [ConvexHullAlgorithm.describeStep grabbed_moved.algo_state]
+                        ++ [MelkmanAlgorithm.describeStep grabbed_moved.melkman_state]
                     }
         Restart ->
-            let
-                algo_state = ConvexHullAlgorithm.initEmptyState model.algo_state.polygon
-            in
-            nocmd <| { before_start_state
-                      | algo_state = algo_state
-                     }
+            nocmd
+            <| { model
+                | naive_state = NaiveAlgorithm.initEmptyState model.naive_state.polygon
+                , melkman_state = MelkmanAlgorithm.initEmptyState model.melkman_state.polygon
+               }
         BadPolygon ->
             let
-                algo_state = ConvexHullAlgorithm.initEmptyState NaiveAlgorithm.counter_example
+                naive_state = NaiveAlgorithm.initEmptyState NaiveAlgorithm.counter_example
             in
             nocmd <| { before_start_state
-                      | algo_state = algo_state
+                      | naive_state = naive_state
                      }
         DoubleClickPoint point_idx ->
             nocmd <| deletePoint model point_idx
@@ -108,6 +123,8 @@ update msg model =
                     { grabbed_moved | mouse_in_svg = (x,y) }
                 Err _ ->
                     Debug.todo "bad value sent over svgCoords port sub"
+        ToggleNarration ->
+            nocmd <| { model | have_narration = not model.have_narration }
         DoNothing ->
             nocmd <| model
 
@@ -147,9 +164,9 @@ view model =
                             , style "table-layout" "fixed"
                             ]
                             [ tr []
-                                 [ viewVisualization model
-                                 , viewNarration model
-                                 ]
+                                 (  viewVisualization model
+                                 ++ viewNarration model
+                                 )
                             ]
                      ]
               , div [ class "footer" ]
@@ -159,43 +176,66 @@ view model =
     }
 
 
-viewVisualization : Model -> Html Msg
+viewVisualization : Model -> List (Html Msg)
 viewVisualization model =
-    td [ class "visualization" ]
-       [ div [] [ drawConvexHullAlgorithmsState model ] ]
+    case model.naive_state.phase of
+        NotStartedYet ->
+            [ td [ class "visualization-wrap" ]
+                 [ div [ class "visualization" ]
+                       [ drawNaiveAlgorithmState model.naive_state ] ]
+            ]
+        _ ->
+            [ td [ class "left-visualization-wrap" ]
+                 [ div [ class "left-visualization" ]
+                       [ drawNaiveAlgorithmState model.naive_state ]
+                 ]
+            , td [ class "right-visualization-wrap" ]
+                 [ div [ class "right-visualization" ]
+                       [ drawMelkmanAlgorithmState model.melkman_state ]
+                 ]
+            ]
 
 
-viewNarration : Model -> Html Msg
+viewNarration : Model -> List (Html Msg)
 viewNarration model =
     let
         (btn_label, btn_action) =
-            case model.algo_state.phase of
-                NotStartedYet ->
+            case (model.naive_state.phase, model.melkman_state.phase) of
+                (NotStartedYet, _) ->
                     ("start!", StepAlgorithm)
-                InProgress ->
-                    ("next step", StepAlgorithm)
-                Done ->
+                (Done, Done) ->
                     ("restart", Restart)
+                _ ->
+                    ("next step", StepAlgorithm)
     in
-        td [ class "narration" ]
-           [ div [ class "progress-log"
-                 , id "progress-log"
+        if model.have_narration
+        then
+            [ td [ class "narration" ]
+                 [ div [ class "progress-log"
+                       , id "progress-log"
+                       ]
+                       model.progress_log
+                  , div [ class "next-btn-container" ]
+                        [ button [ onClick btn_action ]
+                                 [ text btn_label ]
+                        , button [ onClick BadPolygon ]
+                                 [ text "Bad Polygon" ]
+                        , button [ onClick ToggleNarration ]
+                                 [ text "Remove Narration" ]
+                        ]
                  ]
-                 model.progress_log
-            , div [ class "next-btn-container" ]
-                  [ button [ onClick btn_action ]
-                           [ text btn_label ]
-                  , button [ onClick BadPolygon ]
-                           [ text "Bad Polygon" ]
-                  ]
-           ]
+            ]
+        else []
 
 
+-- TODO: move polygon out of algorithm!
 type alias Model =
     { grabbed : Maybe Int
     , progress_log : List (Html Msg)
     , mouse_in_svg : Point
-    , algo_state : ConvexHullAlgorithm.Model
+    , naive_state : NaiveAlgorithm.Model
+    , melkman_state : MelkmanAlgorithm.Model
+    , have_narration : Bool
     }
 
 app_title = "Polygon Convex Hull"
@@ -245,20 +285,20 @@ intro = div
 deletePoint : Model -> Int -> Model
 deletePoint model point_idx =
     let
-        polygon = model.algo_state.polygon
+        polygon = model.naive_state.polygon
         point = trust <| getAt point_idx polygon
-        algo_state = model.algo_state
-        new_algo_state = { algo_state | polygon = List.filter (\p -> p /= point) polygon }
+        naive_state = model.naive_state
+        new_naive_state = { naive_state | polygon = List.filter (\p -> p /= point) polygon }
     in
         if List.length polygon > 3
-        then { model | algo_state = new_algo_state }
+        then { model | naive_state = new_naive_state }
         else model
 
 
 insertPoint : Model -> Int -> Model
 insertPoint model edge_idx =
     let
-        polygon = model.algo_state.polygon
+        polygon = model.naive_state.polygon
         (front, back) = splitAt (edge_idx+1) polygon
         mdpt = case (last front, List.head back) of
                 (Just x, Just y) ->
@@ -273,10 +313,12 @@ insertPoint model edge_idx =
                                      ]
                 _ -> Debug.todo "bad polygon"
         new_polygon = front ++ [mdpt] ++ back
-        algo_state = model.algo_state
-        new_algo_state = { algo_state | polygon = new_polygon }
+        naive_state = model.naive_state
+        new_naive_state = { naive_state | polygon = new_polygon }
     in
-    { model | algo_state = new_algo_state }
+    { model
+     | naive_state = new_naive_state
+    }
 
 
     -- state when the app starts
@@ -285,14 +327,17 @@ before_start_state =
     { grabbed = Nothing
     , progress_log = [intro]
     , mouse_in_svg = (0,0)
-    , algo_state = ConvexHullAlgorithm.initEmptyState init_polygon
+    , naive_state = NaiveAlgorithm.initEmptyState init_polygon
+    , melkman_state = MelkmanAlgorithm.initEmptyState init_polygon
+    , have_narration = True
     }
 
 
-drawConvexHullAlgorithmsState : Model -> Html Msg
-drawConvexHullAlgorithmsState model =
+drawMelkmanAlgorithmState : MelkmanAlgorithm.Model -> Html Msg
+drawMelkmanAlgorithmState model =
     let
-        polygon = model.algo_state.polygon
+        _ = Debug.log "melkman" model
+        polygon = model.polygon
         svgBase extra =
             div [ class "resizable-svg-container" ]
                 [ svg [ viewBox "-40 -12 80 30"
@@ -301,35 +346,63 @@ drawConvexHullAlgorithmsState model =
                       ]
                       (
                       [ Drawing.drawOrigin
-                      , ConvexHullAlgorithm.drawState model.algo_state
-                      , drawPolygon model
-                      , ConvexHullAlgorithm.drawHull model.algo_state
+                      , MelkmanAlgorithm.drawState model
+                      , drawMelkmanAlgorithmPolygon model
+                      , MelkmanAlgorithm.drawHull model
                       ] ++ extra ++
-                      [ Drawing.drawVertsIndex model.algo_state.polygon
+                      [ Drawing.drawVertsIndex model.polygon
                       ]
                       )
                  ]
     in
-    case model.algo_state.phase of
+    case model.phase of
         InProgress ->
-            svgBase [ ConvexHullAlgorithm.drawStep model.algo_state ]
+            svgBase [ MelkmanAlgorithm.drawStep model ]
+        _ ->
+            svgBase []
+
+drawNaiveAlgorithmState : NaiveAlgorithm.Model -> Html Msg
+drawNaiveAlgorithmState model =
+    let
+        _ = Debug.log "naive" model
+        polygon = model.polygon
+        svgBase extra =
+            div [ class "resizable-svg-container" ]
+                [ svg [ viewBox "-40 -12 80 30"
+                      , Svg.Attributes.class "resizable-svg"
+                      , cartesian_area
+                      ]
+                      (
+                      [ Drawing.drawOrigin
+                      , NaiveAlgorithm.drawState model
+                      , drawNaiveAlgorithmPolygon model
+                      , NaiveAlgorithm.drawHull model
+                      ] ++ extra ++
+                      [ Drawing.drawVertsIndex model.polygon
+                      ]
+                      )
+                 ]
+    in
+    case model.phase of
+        InProgress ->
+            svgBase [ NaiveAlgorithm.drawStep model ]
         _ ->
             svgBase []
 
 
 -- Draw the polygon, return svg message
-drawPolygon : Model -> Svg Msg
-drawPolygon model =
+drawMelkmanAlgorithmPolygon : MelkmanAlgorithm.Model -> Svg Msg
+drawMelkmanAlgorithmPolygon {phase, polygon} =
     let
         edge_attrs i =
-            case model.algo_state.phase of
+            case phase of
                 NotStartedYet ->
                     [ onMouseDown (LeftClickEdge i)
                     , onMouseUp   (ReleasePoint)
                     ]
                 _ -> []
         vert_attrs i =
-            case model.algo_state.phase of
+            case phase of
                 NotStartedYet ->
                     [ onDoubleClick (DoubleClickPoint i)
                     , onMouseDown   (GrabPoint i)
@@ -337,7 +410,29 @@ drawPolygon model =
                     ]
                 _ -> []
     in
-        Drawing.drawPolygon model.algo_state.polygon edge_attrs vert_attrs
+        Drawing.drawPolygon polygon edge_attrs vert_attrs
+
+-- ew code dupe:
+drawNaiveAlgorithmPolygon : NaiveAlgorithm.Model -> Svg Msg
+drawNaiveAlgorithmPolygon {phase, polygon} =
+    let
+        edge_attrs i =
+            case phase of
+                NotStartedYet ->
+                    [ onMouseDown (LeftClickEdge i)
+                    , onMouseUp   (ReleasePoint)
+                    ]
+                _ -> []
+        vert_attrs i =
+            case phase of
+                NotStartedYet ->
+                    [ onDoubleClick (DoubleClickPoint i)
+                    , onMouseDown   (GrabPoint i)
+                    , onMouseUp     (ReleasePoint)
+                    ]
+                _ -> []
+    in
+        Drawing.drawPolygon polygon edge_attrs vert_attrs
 
 
 main : Program () Model Msg

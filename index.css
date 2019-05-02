@@ -1,5 +1,10 @@
 body {
     font-family: "Open Sans";
+    width: 100%;
+    margin-right: 0;
+    margin-left: 0;
+    padding-left: 0;
+    padding-right: 0;
 }
 
 button {
@@ -78,16 +83,38 @@ button::last-child {
     text-anchor: middle;
 }
 
-.visualization {
-    vertical-align: top;
+.visualization-wrap {
     width: 60%;
     height: 100vh;
-    position: fixed;
+    position: relative;
+    vertical-align: top;
+}
+
+.visualization {
+    position: sticky;
+}
+
+.left-visualization-wrap {
+    width: 35%;
+    height: 100vh;
+    vertical-align: bottom;
+}
+.left-visualization {
+    margin-bottom: 50%;
+}
+
+.right-visualization-wrap {
+    width: 35%;
+    height: 100vh;
+    vertical-align: bottom;
+}
+.right-visualization {
+    margin-bottom: 50%;
 }
 
 .narration {
     vertical-align: middle;
-    width: 40%;
+    width: 30%;
     height: 100vh;
 }
 .point-label {
