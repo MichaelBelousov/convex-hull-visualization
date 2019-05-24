@@ -3,7 +3,7 @@
 HTML5 Visualization of the linear time complexity algorithm for
 finding the convex hull of a simple polygon.
 
-# [See it!](https://computational-geometry-visualizations.github.io/convex-hull-visualization/)
+# [See it!](https://mikemikeb.com/convex-hull-visualization/)
 
 # Authors
 
